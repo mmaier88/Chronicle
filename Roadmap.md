@@ -362,19 +362,24 @@ source .env.local
 ## Phase 9: Automations & Workflows (Weeks 25-27)
 
 ### 9.1 Workflow System
-- [ ] Tables: `workflows`, `workflow_runs`
+- [x] Tables: `workflows`, `workflow_runs` (from initial migration)
 - [ ] Edge Function: `run_workflows` (cron-triggered)
-- [ ] Workflow types:
+- [x] Workflow types defined:
   - `daily_index_refresh` - Re-embed updated sections
   - `weekly_exec_summary` - Generate project summary
   - `weekly_inconsistency_scan` - Find contradictions
-  - `weekly_new_papers_digest` - Summarize new sources
   - `weekly_citation_check` - Verify all citations
   - `weekly_risk_assessment` - Update safety scores
 
 ### 9.2 Automation Panel UI
-- [ ] Enable/disable workflows per project
-- [ ] Configure schedules
+- [x] `/api/workflows` endpoint (GET/POST for listing and toggling)
+- [x] `WorkflowPanel.tsx` component for sidebar access
+- [x] `/automations` page with:
+  - Project selector dropdown
+  - Active workflows count and stats
+  - Toggle enable/disable per workflow
+  - Schedule indicators (daily/weekly)
+- [x] "Automations" quick action on dashboard
 - [ ] View run history
 - [ ] Manual trigger option
 
@@ -383,7 +388,7 @@ source .env.local
 - [ ] In-app notifications
 - [ ] Webhook integrations
 
-**Milestone:** Projects maintain themselves with automated analysis and reporting.
+**Milestone:** Workflow UI functional. Enables project owners to configure automated workflows. Backend execution pending Edge Functions.
 
 ---
 

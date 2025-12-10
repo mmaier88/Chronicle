@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useEffect, use, useRef } from 'react'
+import { useState, useEffect, use, useRef, useMemo } from 'react'
 import { Editor } from '@/components/editor'
 import { AskProject } from '@/components/ask/AskProject'
 import { CitationDialog } from '@/components/editor/CitationDialog'
 import { CitationPanel } from '@/components/citations/CitationPanel'
 import { ArgumentPanel } from '@/components/arguments/ArgumentPanel'
 import { SafetyPanel } from '@/components/safety/SafetyPanel'
+import { KeyboardShortcutsHelp } from '@/components/help/KeyboardShortcutsHelp'
 import { createClient } from '@/lib/supabase/client'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import Link from 'next/link'
 
 interface DocumentPageProps {
@@ -40,7 +42,65 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [safetyPanelOpen, setSafetyPanelOpen] = useState(false)
   const [citations, setCitations] = useState<Citation[]>([])
   const [selectedText, setSelectedText] = useState('')
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
+
+  // Keyboard shortcuts
+  const shortcuts = useMemo(() => [
+    {
+      key: 'k',
+      ctrl: true,
+      handler: () => setAskPanelOpen(true),
+      description: 'Open Ask Project'
+    },
+    {
+      key: 's',
+      ctrl: true,
+      handler: () => handleSave(),
+      description: 'Save document'
+    },
+    {
+      key: 'c',
+      ctrl: true,
+      shift: true,
+      handler: () => setCitationPanelOpen(true),
+      description: 'Open Citations'
+    },
+    {
+      key: 'a',
+      ctrl: true,
+      shift: true,
+      handler: () => setArgumentPanelOpen(true),
+      description: 'Open Arguments'
+    },
+    {
+      key: 'y',
+      ctrl: true,
+      shift: true,
+      handler: () => setSafetyPanelOpen(true),
+      description: 'Open Safety'
+    },
+    {
+      key: 'Escape',
+      handler: () => {
+        setAskPanelOpen(false)
+        setCitationPanelOpen(false)
+        setArgumentPanelOpen(false)
+        setSafetyPanelOpen(false)
+        setCitationDialogOpen(false)
+        setShortcutsHelpOpen(false)
+      },
+      description: 'Close panels'
+    },
+    {
+      key: '?',
+      shift: true,
+      handler: () => setShortcutsHelpOpen(prev => !prev),
+      description: 'Toggle keyboard shortcuts help'
+    }
+  ], [])
+
+  useKeyboardShortcuts(shortcuts)
 
   useEffect(() => {
     async function loadDocument() {
@@ -204,41 +264,41 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 placeholder="Document title"
               />
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1 sm:space-x-3">
               {lastSaved && (
-                <span className="text-sm text-gray-500">
+                <span className="hidden sm:inline text-sm text-gray-500">
                   Saved {lastSaved.toLocaleTimeString()}
                 </span>
               )}
               <button
                 onClick={() => setSafetyPanelOpen(true)}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
-                title="Safety Assessment"
+                className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Safety Assessment (Ctrl+Shift+Y)"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                Safety
+                <span className="hidden md:inline">Safety</span>
               </button>
               <button
                 onClick={() => setArgumentPanelOpen(true)}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
-                title="Analyze Arguments"
+                className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Analyze Arguments (Ctrl+Shift+A)"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                Arguments
+                <span className="hidden md:inline">Arguments</span>
               </button>
               <button
                 onClick={() => setCitationPanelOpen(true)}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
-                title="View Citations"
+                className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="View Citations (Ctrl+Shift+C)"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Citations
+                <span className="hidden md:inline">Citations</span>
                 {citations.length > 0 && (
                   <span className="bg-purple-600 text-white text-xs rounded-full px-1.5">
                     {citations.length}
@@ -247,20 +307,40 @@ export default function DocumentPage({ params }: DocumentPageProps) {
               </button>
               <button
                 onClick={() => setAskPanelOpen(true)}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
-                title="Ask Project (Ctrl+K)"
+                className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Ask Project (Cmd/Ctrl+K)"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Ask
+                <span className="hidden md:inline">Ask</span>
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="px-2 py-2 sm:px-4 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                title="Save (Cmd/Ctrl+S)"
               >
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? (
+                  <svg className="w-4 h-4 sm:hidden animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
+              </button>
+              <button
+                onClick={() => setShortcutsHelpOpen(true)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Keyboard shortcuts (Shift+?)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </button>
             </div>
           </div>
@@ -327,6 +407,12 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         projectId={document.project_id}
         isOpen={safetyPanelOpen}
         onClose={() => setSafetyPanelOpen(false)}
+      />
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp
+        isOpen={shortcutsHelpOpen}
+        onClose={() => setShortcutsHelpOpen(false)}
       />
     </div>
   )
