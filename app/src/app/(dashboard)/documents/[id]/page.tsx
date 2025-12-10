@@ -7,6 +7,7 @@ import { CitationDialog } from '@/components/editor/CitationDialog'
 import { CitationPanel } from '@/components/citations/CitationPanel'
 import { ArgumentPanel } from '@/components/arguments/ArgumentPanel'
 import { SafetyPanel } from '@/components/safety/SafetyPanel'
+import { EvidencePanel } from '@/components/evidence/EvidencePanel'
 import { KeyboardShortcutsHelp } from '@/components/help/KeyboardShortcutsHelp'
 import { createClient } from '@/lib/supabase/client'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -40,6 +41,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [citationPanelOpen, setCitationPanelOpen] = useState(false)
   const [argumentPanelOpen, setArgumentPanelOpen] = useState(false)
   const [safetyPanelOpen, setSafetyPanelOpen] = useState(false)
+  const [evidencePanelOpen, setEvidencePanelOpen] = useState(false)
   const [citations, setCitations] = useState<Citation[]>([])
   const [selectedText, setSelectedText] = useState('')
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false)
@@ -81,12 +83,20 @@ export default function DocumentPage({ params }: DocumentPageProps) {
       description: 'Open Safety'
     },
     {
+      key: 'e',
+      ctrl: true,
+      shift: true,
+      handler: () => setEvidencePanelOpen(true),
+      description: 'Open Evidence'
+    },
+    {
       key: 'Escape',
       handler: () => {
         setAskPanelOpen(false)
         setCitationPanelOpen(false)
         setArgumentPanelOpen(false)
         setSafetyPanelOpen(false)
+        setEvidencePanelOpen(false)
         setCitationDialogOpen(false)
         setShortcutsHelpOpen(false)
       },
@@ -271,6 +281,16 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 </span>
               )}
               <button
+                onClick={() => setEvidencePanelOpen(true)}
+                className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Find Evidence (Ctrl+Shift+E)"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="hidden md:inline">Evidence</span>
+              </button>
+              <button
                 onClick={() => setSafetyPanelOpen(true)}
                 className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
                 title="Safety Assessment (Ctrl+Shift+Y)"
@@ -407,6 +427,26 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         projectId={document.project_id}
         isOpen={safetyPanelOpen}
         onClose={() => setSafetyPanelOpen(false)}
+      />
+
+      {/* Evidence Panel */}
+      <EvidencePanel
+        projectId={document.project_id}
+        selectedText={selectedText}
+        isOpen={evidencePanelOpen}
+        onClose={() => setEvidencePanelOpen(false)}
+        onInsertCitation={(evidence) => {
+          // Create a citation from the evidence
+          const newCitation: Citation = {
+            id: `citation-${Date.now()}`,
+            text: evidence.content.substring(0, 100) + '...',
+            sourceId: evidence.sourceId,
+            sourceTitle: evidence.sourceTitle,
+            pageNumber: evidence.pageNumber
+          }
+          setCitations(prev => [...prev, newCitation])
+          setEvidencePanelOpen(false)
+        }}
       />
 
       {/* Keyboard Shortcuts Help */}

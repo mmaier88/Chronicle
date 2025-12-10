@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateQueryEmbedding } from '@/lib/voyage'
 import { NextRequest, NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
 
 interface RelevantChunk {
   id: string
@@ -79,11 +80,60 @@ export async function POST(request: NextRequest) {
       .map((chunk, i) => `[${i + 1}] From "${chunk.source_title}":\n${chunk.content}`)
       .join('\n\n')
 
-    // TODO: Use Anthropic Claude to generate an answer based on the context
-    // For now, return the relevant chunks without generating an answer
-    const answer = relevantChunks.length > 0
-      ? `Based on ${relevantChunks.length} relevant source(s), here's what I found:\n\n${context}\n\n[Claude answer generation pending - add ANTHROPIC_API_KEY]`
-      : 'No relevant sources found for your query.'
+    // Generate answer using Claude if we have relevant chunks
+    let answer: string
+
+    if (relevantChunks.length === 0) {
+      answer = 'No relevant sources found for your query. Try uploading more sources or rephrasing your question.'
+    } else {
+      const anthropicApiKey = process.env.ANTHROPIC_API_KEY
+
+      if (!anthropicApiKey) {
+        // Fallback if no API key
+        answer = `Based on ${relevantChunks.length} relevant source(s), here's what I found:\n\n${context}`
+      } else {
+        try {
+          const anthropic = new Anthropic({ apiKey: anthropicApiKey })
+
+          const systemPrompt = `You are a research assistant helping users understand their uploaded sources.
+Your task is to synthesize information from the provided source excerpts to answer the user's question.
+
+Guidelines:
+- Only use information from the provided sources
+- Cite sources using [1], [2], etc. notation matching the source numbers
+- If the sources don't contain enough information to fully answer the question, say so
+- Be concise but thorough
+- Maintain academic objectivity`
+
+          const userPrompt = `Based on the following excerpts from the user's research sources, answer their question.
+
+QUESTION: ${query}
+
+SOURCES:
+${context}
+
+Please provide a well-structured answer with proper citations to the source numbers.`
+
+          const response = await anthropic.messages.create({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1024,
+            messages: [
+              { role: 'user', content: userPrompt }
+            ],
+            system: systemPrompt
+          })
+
+          // Extract text from response
+          const textContent = response.content.find(block => block.type === 'text')
+          answer = textContent ? textContent.text : 'Unable to generate answer.'
+
+        } catch (claudeError) {
+          console.error('Claude API error:', claudeError)
+          // Fallback to showing raw context
+          answer = `Based on ${relevantChunks.length} relevant source(s), here's what I found:\n\n${context}`
+        }
+      }
+    }
 
     return NextResponse.json({
       query,

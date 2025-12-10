@@ -15,6 +15,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
     title: 'Navigation',
     shortcuts: [
       { keys: ['Cmd/Ctrl', 'K'], description: 'Open Ask Project' },
+      { keys: ['Cmd/Ctrl', 'Shift', 'E'], description: 'Find Evidence' },
       { keys: ['Cmd/Ctrl', 'Shift', 'C'], description: 'Open Citations panel' },
       { keys: ['Cmd/Ctrl', 'Shift', 'A'], description: 'Open Arguments panel' },
       { keys: ['Cmd/Ctrl', 'Shift', 'Y'], description: 'Open Safety panel' },
