@@ -333,18 +333,21 @@ source .env.local
 ## Phase 8: Safety & Hallucination Assessment (Weeks 22-24)
 
 ### 8.1 Document Risk Assessment
-- [ ] Edge Function: `assess_document_safety`
-  - Count unsupported claims
-  - Identify outdated references
-  - Detect unverifiable statements
-  - Compute overall safety score
-- [ ] Table: `doc_risk_assessments`
+- [x] `/api/safety/assess` endpoint
+  - Identify issue types: unsupported claims, outdated references, speculation, overgeneralization, missing context
+  - Score severity: high, medium, low
+  - Compute overall safety score (0-100)
+  - Calculate risk level: low, moderate, high, critical
+- [x] Store assessments in `doc_risk_assessments` table
 
 ### 8.2 Safety Dashboard
-- [ ] Safety score display (0-100)
-- [ ] Hallucination risk indicator
-- [ ] List of flagged statements
-- [ ] Suggested fixes
+- [x] Safety panel sidebar (`SafetyPanel.tsx`)
+- [x] Safety score display with visual progress bar
+- [x] Risk level badge indicator
+- [x] Stats: total claims, supported, unsupported, speculative
+- [x] Issue list with severity and suggestions
+- [x] Expandable issue details
+- [x] Recommendations list
 - [ ] Trend over time
 
 ### 8.3 Real-time Safety Hints
@@ -352,7 +355,7 @@ source .env.local
 - [ ] "Find evidence" prompts for unsupported claims
 - [ ] Citation suggestions
 
-**Milestone:** Documents have safety scores with actionable improvement suggestions.
+**Milestone:** Safety assessment functional with scoring and recommendations.
 
 ---
 

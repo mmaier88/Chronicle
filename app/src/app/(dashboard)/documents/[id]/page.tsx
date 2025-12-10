@@ -6,6 +6,7 @@ import { AskProject } from '@/components/ask/AskProject'
 import { CitationDialog } from '@/components/editor/CitationDialog'
 import { CitationPanel } from '@/components/citations/CitationPanel'
 import { ArgumentPanel } from '@/components/arguments/ArgumentPanel'
+import { SafetyPanel } from '@/components/safety/SafetyPanel'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -36,6 +37,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [citationDialogOpen, setCitationDialogOpen] = useState(false)
   const [citationPanelOpen, setCitationPanelOpen] = useState(false)
   const [argumentPanelOpen, setArgumentPanelOpen] = useState(false)
+  const [safetyPanelOpen, setSafetyPanelOpen] = useState(false)
   const [citations, setCitations] = useState<Citation[]>([])
   const [selectedText, setSelectedText] = useState('')
   const editorRef = useRef<HTMLDivElement>(null)
@@ -209,6 +211,16 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 </span>
               )}
               <button
+                onClick={() => setSafetyPanelOpen(true)}
+                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Safety Assessment"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Safety
+              </button>
+              <button
                 onClick={() => setArgumentPanelOpen(true)}
                 className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
                 title="Analyze Arguments"
@@ -306,6 +318,15 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         documentId={document.id}
         isOpen={argumentPanelOpen}
         onClose={() => setArgumentPanelOpen(false)}
+      />
+
+      {/* Safety Panel */}
+      <SafetyPanel
+        documentContent={document.content}
+        documentId={document.id}
+        projectId={document.project_id}
+        isOpen={safetyPanelOpen}
+        onClose={() => setSafetyPanelOpen(false)}
       />
     </div>
   )
