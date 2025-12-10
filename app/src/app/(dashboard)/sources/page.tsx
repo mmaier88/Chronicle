@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { PDFViewerModal } from '@/components/pdf'
 
 interface Source {
   id: string
@@ -20,6 +21,7 @@ export default function SourcesPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedPDF, setSelectedPDF] = useState<Source | null>(null)
 
   const fetchSources = useCallback(async () => {
     try {
@@ -222,14 +224,20 @@ export default function SourcesPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getStatusBadge(source.processing_status)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                    <button
+                      onClick={() => setSelectedPDF(source)}
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      View
+                    </button>
                     <a
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                     >
-                      View PDF
+                      Download
                     </a>
                   </td>
                 </tr>
@@ -248,6 +256,16 @@ export default function SourcesPage() {
           &larr; Back to Dashboard
         </Link>
       </div>
+
+      {/* PDF Viewer Modal */}
+      {selectedPDF && (
+        <PDFViewerModal
+          isOpen={!!selectedPDF}
+          url={selectedPDF.url}
+          title={selectedPDF.title}
+          onClose={() => setSelectedPDF(null)}
+        />
+      )}
     </div>
   )
 }
