@@ -5,6 +5,7 @@ import { Editor } from '@/components/editor'
 import { AskProject } from '@/components/ask/AskProject'
 import { CitationDialog } from '@/components/editor/CitationDialog'
 import { CitationPanel } from '@/components/citations/CitationPanel'
+import { ArgumentPanel } from '@/components/arguments/ArgumentPanel'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -34,6 +35,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [askPanelOpen, setAskPanelOpen] = useState(false)
   const [citationDialogOpen, setCitationDialogOpen] = useState(false)
   const [citationPanelOpen, setCitationPanelOpen] = useState(false)
+  const [argumentPanelOpen, setArgumentPanelOpen] = useState(false)
   const [citations, setCitations] = useState<Citation[]>([])
   const [selectedText, setSelectedText] = useState('')
   const editorRef = useRef<HTMLDivElement>(null)
@@ -207,6 +209,16 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 </span>
               )}
               <button
+                onClick={() => setArgumentPanelOpen(true)}
+                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Analyze Arguments"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Arguments
+              </button>
+              <button
                 onClick={() => setCitationPanelOpen(true)}
                 className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
                 title="View Citations"
@@ -286,6 +298,14 @@ export default function DocumentPage({ params }: DocumentPageProps) {
           // In future, scroll to the citation in the editor
           setCitationPanelOpen(false)
         }}
+      />
+
+      {/* Argument Panel */}
+      <ArgumentPanel
+        documentContent={document.content}
+        documentId={document.id}
+        isOpen={argumentPanelOpen}
+        onClose={() => setArgumentPanelOpen(false)}
       />
     </div>
   )

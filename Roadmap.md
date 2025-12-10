@@ -301,28 +301,32 @@ source .env.local
 ## Phase 7: Argument Graph & Semantic Diff (Weeks 19-21)
 
 ### 7.1 Claim Extraction
-- [ ] Edge Function: `extract_claim_graph`
-  - Identify claims, assumptions, definitions
-  - Extract relationships (supports, contradicts, depends_on, refines)
-  - Score evidence strength
-- [ ] Tables: `claims`, `claim_spans`, `claim_links`, `claim_evidence`
+- [x] `/api/claims/extract` endpoint
+  - Identify claims, assumptions, definitions, evidence
+  - Extract relationships (supports, contradicts, depends_on, refines, exemplifies)
+  - Score confidence for each claim
+- [x] Store claims in `claims` table with links in `claim_links`
 
 ### 7.2 Argument Panel UI
-- [ ] Visual claim network (graph view)
-- [ ] Claim list with status indicators
-- [ ] Evidence strength visualization
-- [ ] Link claims to source evidence
+- [x] Argument panel sidebar (`ArgumentPanel.tsx`)
+- [x] Claim list with type icons and colors
+- [x] Relationship visualization on click
+- [x] Stats (claims, assumptions, evidence, links count)
+- [ ] Visual network graph view (future enhancement)
 
 ### 7.3 Semantic Diff
-- [ ] Edge Function: `semantic_diff`
-  - Compare two branches conceptually
-  - Identify: new claims, removed claims, modified arguments
-  - Explain changes in natural language
-- [ ] Diff viewer UI
-- [ ] Side-by-side branch comparison
+- [x] `/api/diff/semantic` endpoint
+  - Compare two versions conceptually
+  - Identify: added, removed, modified, strengthened, weakened
+  - Categorize by: claim, argument, evidence, structure, tone
+  - Return summary and overall assessment
+- [x] Semantic diff panel UI (`SemanticDiffPanel.tsx`)
+- [x] Change list with importance levels
+- [x] Before/after text comparison
+- [ ] Side-by-side branch comparison (requires branching)
 - [ ] AI-powered merge suggestions
 
-**Milestone:** Users can visualize their argument structure and understand changes between versions.
+**Milestone:** Argument extraction and semantic diff functional. Requires `ANTHROPIC_API_KEY` to enable.
 
 ---
 
