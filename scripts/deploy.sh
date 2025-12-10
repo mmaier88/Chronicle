@@ -38,6 +38,10 @@ rsync -avz --delete \
 echo "Copying environment file..."
 scp ./app/.env.local $SERVER:$DEPLOY_DIR/.env.local
 
+# Copy Roadmap.md
+echo "Copying Roadmap.md..."
+scp ./Roadmap.md $SERVER:$APP_DIR/Roadmap.md
+
 # Install dependencies and build on server
 echo "Installing dependencies and building..."
 ssh $SERVER "cd $DEPLOY_DIR && npm install && npm run build"
