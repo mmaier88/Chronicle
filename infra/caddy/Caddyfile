@@ -1,0 +1,54 @@
+# ResearchBase Caddy Configuration
+# Domain: researchbase.pro
+
+# Redirect www to apex
+www.researchbase.pro {
+    redir https://researchbase.pro{uri} permanent
+}
+
+# Main site
+researchbase.pro {
+    # Serve Roadmap.md at /roadmap
+    handle /roadmap {
+        root * /opt/researchbase
+        rewrite * /Roadmap.md
+        file_server
+        header Content-Type "text/markdown; charset=utf-8"
+    }
+
+    # Proxy everything else to Next.js
+    handle {
+        reverse_proxy localhost:3000
+    }
+
+    # Security headers
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    log {
+        output file /var/log/caddy/researchbase.log
+        format json
+    }
+}
+
+# Keep the IP-based access for now (will remove after DNS propagates)
+:80 {
+    handle /roadmap {
+        root * /opt/researchbase
+        rewrite * /Roadmap.md
+        file_server
+        header Content-Type "text/markdown; charset=utf-8"
+    }
+
+    handle {
+        reverse_proxy localhost:3000
+    }
+
+    log {
+        output file /var/log/caddy/access.log
+    }
+}
