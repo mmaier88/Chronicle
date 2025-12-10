@@ -488,25 +488,44 @@ source .env.local
 > **Priority: #1** — Required for enterprise adoption
 
 ### 11.1 Role-Based Access
-- [ ] User roles: `owner`, `admin`, `editor`, `reviewer`, `viewer`
-- [ ] Workspace-level permissions
-- [ ] Project-level permissions (inherit or override)
-- [ ] Document-level permissions
+- [x] User roles: `owner`, `admin`, `editor`, `reviewer`, `viewer`
+- [x] Workspace-level permissions (RLS policies)
+- [x] Project-level permissions (inherit or override)
+- [x] Document-level permissions
+- [x] Helper functions: `get_project_role()`, `get_document_role()`, `can_edit_document()`, `can_review_document()`
 
-### 11.2 Collaboration Workflows
-- [ ] Suggested edits mode (like Google Docs)
-- [ ] Comment threads with resolution
+### 11.2 Workspace Management API
+- [x] `GET/POST /api/workspaces` - List/create workspaces
+- [x] `GET/PATCH/DELETE /api/workspaces/[id]` - Workspace details
+- [x] `GET/PATCH/DELETE /api/workspaces/[id]/members` - Member management
+- [x] `GET/POST/DELETE /api/workspaces/[id]/invitations` - Invitations
+- [x] `GET/POST /api/invitations/[token]/accept` - Accept invitation
+
+### 11.3 Collaboration Workflows
+- [x] Comment threads with resolution (`document_comments` table)
+- [x] Suggested edits mode (comment_type: 'suggestion')
+- [x] `GET/POST /api/documents/[id]/comments` - Comments API
+- [x] `PATCH/DELETE /api/documents/[id]/comments/[commentId]` - Comment actions
+- [x] Section locking (`section_locks` table)
+- [x] Approval workflows (`document_approvals`, `approval_reviewers` tables)
 - [ ] @mentions and notifications
-- [ ] Locked sections (prevent editing specific parts)
-- [ ] Approval workflows (submit → review → approve)
+- [ ] Comments UI component
+- [ ] Approval request UI
 
-### 11.3 Audit & Compliance
-- [ ] Full audit trail (who changed what, when)
+### 11.4 Audit & Compliance
+- [x] Full audit trail (`activity_log` table with 30+ action types)
+- [x] `log_activity()` PostgreSQL function
 - [ ] Export audit logs (CSV, JSON)
 - [ ] Data retention policies
 - [ ] GDPR compliance tools (export, delete user data)
 
-**Milestone:** Enterprise-ready access control with approval workflows.
+### 11.5 Team Management UI
+- [ ] Workspace settings page
+- [ ] Member list with role management
+- [ ] Invitation dialog
+- [ ] Accept invitation page
+
+**Milestone:** Backend complete! API for teams, invitations, comments, and audit logging.
 
 ---
 
