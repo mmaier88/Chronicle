@@ -131,14 +131,16 @@ source .env.local
 ## Phase 2: Editor & Collaboration (Weeks 4-6)
 
 ### 2.1 Tiptap Editor
-- [ ] Install Tiptap with essential extensions
+- [x] Install Tiptap with essential extensions
   - StarterKit, Placeholder, Typography
-  - Heading, BulletList, OrderedList
+  - Link, Underline, Highlight, TextAlign
   - CodeBlock, Blockquote, HorizontalRule
-- [ ] Custom extensions for:
-  - Citation marks
-  - AI-generated span highlighting
-  - Claim/assumption annotations
+- [x] Custom extensions for:
+  - Citation marks (`Citation.ts`)
+  - AI-generated span highlighting (`AISpan.ts`)
+  - [ ] Claim/assumption annotations (Phase 7)
+- [x] Editor toolbar with formatting controls
+- [x] Document page with save functionality
 
 ### 2.2 Yjs Multiplayer
 - [ ] Set up Yjs provider with Supabase Realtime
@@ -147,12 +149,14 @@ source .env.local
 - [ ] Branch-aware document state
 
 ### 2.3 Document Management UI
+- [x] Document page with editor (`/documents/[id]`)
+- [x] Quick actions on dashboard
 - [ ] Document tree sidebar
 - [ ] Branch switcher
 - [ ] Section navigation
 - [ ] Version history panel
 
-**Milestone:** Multiple users can edit the same document in real-time with branch support.
+**Milestone:** Editor functional with formatting. Multiplayer pending Yjs integration.
 
 ---
 

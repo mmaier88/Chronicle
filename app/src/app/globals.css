@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: #ffffff;
@@ -23,4 +24,73 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Tiptap Editor Styles */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid #e5e7eb;
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.ProseMirror pre {
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.ProseMirror code {
+  background: #f3f4f6;
+  color: #1f2937;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.ProseMirror pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 2rem 0;
+}
+
+.ProseMirror mark {
+  background-color: #fef08a;
+  padding: 0.125rem 0;
+}
+
+/* AI-generated text highlight */
+.ProseMirror .ai-generated {
+  background-color: rgba(147, 197, 253, 0.3);
+  border-bottom: 2px dashed #3b82f6;
+}
+
+/* Citation highlight */
+.ProseMirror .citation {
+  background-color: rgba(167, 243, 208, 0.3);
+  cursor: pointer;
+}
+
+.ProseMirror .citation:hover {
+  background-color: rgba(167, 243, 208, 0.5);
 }

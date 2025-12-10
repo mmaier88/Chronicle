@@ -11,8 +11,13 @@
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.1",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tiptap/extension-highlight": "^3.13.0",
+    "@tiptap/extension-link": "^3.13.0",
     "@tiptap/extension-placeholder": "^3.13.0",
+    "@tiptap/extension-text-align": "^3.13.0",
     "@tiptap/extension-typography": "^3.13.0",
+    "@tiptap/extension-underline": "^3.13.0",
     "@tiptap/pm": "^3.13.0",
     "@tiptap/react": "^3.13.0",
     "@tiptap/starter-kit": "^3.13.0",
@@ -22,7 +27,9 @@
     "next": "16.0.8",
     "react": "19.2.1",
     "react-dom": "19.2.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.27"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
