@@ -1,13 +1,23 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import { Editor } from '@/components/editor'
 import { AskProject } from '@/components/ask/AskProject'
+import { CitationDialog } from '@/components/editor/CitationDialog'
+import { CitationPanel } from '@/components/citations/CitationPanel'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
 interface DocumentPageProps {
   params: Promise<{ id: string }>
+}
+
+interface Citation {
+  id: string
+  text: string
+  sourceId: string
+  sourceTitle: string
+  pageNumber?: number
 }
 
 export default function DocumentPage({ params }: DocumentPageProps) {
@@ -22,6 +32,11 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [askPanelOpen, setAskPanelOpen] = useState(false)
+  const [citationDialogOpen, setCitationDialogOpen] = useState(false)
+  const [citationPanelOpen, setCitationPanelOpen] = useState(false)
+  const [citations, setCitations] = useState<Citation[]>([])
+  const [selectedText, setSelectedText] = useState('')
+  const editorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function loadDocument() {
@@ -111,6 +126,36 @@ export default function DocumentPage({ params }: DocumentPageProps) {
     setDocument({ ...document, title: e.target.value })
   }
 
+  const handleCitationClick = () => {
+    // Get selected text from window selection
+    const selection = window.getSelection()
+    if (selection && selection.toString().trim()) {
+      setSelectedText(selection.toString().trim())
+    }
+    setCitationDialogOpen(true)
+  }
+
+  const handleCitationInsert = async (sourceId: string, pageNumber?: number) => {
+    // Fetch source title
+    const supabase = createClient()
+    const { data: source } = await supabase
+      .from('sources')
+      .select('title')
+      .eq('id', sourceId)
+      .single()
+
+    const newCitation: Citation = {
+      id: `citation-${Date.now()}`,
+      text: selectedText || 'Selected text',
+      sourceId,
+      sourceTitle: source?.title || 'Unknown Source',
+      pageNumber
+    }
+
+    setCitations(prev => [...prev, newCitation])
+    setSelectedText('')
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -162,6 +207,21 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 </span>
               )}
               <button
+                onClick={() => setCitationPanelOpen(true)}
+                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="View Citations"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Citations
+                {citations.length > 0 && (
+                  <span className="bg-purple-600 text-white text-xs rounded-full px-1.5">
+                    {citations.length}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => setAskPanelOpen(true)}
                 className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
                 title="Ask Project (Ctrl+K)"
@@ -184,11 +244,13 @@ export default function DocumentPage({ params }: DocumentPageProps) {
       </header>
 
       {/* Editor */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-8" ref={editorRef}>
         <Editor
           content={document.content}
           onChange={handleContentChange}
           placeholder="Start writing your research..."
+          documentId={document.id}
+          onCitationClick={handleCitationClick}
         />
       </main>
 
@@ -197,6 +259,33 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         projectId={document.project_id}
         isOpen={askPanelOpen}
         onClose={() => setAskPanelOpen(false)}
+      />
+
+      {/* Citation Dialog */}
+      <CitationDialog
+        isOpen={citationDialogOpen}
+        onClose={() => setCitationDialogOpen(false)}
+        onInsert={handleCitationInsert}
+        projectId={document.project_id}
+      />
+
+      {/* Citation Panel */}
+      <CitationPanel
+        citations={citations}
+        documentId={document.id}
+        isOpen={citationPanelOpen}
+        onClose={() => setCitationPanelOpen(false)}
+        onVerify={(citation) => {
+          // Update citation with verification
+          setCitations(prev =>
+            prev.map(c => c.id === citation.id ? citation : c)
+          )
+        }}
+        onJumpTo={(citation) => {
+          // For now just close the panel
+          // In future, scroll to the citation in the editor
+          setCitationPanelOpen(false)
+        }}
       />
     </div>
   )

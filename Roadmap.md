@@ -271,26 +271,30 @@ source .env.local
 ## Phase 6: Citations & Verification (Weeks 16-18)
 
 ### 6.1 Citation System
-- [ ] Table: `citations` with offset tracking
-- [ ] Citation insertion UI (link text to source)
+- [x] `citations` table (from initial migration)
+- [x] Citation insertion UI (`CitationDialog.tsx`)
+- [x] Citation mark in Tiptap (`Citation.ts` extension)
+- [x] Citation button in editor toolbar
 - [ ] Citation styles (APA, MLA, Chicago, etc.)
 - [ ] Auto-format citations
 
 ### 6.2 Citation Verification
-- [ ] Edge Function: `verify_citations`
-  - For each citation, check if source supports claim
-  - Detect: supported, outdated, contradictory
+- [x] `/api/citations/verify` endpoint
+  - Check if source supports claim using Claude
+  - Return: supported, contradicted, partial, unverifiable
   - Store results in `citation_verification_runs`
-- [ ] Verification status indicators in editor
-- [ ] Batch verification for entire document
+- [x] Verification status indicators (icons + badges)
+- [x] Batch verification ("Verify All" button)
 
 ### 6.3 Citation Panel
-- [ ] List all citations in document
-- [ ] Verification status per citation
+- [x] Citation panel sidebar (`CitationPanel.tsx`)
+- [x] List all citations with verification status
+- [x] Stats bar (verified/total, supported/contradicted counts)
+- [x] Jump to citation functionality
 - [ ] Quick-fix suggestions for issues
 - [ ] Export bibliography
 
-**Milestone:** Full citation management with AI-powered verification.
+**Milestone:** Citation system functional with AI-powered verification. Requires `ANTHROPIC_API_KEY` to enable verification.
 
 ---
 

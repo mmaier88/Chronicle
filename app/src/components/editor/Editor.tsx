@@ -19,6 +19,7 @@ interface EditorProps {
   placeholder?: string
   editable?: boolean
   documentId?: string
+  onCitationClick?: () => void
 }
 
 export function Editor({
@@ -26,7 +27,8 @@ export function Editor({
   onChange,
   placeholder = 'Start writing...',
   editable = true,
-  documentId
+  documentId,
+  onCitationClick
 }: EditorProps) {
   const [isAIProcessing, setIsAIProcessing] = useState(false)
   const [aiError, setAIError] = useState<string | null>(null)
@@ -135,7 +137,7 @@ export function Editor({
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 relative">
-      <EditorToolbar editor={editor} />
+      <EditorToolbar editor={editor} onCitationClick={onCitationClick} />
       <EditorContent editor={editor} />
 
       {/* AI Processing Indicator */}
