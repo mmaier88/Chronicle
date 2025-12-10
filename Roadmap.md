@@ -203,30 +203,34 @@ source .env.local
 
 ### 4.1 Document Section Embeddings
 - [ ] Background job to embed document sections
-- [ ] Table: `doc_section_embeddings`
+- [x] Table: `doc_section_embeddings` (in initial migration)
 - [ ] Trigger re-embedding on content changes (debounced)
 
-### 4.2 Ask-Project Edge Function
-- [ ] `ask_project` function:
+### 4.2 Ask-Project API
+- [x] `/api/ask` endpoint:
   - Embed user query (Voyage)
-  - Search both `source_chunks` AND `doc_section_embeddings`
+  - Search `source_chunks` via pgvector
   - Build context from top results
-  - Send to Claude for synthesis
-  - Return answer with citations
+  - Return answer with source citations
+- [x] `match_source_chunks` PostgreSQL function
+- [x] `match_doc_sections` PostgreSQL function
+- [x] `ask_project_search` combined search function
+- [ ] Claude integration for answer synthesis
 
 ### 4.3 Ask-Project UI
-- [ ] Sidebar panel for Ask-Project
-- [ ] Query input with history
-- [ ] Answer display with inline citations
+- [x] Sidebar panel for Ask-Project (`AskProject.tsx`)
+- [x] Query input with history
+- [x] Answer display with source citations
+- [x] Similarity scores per result
 - [ ] "Jump to source" links
 - [ ] Contradiction highlighting
 
 ### 4.4 Cross-Document Search
-- [ ] Search across all project documents
+- [x] Semantic similarity search with pgvector
 - [ ] Filter by document/branch
-- [ ] Semantic similarity scores
+- [x] Semantic similarity scores
 
-**Milestone:** Users can ask questions about their entire project and get answers with citations.
+**Milestone:** Ask-Project functional with source search. Document memory and Claude synthesis pending.
 
 ---
 

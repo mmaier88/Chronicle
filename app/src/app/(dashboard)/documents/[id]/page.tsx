@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { Editor } from '@/components/editor'
+import { AskProject } from '@/components/ask/AskProject'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -15,10 +16,12 @@ export default function DocumentPage({ params }: DocumentPageProps) {
     id: string
     title: string
     content: string
+    project_id?: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [askPanelOpen, setAskPanelOpen] = useState(false)
 
   useEffect(() => {
     async function loadDocument() {
@@ -159,6 +162,16 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 </span>
               )}
               <button
+                onClick={() => setAskPanelOpen(true)}
+                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Ask Project (Ctrl+K)"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Ask
+              </button>
+              <button
                 onClick={handleSave}
                 disabled={saving}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -178,6 +191,13 @@ export default function DocumentPage({ params }: DocumentPageProps) {
           placeholder="Start writing your research..."
         />
       </main>
+
+      {/* Ask Project Sidebar */}
+      <AskProject
+        projectId={document.project_id}
+        isOpen={askPanelOpen}
+        onClose={() => setAskPanelOpen(false)}
+      />
     </div>
   )
 }
