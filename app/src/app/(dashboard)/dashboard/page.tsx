@@ -148,6 +148,27 @@ export default async function DashboardPage() {
               </div>
             </div>
           </Link>
+
+          <Link
+            href="/automations"
+            className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 transition-colors"
+          >
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                  Automations
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Configure workflow schedules
+                </p>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 
