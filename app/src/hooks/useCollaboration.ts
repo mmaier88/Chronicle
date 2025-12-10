@@ -59,10 +59,19 @@ function generateUserColor(seed: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
+// Get WebSocket URL from environment or use production server
+const getDefaultWebsocketUrl = () => {
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_YJS_WEBSOCKET_URL) {
+    return process.env.NEXT_PUBLIC_YJS_WEBSOCKET_URL
+  }
+  // Production: Hetzner server at 138.199.231.3:1234
+  return 'ws://138.199.231.3:1234'
+}
+
 export function useCollaboration({
   documentId,
   user,
-  websocketUrl = 'wss://y-websocket-server.herokuapp.com', // Default public server for demo
+  websocketUrl = getDefaultWebsocketUrl(),
   onStatusChange
 }: UseCollaborationOptions): UseCollaborationReturn {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)

@@ -67,8 +67,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create source record' }, { status: 500 })
     }
 
-    // TODO: Trigger background job to extract text and create embeddings
-    // This would call a Supabase Edge Function or background worker
+    // Auto-trigger processing in background (non-blocking)
+    // We use fetch to call the process endpoint, but don't await it
+    const processUrl = new URL(`/api/sources/${source.id}/process`, request.url)
+    fetch(processUrl.toString(), {
+      method: 'POST',
+      headers: {
+        'Cookie': request.headers.get('cookie') || '',
+      },
+    }).catch(err => {
+      console.error('Failed to trigger processing:', err)
+    })
 
     return NextResponse.json({
       success: true,
@@ -77,7 +86,7 @@ export async function POST(request: NextRequest) {
         title: source.title,
         storage_path: source.storage_path,
         url: urlData.publicUrl,
-        processing_status: source.processing_status
+        processing_status: 'processing' // Will be processing soon
       }
     })
 

@@ -1,77 +1,126 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateEmbeddings } from '@/lib/voyage'
 import { NextRequest, NextResponse } from 'next/server'
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 
-// PDF text extraction
-// Note: pdf-parse has issues with Next.js Turbopack bundling
-// In production, use a Supabase Edge Function or external service (e.g., Unstructured.io)
-async function extractTextFromPDF(buffer: ArrayBuffer): Promise<{ text: string; numPages: number }> {
-  // TODO: Implement with Supabase Edge Function or external PDF processing service
-  // For now, return a placeholder to allow the pipeline to work
-  // The actual PDF parsing should be done by:
-  // 1. A Supabase Edge Function with Deno
-  // 2. An external service like Unstructured.io
-  // 3. A separate Node.js worker service
+// Initialize PDF.js without worker for serverless environment
+pdfjsLib.GlobalWorkerOptions.workerSrc = ''
 
-  console.warn('PDF text extraction not yet implemented - using placeholder')
+/**
+ * Extract text from a PDF using PDF.js
+ */
+async function extractTextFromPDF(buffer: ArrayBuffer): Promise<{ text: string; numPages: number; pageTexts: string[] }> {
+  try {
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(buffer),
+      useSystemFonts: true,
+    })
 
-  return {
-    text: `[PDF content placeholder - file size: ${buffer.byteLength} bytes]\n\nThis PDF will be processed by an external service. The embedding pipeline is ready.`,
-    numPages: 1
+    const pdf = await loadingTask.promise
+    const numPages = pdf.numPages
+    const pageTexts: string[] = []
+
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum)
+      const textContent = await page.getTextContent()
+
+      // Combine text items, preserving some structure
+      let lastY: number | null = null
+      let pageText = ''
+
+      for (const item of textContent.items) {
+        if ('str' in item) {
+          const textItem = item as { str: string; transform: number[] }
+          const currentY = textItem.transform[5]
+
+          // Add newline if we've moved to a new line (Y position changed significantly)
+          if (lastY !== null && Math.abs(currentY - lastY) > 5) {
+            pageText += '\n'
+          } else if (pageText && !pageText.endsWith(' ') && !pageText.endsWith('\n')) {
+            pageText += ' '
+          }
+
+          pageText += textItem.str
+          lastY = currentY
+        }
+      }
+
+      pageTexts.push(pageText.trim())
+    }
+
+    // Combine all pages with clear page breaks
+    const text = pageTexts
+      .map((pageText, idx) => `[Page ${idx + 1}]\n${pageText}`)
+      .join('\n\n')
+
+    return { text, numPages, pageTexts }
+  } catch (error) {
+    console.error('PDF extraction error:', error)
+    throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
+interface ChunkWithPage {
+  content: string
+  pageNumber: number
+}
+
 /**
- * Chunk text into smaller pieces for embedding
+ * Chunk text by pages, preserving page information
  */
-function chunkText(text: string, maxChunkSize: number = 1000): string[] {
-  const paragraphs = text.split(/\n\n+/)
-  const chunks: string[] = []
-  let currentChunk = ''
+function chunkTextByPages(pageTexts: string[], maxChunkSize: number = 1000): ChunkWithPage[] {
+  const chunks: ChunkWithPage[] = []
 
-  for (const paragraph of paragraphs) {
-    const trimmed = paragraph.trim()
-    if (!trimmed) continue
+  for (let pageNum = 0; pageNum < pageTexts.length; pageNum++) {
+    const pageText = pageTexts[pageNum]
+    if (!pageText.trim()) continue
 
-    if (currentChunk.length + trimmed.length > maxChunkSize) {
-      if (currentChunk) {
-        chunks.push(currentChunk.trim())
-      }
-      // If single paragraph is too long, split by sentences
-      if (trimmed.length > maxChunkSize) {
-        const sentences = trimmed.split(/(?<=[.!?])\s+/)
-        for (const sentence of sentences) {
-          if (sentence.length > maxChunkSize) {
-            // Last resort: split by words
-            const words = sentence.split(/\s+/)
-            let wordChunk = ''
-            for (const word of words) {
-              if (wordChunk.length + word.length > maxChunkSize) {
-                chunks.push(wordChunk.trim())
-                wordChunk = word
-              } else {
-                wordChunk += ' ' + word
-              }
-            }
-            if (wordChunk) chunks.push(wordChunk.trim())
-          } else {
-            chunks.push(sentence)
-          }
+    const paragraphs = pageText.split(/\n\n+/)
+    let currentChunk = ''
+
+    for (const paragraph of paragraphs) {
+      const trimmed = paragraph.trim()
+      if (!trimmed || trimmed.length < 20) continue
+
+      if (currentChunk.length + trimmed.length > maxChunkSize) {
+        if (currentChunk.trim().length > 50) {
+          chunks.push({ content: currentChunk.trim(), pageNumber: pageNum + 1 })
         }
-        currentChunk = ''
+        // Handle long paragraphs
+        if (trimmed.length > maxChunkSize) {
+          const sentences = trimmed.split(/(?<=[.!?])\s+/)
+          let sentenceChunk = ''
+          for (const sentence of sentences) {
+            if (sentenceChunk.length + sentence.length > maxChunkSize) {
+              if (sentenceChunk.trim().length > 50) {
+                chunks.push({ content: sentenceChunk.trim(), pageNumber: pageNum + 1 })
+              }
+              sentenceChunk = sentence
+            } else {
+              sentenceChunk += ' ' + sentence
+            }
+          }
+          if (sentenceChunk.trim().length > 50) {
+            chunks.push({ content: sentenceChunk.trim(), pageNumber: pageNum + 1 })
+          }
+          currentChunk = ''
+        } else {
+          currentChunk = trimmed
+        }
       } else {
-        currentChunk = trimmed
+        currentChunk += (currentChunk ? '\n\n' : '') + trimmed
       }
-    } else {
-      currentChunk += '\n\n' + trimmed
+    }
+
+    // Push remaining content from this page
+    if (currentChunk.trim().length > 50) {
+      chunks.push({ content: currentChunk.trim(), pageNumber: pageNum + 1 })
     }
   }
 
-  if (currentChunk.trim()) {
-    chunks.push(currentChunk.trim())
-  }
-
-  return chunks.filter(c => c.length > 50) // Filter out very short chunks
+  return chunks
 }
 
 export async function POST(
@@ -117,24 +166,25 @@ export async function POST(
 
       // Extract text from PDF
       const buffer = await fileData.arrayBuffer()
-      const { text, numPages } = await extractTextFromPDF(buffer)
+      const { numPages, pageTexts } = await extractTextFromPDF(buffer)
 
-      // Chunk the text
-      const chunks = chunkText(text)
+      // Chunk the text by pages
+      const chunks = chunkTextByPages(pageTexts)
 
       if (chunks.length === 0) {
         throw new Error('No text content extracted from PDF')
       }
 
       // Generate embeddings for all chunks
-      const embeddings = await generateEmbeddings(chunks)
+      const chunkContents = chunks.map(c => c.content)
+      const embeddings = await generateEmbeddings(chunkContents)
 
-      // Store chunks with embeddings
-      const chunkRecords = chunks.map((content, index) => ({
+      // Store chunks with embeddings and page numbers
+      const chunkRecords = chunks.map((chunk, index) => ({
         source_id: id,
-        content,
+        content: chunk.content,
         chunk_index: index,
-        page_number: null, // Would need more sophisticated parsing to determine page
+        page_number: chunk.pageNumber,
         embedding: embeddings[index],
       }))
 

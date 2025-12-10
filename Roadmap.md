@@ -16,11 +16,11 @@ ResearchBase transforms how researchers and teams work with documents. It's a **
 
 | Component | Service | Details |
 |-----------|---------|---------|
-| **App Server** | Hetzner cx42 | `138.199.231.3` / `2a01:4f8:c014:86e8::/64` (fsn1) |
+| **Hosting** | Vercel | `researchbase.pro` / `app-markus-projects-2b9af781.vercel.app` |
 | **Backend** | Supabase | Postgres + pgvector, Auth, Storage, Realtime, Edge Functions |
 | **LLM** | Anthropic Claude | Reasoning, generation, verification |
-| **Embeddings** | Voyage AI | Document & query embeddings (1536 dim) |
-| **Secrets** | 1Password | Service account for CI/CD and server secrets |
+| **Embeddings** | Voyage AI | Document & query embeddings (1024 dim) |
+| **Secrets** | 1Password | Service account for CI/CD and deployment secrets |
 
 ---
 
@@ -92,7 +92,9 @@ source .env.local
 - [x] Service role key stored in 1Password
 - [x] pgvector extension enabled (via migration)
 - [x] Email auth provider configured (default)
-- [ ] Configure OAuth providers (Google, GitHub)
+- [x] OAuth UI implemented (login page with Google/GitHub buttons)
+- [ ] Configure Google OAuth in Supabase (requires Google Cloud credentials)
+- [ ] Configure GitHub OAuth in Supabase (requires GitHub app)
 - [ ] Set up Storage buckets for PDFs
 - [ ] Configure Realtime for Yjs
 
@@ -148,6 +150,7 @@ source .env.local
   - WebSocket provider setup
   - User awareness and presence tracking
   - Connection status management
+  - Configurable via `NEXT_PUBLIC_YJS_WEBSOCKET_URL` env var
 - [x] `CollaborativeEditor.tsx` with TipTap integration
   - Collaboration extension
   - CollaborationCursor extension
@@ -156,7 +159,11 @@ source .env.local
   - Avatar display with user colors
   - Connection status indicator
   - Tooltip with user names
-- [ ] Production WebSocket server (currently using demo server)
+- [x] Production WebSocket server
+  - Hosted on Hetzner at `ws://138.199.231.3:1234`
+  - Custom y-websocket implementation with pm2
+  - Document persistence in memory
+  - [ ] SSL via Caddy (after DNS setup)
 - [ ] Branch-aware document state
 
 ### 2.3 Document Management UI
@@ -178,11 +185,13 @@ source .env.local
   - Accept PDF upload
   - Store in Supabase Storage
   - Create source record in database
+  - Auto-trigger processing after upload
 - [x] API endpoint: `/api/sources/[id]/process`
-  - Extract text (pdf-parse)
-  - Chunk by paragraphs (~1000 chars)
-  - Generate embeddings via Voyage AI
-  - Store in `source_chunks` table
+  - Extract text using PDF.js (pdfjs-dist)
+  - Chunk by pages with paragraph splitting (~1000 chars)
+  - Track page numbers for each chunk
+  - Generate embeddings via Voyage AI (1024 dim)
+  - Store in `source_chunks` table with page references
 - [x] Voyage AI client (`lib/voyage.ts`)
 
 ### 3.2 Database: Sources & Chunks
@@ -474,6 +483,265 @@ source .env.local
 
 ---
 
+## Phase 11: Teams & Access Control (Weeks 31-34)
+
+> **Priority: #1** — Required for enterprise adoption
+
+### 11.1 Role-Based Access
+- [ ] User roles: `owner`, `admin`, `editor`, `reviewer`, `viewer`
+- [ ] Workspace-level permissions
+- [ ] Project-level permissions (inherit or override)
+- [ ] Document-level permissions
+
+### 11.2 Collaboration Workflows
+- [ ] Suggested edits mode (like Google Docs)
+- [ ] Comment threads with resolution
+- [ ] @mentions and notifications
+- [ ] Locked sections (prevent editing specific parts)
+- [ ] Approval workflows (submit → review → approve)
+
+### 11.3 Audit & Compliance
+- [ ] Full audit trail (who changed what, when)
+- [ ] Export audit logs (CSV, JSON)
+- [ ] Data retention policies
+- [ ] GDPR compliance tools (export, delete user data)
+
+**Milestone:** Enterprise-ready access control with approval workflows.
+
+---
+
+## Phase 12: Research Data Import (Weeks 35-38)
+
+> **Priority: #2** — Removes major adoption friction
+
+### 12.1 Academic Source Import
+- [ ] ArXiv import (fetch paper by ID, extract PDF)
+- [ ] DOI resolver (CrossRef API)
+- [ ] PubMed import
+- [ ] Semantic Scholar integration
+
+### 12.2 Reference Manager Sync
+- [ ] Zotero sync (OAuth + API)
+- [ ] Mendeley import
+- [ ] EndNote import (XML/RIS)
+- [ ] BibTeX file import
+
+### 12.3 Document Import
+- [ ] Web article import (Readability extraction)
+- [ ] Google Docs import (via Google Drive API)
+- [ ] Notion import (API + markdown conversion)
+- [ ] GitHub markdown ingest
+- [ ] Overleaf sync (Git integration)
+
+### 12.4 Bulk Operations
+- [ ] Batch import UI
+- [ ] Import queue with progress tracking
+- [ ] Duplicate detection
+- [ ] Auto-categorization suggestions
+
+**Milestone:** Researchers can import existing libraries from 5+ sources.
+
+---
+
+## Phase 13: Real-time AI Guardrails (Weeks 39-42)
+
+> **Priority: #3** — Makes AI a live co-pilot, not just post-processing
+
+### 13.1 Inline Warnings
+- [ ] Unsupported claim detection (real-time)
+- [ ] Hallucination warning indicators
+- [ ] Speculation markers ("This appears to be opinion...")
+- [ ] Outdated reference alerts
+
+### 13.2 Proactive Suggestions
+- [ ] Auto-citation suggestions ("Add a source for this claim?")
+- [ ] Evidence retrieval prompts
+- [ ] Factuality confidence scores (inline)
+- [ ] "Strengthen this argument" nudges
+
+### 13.3 Writing Assistance
+- [ ] Tone consistency checker
+- [ ] Readability scoring (live)
+- [ ] Jargon detection with simplification suggestions
+- [ ] Bias detection alerts
+
+### 13.4 Configuration
+- [ ] Guardrail sensitivity levels (strict → relaxed)
+- [ ] Per-document guardrail settings
+- [ ] Snooze/dismiss individual warnings
+- [ ] Team-wide guardrail policies
+
+**Milestone:** AI provides continuous guidance during writing, not just on-demand.
+
+---
+
+## Phase 14: Document Branching & Merging (Weeks 43-46)
+
+> **Priority: #4** — Critical for academic collaboration, legal, policy writing
+
+### 14.1 Branch Management
+- [ ] Create branch from any document state
+- [ ] Branch naming and description
+- [ ] Branch-aware Yjs document state
+- [ ] Switch between branches (instant)
+- [ ] Branch comparison view
+
+### 14.2 Merge System
+- [ ] Visual diff between branches
+- [ ] Conflict detection and highlighting
+- [ ] AI-powered merge suggestions
+- [ ] Manual conflict resolution UI
+- [ ] Merge commit with summary
+
+### 14.3 Version Lineage
+- [ ] Version history timeline
+- [ ] Branch tree visualization
+- [ ] Restore previous versions
+- [ ] Named checkpoints/tags
+- [ ] Export specific versions
+
+### 14.4 Collaboration on Branches
+- [ ] Branch-specific permissions
+- [ ] Merge request workflow (request → review → merge)
+- [ ] Branch comments and discussion
+- [ ] Notification on branch changes
+
+**Milestone:** Full Git-like branching for documents with visual merge tools.
+
+---
+
+## Phase 15: Continuous Knowledge Graphing (Weeks 47-52)
+
+> **Priority: #5** — The killer enterprise feature
+
+### 15.1 Cross-Document Consolidation
+- [ ] Entity extraction across all documents
+- [ ] Concept deduplication and linking
+- [ ] Cross-document relationship mapping
+- [ ] Workspace-wide claim inventory
+
+### 15.2 Contradiction Detection
+- [ ] Automatic contradiction scanning (scheduled)
+- [ ] Contradiction severity scoring
+- [ ] Source attribution for conflicts
+- [ ] Resolution suggestions
+- [ ] Contradiction dashboard
+
+### 15.3 Knowledge Graph View
+- [ ] Interactive graph visualization (D3.js / Cytoscape)
+- [ ] Filter by: document, claim type, confidence, date
+- [ ] Cluster related concepts
+- [ ] Path finding ("How does X relate to Y?")
+- [ ] Export graph (JSON, GraphML)
+
+### 15.4 Queryable Ontology
+- [ ] Natural language graph queries
+- [ ] "What does our org believe about X?"
+- [ ] "What are our unsupported assumptions?"
+- [ ] "Show all contradictions in project Y"
+- [ ] Structured query API
+
+**Milestone:** "Here's everything your organization believes. Here are contradictions. Here are unsupported assumptions."
+
+---
+
+## Phase 16: Global Search & Workspace Intelligence (Weeks 53-56)
+
+> **Priority: #6** — Makes the product a research brain
+
+### 16.1 Cross-Project Search
+- [ ] Unified search across all projects
+- [ ] Semantic search with filters
+- [ ] Search within: documents, sources, claims, citations
+- [ ] Saved searches and alerts
+
+### 16.2 Workspace Summaries
+- [ ] Automatic weekly research summary
+- [ ] "What changed this week" digest
+- [ ] Key findings extraction
+- [ ] Progress tracking across projects
+
+### 16.3 Global Semantic Memory
+- [ ] Cross-workspace insight extraction
+- [ ] Trend detection across documents
+- [ ] Topic clustering
+- [ ] Research activity heatmaps
+
+### 16.4 Notifications & Digests
+- [ ] Email weekly summaries
+- [ ] Slack/Teams integration
+- [ ] Custom digest configuration
+- [ ] Activity feed in-app
+
+**Milestone:** ResearchBase becomes the "second brain" for research teams.
+
+---
+
+## Phase 17: Opinionated Research Workflows (Weeks 57-60)
+
+> **Priority: #7** — Makes the platform sticky
+
+### 17.1 Literature Review Pipeline
+- [ ] Search → Screen → Extract → Synthesize workflow
+- [ ] PRISMA flow for systematic reviews
+- [ ] Inclusion/exclusion criteria tracking
+- [ ] Quality assessment checklists
+
+### 17.2 Research Templates
+- [ ] Experiment design helper
+- [ ] Hypothesis tracking
+- [ ] Methods section generator
+- [ ] Results interpretation guide
+
+### 17.3 Argumentation Tools
+- [ ] Debate/argument mapping
+- [ ] Pro/con structuring
+- [ ] Counterargument generator
+- [ ] Logical fallacy detection
+
+### 17.4 Writing Workflows
+- [ ] Draft → Review → Revision → Finalize pipeline
+- [ ] Research note distillation
+- [ ] Abstract generator
+- [ ] Submission checklist per journal
+
+**Milestone:** Domain-specific workflows for literature reviews, experiments, and academic writing.
+
+---
+
+## Phase 18: Multi-Agent Reasoning (Weeks 61-64)
+
+> **Priority: #8** — AI-native, not just AI-enhanced
+
+### 18.1 Specialized Agents
+- [ ] Evidence Agent: Gathers relevant PDFs and excerpts
+- [ ] Fact-Checking Agent: Verifies claims against sources
+- [ ] Argument Agent: Structures and strengthens reasoning
+- [ ] Summarization Agent: Creates layered summaries
+- [ ] Contradiction Agent: Identifies conflicts
+
+### 18.2 Agent Orchestration
+- [ ] Multi-agent pipeline execution
+- [ ] Agent handoff and context passing
+- [ ] Parallel agent execution where possible
+- [ ] Agent confidence scoring
+
+### 18.3 Transparent Reasoning
+- [ ] Show agent "thought process"
+- [ ] Source attribution per agent
+- [ ] User can intervene/redirect agents
+- [ ] Explain disagreements between agents
+
+### 18.4 Custom Agent Configuration
+- [ ] Define custom agent roles
+- [ ] Agent prompt templates
+- [ ] Domain-specific agent tuning
+- [ ] Agent performance analytics
+
+**Milestone:** Team of AI agents provides more accurate synthesis than single LLM calls.
+
+---
+
 ## Architecture Overview
 
 ```
@@ -488,8 +756,8 @@ source .env.local
           │ fetch / websocket
           ▼
 
-[Hetzner cx42 - 138.199.231.3]
-  └── Next.js App Server (pm2 / Docker)
+[Vercel Edge Network]
+  └── Next.js App (serverless functions)
           │
           ▼
 
@@ -562,9 +830,9 @@ source .env.local
 ## Team & Resources
 
 - **Development:** Full-stack TypeScript
-- **Infrastructure:** Hetzner + Supabase (managed)
+- **Infrastructure:** Vercel + Supabase (managed)
 - **AI Services:** Anthropic + Voyage (API keys configured)
-- **Estimated Timeline:** 30 weeks to v1.0
+- **Estimated Timeline:** 30 weeks to v1.0, 64 weeks to v2.0 (enterprise)
 
 ---
 
