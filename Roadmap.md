@@ -236,30 +236,35 @@ source .env.local
 
 ## Phase 5: AI Writing Assistance (Weeks 13-15)
 
-### 5.1 AI Text Edit Edge Function
-- [ ] `ai_text_edit` supporting modes:
+### 5.1 AI Text Edit API
+- [x] `/api/ai/edit` endpoint supporting modes:
   - `summarize` - Condense selected text
   - `rewrite` - Improve clarity/style
   - `expand` - Add detail and depth
   - `shorten` - Make concise
   - `define` - Explain terms
   - `humanize` - Make more natural
+  - `continue` - Continue writing
   - `style_match` - Match reference style
   - `persona` - Write as specific voice
   - `obfuscate` - Anonymize content
+- [x] Anthropic Claude integration (`lib/anthropic.ts`)
+- [ ] Add `ANTHROPIC_API_KEY` to production environment
 
 ### 5.2 Slash Commands
-- [ ] Tiptap slash command extension
-- [ ] `/summarize`, `/rewrite`, `/expand`, etc.
+- [x] Tiptap slash command extension (`SlashCommand.tsx`)
+- [x] `/summarize`, `/rewrite`, `/expand`, `/shorten`, `/define`, `/humanize`, `/continue`
+- [x] Keyboard navigation in command menu
 - [ ] Selection-based AI menu (right-click)
 
 ### 5.3 AI Provenance Tracking
-- [ ] Table: `ai_jobs` (audit all AI calls)
-- [ ] Table: `ai_spans` (track AI-generated text ranges)
-- [ ] Visual indicator for AI-generated content
+- [x] `ai_jobs` table logs all AI calls (from initial migration)
+- [x] `AISpan` Tiptap mark for AI-generated text
+- [x] AI spans include model, action, timestamp metadata
+- [ ] Visual indicator styling for AI-generated content
 - [ ] "Humanize" action to remove AI markers
 
-**Milestone:** Users can use slash commands to transform text with full provenance tracking.
+**Milestone:** Slash commands functional with Claude integration. Requires `ANTHROPIC_API_KEY` to enable.
 
 ---
 
