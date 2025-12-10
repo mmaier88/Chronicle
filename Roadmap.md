@@ -408,9 +408,22 @@ source .env.local
 
 ### 10.3 User Experience
 - [ ] Onboarding flow
-- [ ] Keyboard shortcuts
-- [ ] Dark mode
-- [ ] Mobile responsive design
+- [x] Keyboard shortcuts (`useKeyboardShortcuts` hook)
+  - Cmd/Ctrl+K: Ask Project
+  - Cmd/Ctrl+S: Save document
+  - Cmd/Ctrl+Shift+C: Citations panel
+  - Cmd/Ctrl+Shift+A: Arguments panel
+  - Cmd/Ctrl+Shift+Y: Safety panel
+  - Shift+?: Keyboard shortcuts help
+  - Escape: Close all panels
+- [x] Dark mode enhancements
+  - Editor styles (blockquotes, code, marks)
+  - Focus ring visibility
+  - Custom scrollbar styling
+- [x] Mobile responsive design
+  - Collapsible button labels on small screens
+  - Touch-friendly tap targets (44px minimum)
+  - Adaptive panel widths
 - [ ] Accessibility audit (WCAG 2.1)
 
 ### 10.4 Documentation
@@ -424,7 +437,7 @@ source .env.local
 - [ ] Bug fixes
 - [ ] Production deployment checklist
 
-**Milestone:** Production-ready application.
+**Milestone:** Core UX polish complete. Keyboard shortcuts, dark mode, and responsive design implemented.
 
 ---
 
