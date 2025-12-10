@@ -128,7 +128,10 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <div className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 opacity-50">
+          <Link
+            href="/sources"
+            className="block p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+          >
             <div className="flex items-center">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,11 +143,11 @@ export default async function DashboardPage() {
                   Upload PDF
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Coming in Phase 3
+                  Add sources to your library
                 </p>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
 

@@ -163,23 +163,27 @@ source .env.local
 ## Phase 3: Source Ingestion & Voyage Embeddings (Weeks 7-9)
 
 ### 3.1 PDF Processing Pipeline
-- [ ] Edge Function: `embed_source`
+- [x] API endpoint: `/api/sources/upload`
   - Accept PDF upload
-  - Extract text (pdf-parse or similar)
-  - Chunk by paragraphs/pages (~500-1000 tokens)
-  - Send to Voyage for embedding
+  - Store in Supabase Storage
+  - Create source record in database
+- [x] API endpoint: `/api/sources/[id]/process`
+  - Extract text (pdf-parse)
+  - Chunk by paragraphs (~1000 chars)
+  - Generate embeddings via Voyage AI
   - Store in `source_chunks` table
+- [x] Voyage AI client (`lib/voyage.ts`)
 
 ### 3.2 Database: Sources & Chunks
 ```sql
--- sources: metadata, storage_path
--- source_chunks: content, page_number, embedding vector(1536)
+-- sources: metadata, storage_path (from Phase 1 migration)
+-- source_chunks: content, chunk_index, embedding vector(1024)
 -- IVFFlat index on embeddings
 ```
 
 ### 3.3 Source Panel UI
-- [ ] PDF upload interface
-- [ ] Source library (list all project sources)
+- [x] PDF upload interface (`/sources` page)
+- [x] Source library with status badges
 - [ ] PDF viewer with page navigation
 - [ ] Highlight search results in PDF
 
@@ -191,7 +195,7 @@ source .env.local
 - [ ] "Find Evidence" button in editor
 - [ ] Evidence panel showing relevant excerpts
 
-**Milestone:** Users can upload PDFs, search for evidence, and see relevant source excerpts.
+**Milestone:** PDF upload and embedding pipeline ready. Evidence retrieval pending.
 
 ---
 
