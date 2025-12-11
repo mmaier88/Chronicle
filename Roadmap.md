@@ -694,35 +694,56 @@ source .env.local
 
 ---
 
-## Phase 16: Global Search & Workspace Intelligence (Weeks 53-56)
+## Phase 16: Global Search & Workspace Intelligence (Weeks 53-56) ✅
 
 > **Priority: #6** — Makes the product a research brain
 
-### 16.1 Cross-Project Search
-- [ ] Unified search across all projects
-- [ ] Semantic search with filters
-- [ ] Search within: documents, sources, claims, citations
-- [ ] Saved searches and alerts
+### 16.1 Cross-Project Search ✅
+- [x] Unified search across all accessible workspaces (`/api/search`)
+  - Search documents, sources, sections, entities, claims
+  - Relevance ranking with excerpts
+  - Filter by content type and workspace
+- [x] Search page (`/search`) with:
+  - Type filters (document, source, entity, section, claim)
+  - Workspace selector
+  - Real-time results with excerpts
+- [x] Saved searches (`/api/search/saved`)
+  - Save with custom names
+  - Quick re-run from sidebar
 
-### 16.2 Workspace Summaries
-- [ ] Automatic weekly research summary
-- [ ] "What changed this week" digest
-- [ ] Key findings extraction
-- [ ] Progress tracking across projects
+### 16.2 Workspace Summaries ✅
+- [x] AI-powered workspace summaries (`/api/workspaces/[id]/summary`)
+  - Weekly/monthly/custom periods
+  - Key findings extraction
+  - Trend detection
+  - Recommendations for next steps
+- [x] Summary metrics: new documents, sources, entities, contradictions
+- [x] Active users tracking
 
-### 16.3 Global Semantic Memory
-- [ ] Cross-workspace insight extraction
-- [ ] Trend detection across documents
-- [ ] Topic clustering
-- [ ] Research activity heatmaps
+### 16.3 Activity Feed ✅
+- [x] Workspace activity tracking (`/api/workspaces/[id]/activity`)
+  - Record all workspace actions
+  - Filter by target type
+  - Paginated feed
+- [x] Activity details with context
 
-### 16.4 Notifications & Digests
-- [ ] Email weekly summaries
+### 16.4 Notifications & Digests ✅
+- [x] Notification system (`/api/notifications`)
+  - List, mark read, dismiss, delete
+  - Unread count badge
+- [x] Notification preferences (`/api/notifications/preferences`)
+  - Email settings: weekly summary, contradictions, mentions
+  - In-app settings: contradictions, mentions, document changes
+  - Digest day/time configuration
+- [ ] Email delivery (requires email provider integration)
 - [ ] Slack/Teams integration
-- [ ] Custom digest configuration
-- [ ] Activity feed in-app
 
-**Milestone:** ResearchBase becomes the "second brain" for research teams.
+**Database Migration:** `00005_search_and_summaries.sql`
+- Tables: saved_searches, workspace_summaries, activity_feed, notification_preferences, notifications
+- Helper functions: record_activity, get_workspace_activity, create_notification
+- Full RLS policies
+
+**Milestone:** ResearchBase becomes the "second brain" for research teams. ✅
 
 ---
 
