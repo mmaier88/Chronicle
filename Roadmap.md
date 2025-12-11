@@ -520,12 +520,14 @@ source .env.local
 - [ ] GDPR compliance tools (export, delete user data)
 
 ### 11.5 Team Management UI
-- [ ] Workspace settings page
-- [ ] Member list with role management
-- [ ] Invitation dialog
-- [ ] Accept invitation page
+- [x] Workspace settings page (`/workspace/[id]/settings`)
+- [x] Member list with role management
+- [x] Invitation dialog (modal with email/role selection)
+- [x] Accept invitation page (`/invite/[token]`)
+- [x] New workspace page (`/workspace/new`)
+- [x] Workspace detail page (`/workspace/[id]`)
 
-**Milestone:** Backend complete! API for teams, invitations, comments, and audit logging.
+**Milestone:** Phase 11 complete! Full teams & access control with UI.
 
 ---
 

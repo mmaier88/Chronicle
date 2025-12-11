@@ -46,10 +46,16 @@ export async function GET(
 
     return NextResponse.json({
       workspace: {
-        ...workspace,
-        role: userMember.role,
+        id: workspace.id,
+        name: workspace.name,
+        description: workspace.description,
+        slug: workspace.slug,
+        owner_id: workspace.owner_id,
+        created_at: workspace.created_at,
+        updated_at: workspace.updated_at,
         member_count: workspace.workspace_members.length,
-      }
+      },
+      role: userMember.role,
     })
 
   } catch (error) {
@@ -87,15 +93,12 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { name, slug } = body
+    const { name, description, slug } = body
 
-    const updates: Record<string, string> = {}
-    if (name) updates.name = name
-    if (slug) updates.slug = slug
-
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'No updates provided' }, { status: 400 })
-    }
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    if (name !== undefined) updates.name = name
+    if (description !== undefined) updates.description = description
+    if (slug !== undefined) updates.slug = slug
 
     const { data: workspace, error: updateError } = await supabase
       .from('workspaces')
