@@ -440,6 +440,52 @@ export function useKnowledgeGraph(workspaceId: string) {
     return await res.json()
   }, [workspaceId])
 
+  // Natural language query
+  const queryKnowledge = useCallback(async (query: string) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/knowledge/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          query,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Query failed')
+      }
+
+      return await res.json() as {
+        query: string
+        result: {
+          answer: string
+          relevant_entities: string[]
+          relevant_relationships: string[]
+          contradictions_noted: string[]
+          confidence: 'high' | 'medium' | 'low'
+          gaps: string[]
+        }
+        relevant_entity_ids: string[]
+        context_size: {
+          entities: number
+          relationships: number
+          contradictions: number
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Query failed'
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [workspaceId])
+
   return {
     // State
     loading,
@@ -467,5 +513,8 @@ export function useKnowledgeGraph(workspaceId: string) {
     // Graph operations
     getGraph,
     createSnapshot,
+
+    // Query operations
+    queryKnowledge,
   }
 }

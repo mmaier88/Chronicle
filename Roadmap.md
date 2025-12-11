@@ -654,23 +654,34 @@ source .env.local
 - [x] Resolution suggestions (AI-generated possible_resolutions)
 - [x] Contradiction status management (detected/confirmed/resolved/dismissed)
 
-### 15.3 Knowledge Graph View (API Complete)
+### 15.3 Knowledge Graph View ✅
 - [x] Graph data API (`/api/knowledge/graph`)
   - Center-focused traversal with configurable depth
   - Filter by entity types, relationship types, document
   - Stats: node count, edge count, type distribution
 - [x] Graph snapshots for versioning (`/api/knowledge/graph` POST)
-- [ ] Interactive graph visualization (D3.js / Cytoscape) - UI pending
+- [x] Interactive graph visualization (`react-force-graph-2d`)
+  - Force-directed layout with zoom/pan
+  - Color-coded by entity type
+  - Node size by mention count
+  - Edge arrows and labels
+- [x] Entity detail panel with relationships and mentions
 - [ ] Cluster related concepts
 - [ ] Path finding ("How does X relate to Y?")
 - [ ] Export graph (JSON, GraphML)
 
-### 15.4 Queryable Ontology (Foundation)
+### 15.4 Queryable Ontology ✅
 - [x] Structured query API (list entities, relationships, contradictions with filters)
-- [x] React hook `useKnowledgeGraph` for frontend integration
-- [ ] Natural language graph queries
-- [ ] "What does our org believe about X?"
-- [ ] "What are our unsupported assumptions?"
+- [x] React hook `useKnowledgeGraph` with `queryKnowledge` method
+- [x] Natural language graph queries (`/api/knowledge/query`)
+  - AI-powered answers from knowledge graph context
+  - Returns relevant entities, relationships, contradictions
+  - Confidence scoring and gap identification
+- [x] Knowledge page (`/knowledge`) with:
+  - Interactive graph visualization
+  - Entity detail panel
+  - Quick query suggestions
+  - Contradiction alerts
 
 **Database Migration:** `00004_knowledge_graph.sql`
 - Entity types: person, organization, concept, claim, methodology, finding, dataset, location, event, term, other
