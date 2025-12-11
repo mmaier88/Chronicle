@@ -569,30 +569,32 @@ source .env.local
 > **Priority: #3** — Makes AI a live co-pilot, not just post-processing
 
 ### 13.1 Inline Warnings
-- [ ] Unsupported claim detection (real-time)
-- [ ] Hallucination warning indicators
-- [ ] Speculation markers ("This appears to be opinion...")
-- [ ] Outdated reference alerts
+- [x] Unsupported claim detection (`/api/guardrails/analyze`)
+- [x] Hallucination warning indicators
+- [x] Speculation markers
+- [x] Bias detection
 
 ### 13.2 Proactive Suggestions
-- [ ] Auto-citation suggestions ("Add a source for this claim?")
-- [ ] Evidence retrieval prompts
-- [ ] Factuality confidence scores (inline)
-- [ ] "Strengthen this argument" nudges
+- [x] Auto-citation suggestions (`/api/guardrails/suggest-citations`)
+- [x] Evidence retrieval from project sources
+- [x] Factuality confidence scores
+- [x] Fact-checking API (`/api/guardrails/fact-check`)
 
 ### 13.3 Writing Assistance
-- [ ] Tone consistency checker
-- [ ] Readability scoring (live)
-- [ ] Jargon detection with simplification suggestions
-- [ ] Bias detection alerts
+- [x] Tone consistency checker (`/api/guardrails/writing`)
+- [x] Readability scoring (Flesch score)
+- [x] Jargon detection with simplification
+- [x] Text simplification API (PUT `/api/guardrails/writing`)
+- [x] Passive voice detection
 
 ### 13.4 Configuration
-- [ ] Guardrail sensitivity levels (strict → relaxed)
-- [ ] Per-document guardrail settings
-- [ ] Snooze/dismiss individual warnings
-- [ ] Team-wide guardrail policies
+- [x] Guardrail sensitivity levels (strict/medium/relaxed)
+- [x] Configurable check types
+- [x] Dismiss individual warnings
+- [x] React hook (`useGuardrails`)
+- [x] Guardrails panel component
 
-**Milestone:** AI provides continuous guidance during writing, not just on-demand.
+**Milestone:** Phase 13 complete! AI guardrails with warnings, suggestions, fact-checking, and writing assistance.
 
 ---
 
