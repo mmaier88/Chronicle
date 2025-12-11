@@ -97,14 +97,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity (non-blocking)
-    supabase.rpc('log_activity', {
-      p_action: 'project.create',
-      p_workspace_id: workspace_id,
-      p_project_id: project.id,
-      p_target_type: 'project',
-      p_target_id: project.id,
-      p_details: { name: project.name },
-    }).catch((err) => console.error('Failed to log activity:', err))
+    void (async () => {
+      try {
+        await supabase.rpc('log_activity', {
+          p_action: 'project.create',
+          p_workspace_id: workspace_id,
+          p_project_id: project.id,
+          p_target_type: 'project',
+          p_target_id: project.id,
+          p_details: { name: project.name },
+        })
+      } catch (err) {
+        console.error('Failed to log activity:', err)
+      }
+    })()
 
     return NextResponse.json({ project }, { status: 201 })
 

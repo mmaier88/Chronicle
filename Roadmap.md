@@ -747,68 +747,138 @@ source .env.local
 
 ---
 
-## Phase 17: Opinionated Research Workflows (Weeks 57-60)
+## Phase 17: Opinionated Research Workflows (Weeks 57-60) ✅
 
 > **Priority: #7** — Makes the platform sticky
 
-### 17.1 Literature Review Pipeline
-- [ ] Search → Screen → Extract → Synthesize workflow
-- [ ] PRISMA flow for systematic reviews
-- [ ] Inclusion/exclusion criteria tracking
-- [ ] Quality assessment checklists
+### 17.1 Literature Review Pipeline ✅
+- [x] Search → Screen → Extract → Synthesize workflow (`/api/research/literature-review`)
+- [x] PRISMA flow with stage tracking (search, screen, extract, synthesize, complete)
+- [x] Inclusion/exclusion criteria tracking (AI-generated from research question)
+- [x] Source screening API (`/api/research/literature-review/[id]/screen`)
+  - Manual screening with decisions (include/exclude/maybe/pending)
+  - AI-powered auto-screening against criteria
+  - Screening statistics and progress tracking
+- [x] Quality assessment scoring
 
-### 17.2 Research Templates
-- [ ] Experiment design helper
-- [ ] Hypothesis tracking
-- [ ] Methods section generator
-- [ ] Results interpretation guide
+### 17.2 Research Templates ✅
+- [x] Template system (`/api/research/templates`)
+  - Types: experiment, hypothesis, methods, results, literature_review, abstract, discussion, custom
+  - Configurable structure with AI prompts
+  - Public/private templates
+- [x] Hypothesis tracking (`/api/research/hypotheses`)
+  - Statement and rationale capture
+  - Status tracking (proposed/testing/supported/refuted/inconclusive)
+  - AI-powered evaluation against sources
+  - Supporting and contradicting evidence tracking
 
-### 17.3 Argumentation Tools
-- [ ] Debate/argument mapping
-- [ ] Pro/con structuring
-- [ ] Counterargument generator
-- [ ] Logical fallacy detection
+### 17.3 Argumentation Tools ✅
+- [x] Argument mapping (`/api/research/arguments`)
+  - Auto-generate from document content
+  - Central claim identification
+- [x] Argument nodes (`/api/research/arguments/[id]/nodes`)
+  - Types: claim, premise, evidence, counterargument, rebuttal, conclusion
+  - Pro/con/neutral stance tracking
+  - Strength scoring
+  - Position for visualization
+- [x] Logical fallacy detection (`/api/research/fallacies`)
+  - 15 fallacy types: ad_hominem, straw_man, false_dichotomy, etc.
+  - Severity scoring (low/medium/high)
+  - Suggestions for improvement
+  - Overall argument quality scoring
 
-### 17.4 Writing Workflows
-- [ ] Draft → Review → Revision → Finalize pipeline
-- [ ] Research note distillation
-- [ ] Abstract generator
-- [ ] Submission checklist per journal
+### 17.4 Writing Workflows ✅
+- [x] Writing projects (`/api/research/writing`)
+  - Draft → Review → Revision → Finalize → Submitted → Published pipeline
+  - Target journal/conference tracking
+  - Deadline management
+  - Word count targets
+  - Academic writing checklist
+- [x] AI-powered feedback (`/api/research/writing/[id]/feedback`)
+  - Stage-specific feedback prompts
+  - Types: ai_suggestion, peer_review, self_note
+  - Structure, clarity, citation, argument, style, formatting analysis
+  - Readiness scoring and next steps
 
-**Milestone:** Domain-specific workflows for literature reviews, experiments, and academic writing.
+**Database Migration:** `00006_research_workflows.sql`
+- Tables: literature_reviews, review_sources, research_templates, hypotheses, argument_maps, argument_nodes, detected_fallacies, writing_projects, writing_feedback
+- Enums: review_stage, screening_decision, template_type, argument_type, argument_stance, writing_stage
+- Full RLS policies
+
+**React Hook:** `useResearchWorkflows`
+- Literature review management and screening
+- Hypothesis creation and evaluation
+- Argument map creation with auto-generation
+- Writing project and feedback management
+- Fallacy detection
+
+**Milestone:** Domain-specific workflows for literature reviews, experiments, and academic writing. ✅
 
 ---
 
-## Phase 18: Multi-Agent Reasoning (Weeks 61-64)
+## Phase 18: Multi-Agent Reasoning (Weeks 61-64) ✅
 
 > **Priority: #8** — AI-native, not just AI-enhanced
 
-### 18.1 Specialized Agents
-- [ ] Evidence Agent: Gathers relevant PDFs and excerpts
-- [ ] Fact-Checking Agent: Verifies claims against sources
-- [ ] Argument Agent: Structures and strengthens reasoning
-- [ ] Summarization Agent: Creates layered summaries
-- [ ] Contradiction Agent: Identifies conflicts
+### 18.1 Specialized Agents ✅
+- [x] Evidence Agent: Gathers relevant PDFs and excerpts
+- [x] Fact-Checking Agent: Verifies claims against sources
+- [x] Argument Agent: Structures and strengthens reasoning
+- [x] Summarization Agent: Creates layered summaries
+- [x] Contradiction Agent: Identifies conflicts
+- [x] Agent definitions API (`/api/agents`)
+  - Custom agent creation with configurable prompts
+  - Model selection, temperature, max tokens
+  - Capability flags: search_sources, search_entities, create_entities, modify_document
 
-### 18.2 Agent Orchestration
-- [ ] Multi-agent pipeline execution
-- [ ] Agent handoff and context passing
-- [ ] Parallel agent execution where possible
-- [ ] Agent confidence scoring
+### 18.2 Agent Orchestration ✅
+- [x] Agent pipelines (`/api/agents/pipelines`)
+  - Multi-step pipeline definition
+  - Input/output mapping between steps
+  - Parallel execution groups
+  - Trigger types: manual, on_document_save, scheduled
+- [x] Agent execution (`/api/agents/execute`)
+  - Context gathering based on capabilities
+  - Structured reasoning with step tracking
+  - Token usage tracking
+  - Error handling with retry support
+- [x] Execution history (`/api/agents/executions`)
+  - Filter by agent, pipeline, status
+  - Full execution details with traces
 
-### 18.3 Transparent Reasoning
-- [ ] Show agent "thought process"
-- [ ] Source attribution per agent
-- [ ] User can intervene/redirect agents
-- [ ] Explain disagreements between agents
+### 18.3 Transparent Reasoning ✅
+- [x] Reasoning traces (`/api/agents/executions/[id]`)
+  - Step-by-step thought process (thought, action, observation, conclusion)
+  - Sources consulted tracking
+  - Entities referenced tracking
+  - Timing per step
+- [x] Execution detail view with full trace
+- [x] Cancel running execution support
+- [ ] User intervention/redirect (UI pending)
 
-### 18.4 Custom Agent Configuration
-- [ ] Define custom agent roles
-- [ ] Agent prompt templates
-- [ ] Domain-specific agent tuning
-- [ ] Agent performance analytics
+### 18.4 Agent Disagreements ✅
+- [x] Disagreement tracking (`/api/agents/disagreements`)
+  - Capture conflicting agent conclusions
+  - Topic and position recording
+- [x] Resolution system
+  - User manual resolution
+  - AI arbitration agent (auto-resolve)
+  - Resolution tracking with timestamp
+- [x] Disagreement filtering (resolved/unresolved)
 
-**Milestone:** Team of AI agents provides more accurate synthesis than single LLM calls.
+**Database Migration:** `00007_multi_agent.sql`
+- Tables: agent_definitions, agent_pipelines, agent_executions, reasoning_traces, agent_handoffs, agent_disagreements
+- Enums: agent_type (evidence, fact_checker, argument, summarizer, contradiction, research, writer, critic, custom), agent_status
+- 5 default agents pre-seeded: Evidence Agent, Fact Checker, Argument Analyst, Summarizer, Contradiction Detector
+- Full RLS policies
+
+**React Hook:** `useAgents`
+- Agent CRUD (create, update, delete custom agents)
+- Pipeline management
+- Execution with real-time trace tracking
+- Disagreement management and resolution
+
+**Milestone:** AI-native platform with transparent, multi-agent reasoning. ✅
 
 ---
 

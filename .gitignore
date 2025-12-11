@@ -48,3 +48,4 @@ coverage/
 
 # Supabase
 supabase/.temp/
+.env*.local

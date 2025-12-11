@@ -57,6 +57,21 @@ ResearchBase transforms how researchers and teams work with documents. It's a **
 - **Activity Feed:** Track all workspace activity
 - **Notifications:** Configurable alerts for contradictions, mentions, and changes
 
+### Research Workflows (Phase 17)
+- **Literature Review Pipeline:** PRISMA-compliant systematic reviews with AI screening
+- **Research Templates:** Experiment, hypothesis, methods, and results templates
+- **Hypothesis Tracking:** AI-evaluated hypotheses with evidence tracking
+- **Argument Mapping:** Auto-generated argument structure with pro/con analysis
+- **Fallacy Detection:** 15 logical fallacy types with severity scoring
+- **Writing Workflows:** Draft → Review → Revision → Finalize pipeline with AI feedback
+
+### Multi-Agent Reasoning (Phase 18)
+- **Specialized Agents:** Evidence, Fact-Checker, Argument, Summarizer, Contradiction agents
+- **Custom Agents:** Define your own agents with custom prompts and capabilities
+- **Agent Pipelines:** Multi-step workflows with parallel execution
+- **Transparent Reasoning:** Step-by-step thought process visibility
+- **Agent Disagreements:** Track and resolve conflicting agent conclusions
+
 ## Tech Stack
 
 | Component | Technology |
@@ -175,6 +190,32 @@ VOYAGE_API_KEY=your_voyage_key
 |----------|-------------|
 | `GET/POST /api/workflows` | Manage workflows |
 | `POST /api/workflows/execute` | Execute workflow action |
+
+### Research Workflows
+| Endpoint | Description |
+|----------|-------------|
+| `GET/POST /api/research/literature-review` | Literature review management |
+| `GET/PATCH/DELETE /api/research/literature-review/[id]` | Review CRUD |
+| `GET/POST /api/research/literature-review/[id]/sources` | Add sources to review |
+| `POST /api/research/literature-review/[id]/screen` | Screen sources (manual or AI) |
+| `GET/POST /api/research/templates` | Research templates |
+| `GET/POST /api/research/hypotheses` | Hypothesis tracking |
+| `GET/POST /api/research/arguments` | Argument maps |
+| `GET/POST/PATCH/DELETE /api/research/arguments/[id]/nodes` | Argument nodes |
+| `GET/POST /api/research/fallacies` | Fallacy detection |
+| `GET/POST/PATCH /api/research/writing` | Writing projects |
+| `GET/POST/PATCH /api/research/writing/[id]/feedback` | Writing feedback |
+
+### Agents
+| Endpoint | Description |
+|----------|-------------|
+| `GET/POST /api/agents` | Agent definitions |
+| `GET/PATCH/DELETE /api/agents/[id]` | Agent CRUD |
+| `GET/POST /api/agents/pipelines` | Agent pipelines |
+| `POST /api/agents/execute` | Execute agent with reasoning |
+| `GET /api/agents/executions` | List executions |
+| `GET/DELETE /api/agents/executions/[id]` | Execution details/cancel |
+| `GET/POST/PATCH /api/agents/disagreements` | Agent disagreements |
 
 ## Keyboard Shortcuts
 
