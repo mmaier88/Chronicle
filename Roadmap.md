@@ -603,33 +603,33 @@ source .env.local
 > **Priority: #4** — Critical for academic collaboration, legal, policy writing
 
 ### 14.1 Branch Management
-- [ ] Create branch from any document state
-- [ ] Branch naming and description
-- [ ] Branch-aware Yjs document state
-- [ ] Switch between branches (instant)
-- [ ] Branch comparison view
+- [x] Create branch from any document state (`POST /api/documents/[id]/branches`)
+- [x] Branch naming and description
+- [x] Copy content from parent branch
+- [x] Switch between branches (via `useBranches` hook)
+- [x] Delete branches (non-main only)
 
 ### 14.2 Merge System
-- [ ] Visual diff between branches
-- [ ] Conflict detection and highlighting
-- [ ] AI-powered merge suggestions
-- [ ] Manual conflict resolution UI
-- [ ] Merge commit with summary
+- [x] Branch diff API (`GET /api/documents/[id]/branches/[branchId]/diff`)
+- [x] Conflict detection and highlighting
+- [x] AI-powered diff analysis (`POST .../diff`)
+- [x] AI-powered merge suggestions (`PUT .../merge`)
+- [x] Merge with conflict resolution (`POST .../merge`)
 
 ### 14.3 Version Lineage
+- [x] Branch tree structure (parent/children tracking)
 - [ ] Version history timeline
-- [ ] Branch tree visualization
 - [ ] Restore previous versions
 - [ ] Named checkpoints/tags
 - [ ] Export specific versions
 
 ### 14.4 Collaboration on Branches
+- [x] Track merge history (merged_at, merged_by)
 - [ ] Branch-specific permissions
-- [ ] Merge request workflow (request → review → merge)
+- [ ] Merge request workflow
 - [ ] Branch comments and discussion
-- [ ] Notification on branch changes
 
-**Milestone:** Full Git-like branching for documents with visual merge tools.
+**Milestone:** Core branching and merging complete! APIs for create, diff, merge with AI assistance.
 
 ---
 
