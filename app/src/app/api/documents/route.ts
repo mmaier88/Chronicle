@@ -130,7 +130,6 @@ export async function POST(request: NextRequest) {
     await supabase
       .from('doc_sections')
       .insert({
-        document_id: document.id,
         branch_id: mainBranch.id,
         order_index: 0,
         title: 'Introduction',
