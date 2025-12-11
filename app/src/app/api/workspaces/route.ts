@@ -109,14 +109,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create workspace' }, { status: 500 })
     }
 
-    // Log activity
-    await supabase.rpc('log_activity', {
+    // Log activity (don't fail workspace creation if logging fails)
+    supabase.rpc('log_activity', {
       p_action: 'workspace.create',
       p_workspace_id: workspace.id,
       p_target_type: 'workspace',
       p_target_id: workspace.id,
       p_details: { name: workspace.name },
-    })
+    }).catch((err) => console.error('Failed to log activity:', err))
 
     return NextResponse.json({
       workspace: {
