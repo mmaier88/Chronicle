@@ -43,6 +43,20 @@ ResearchBase transforms how researchers and teams work with documents. It's a **
 - Safety assessment scheduling
 - Execution tracking and history
 
+### Knowledge Graph (Phase 15)
+- **Entity Extraction:** AI-powered extraction of persons, organizations, concepts, claims, methodologies, findings
+- **Cross-Document Relationships:** 12 relationship types (supports, contradicts, related_to, etc.)
+- **Contradiction Detection:** Automatic detection with severity scoring and resolution tracking
+- **Interactive Graph Visualization:** Force-directed graph with entity filtering
+- **Natural Language Queries:** Ask questions about your knowledge base
+
+### Global Search & Intelligence (Phase 16)
+- **Unified Search:** Search across documents, sources, entities, sections, claims
+- **Saved Searches:** Save and re-run frequent queries
+- **Workspace Summaries:** AI-generated weekly/monthly research digests
+- **Activity Feed:** Track all workspace activity
+- **Notifications:** Configurable alerts for contradictions, mentions, and changes
+
 ## Tech Stack
 
 | Component | Technology |
@@ -53,6 +67,7 @@ ResearchBase transforms how researchers and teams work with documents. It's a **
 | Embeddings | Voyage AI (voyage-2, 1024 dim) |
 | Collaboration | Yjs + y-websocket |
 | PDF Processing | react-pdf, pdf-parse |
+| Graph Visualization | react-force-graph-2d |
 | Deployment | Hetzner cx42, PM2, Caddy |
 | Secrets | 1Password Service Accounts |
 
@@ -115,6 +130,7 @@ VOYAGE_API_KEY=your_voyage_key
 
 ## API Endpoints
 
+### Core
 | Endpoint | Description |
 |----------|-------------|
 | `POST /api/ask` | Query project knowledge base |
@@ -122,10 +138,41 @@ VOYAGE_API_KEY=your_voyage_key
 | `POST /api/evidence/find` | Semantic evidence search |
 | `POST /api/sources/upload` | Upload PDF sources |
 | `POST /api/sources/[id]/process` | Process uploaded PDF |
+
+### Analysis & Safety
+| Endpoint | Description |
+|----------|-------------|
 | `POST /api/citations/verify` | Verify citation accuracy |
 | `POST /api/claims/extract` | Extract claims from document |
 | `POST /api/safety/assess` | Assess document safety |
 | `POST /api/diff/semantic` | Compare document versions |
+| `POST /api/guardrails/analyze` | Inline warnings and suggestions |
+| `POST /api/guardrails/fact-check` | Fact check claims |
+
+### Knowledge Graph
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/knowledge/extract` | Extract entities from content |
+| `GET/POST /api/knowledge/entities` | List/create entities |
+| `GET/PATCH/DELETE /api/knowledge/entities/[id]` | Entity CRUD |
+| `GET/POST /api/knowledge/relationships` | Manage relationships |
+| `GET/POST /api/knowledge/contradictions` | Detect/list contradictions |
+| `GET/POST /api/knowledge/graph` | Graph data and snapshots |
+| `POST /api/knowledge/query` | Natural language queries |
+
+### Search & Intelligence
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/search` | Global search across all content |
+| `GET/POST/DELETE /api/search/saved` | Saved searches |
+| `GET/POST /api/workspaces/[id]/summary` | Workspace summaries |
+| `GET/POST /api/workspaces/[id]/activity` | Activity feed |
+| `GET/PATCH/DELETE /api/notifications` | User notifications |
+| `GET/PUT /api/notifications/preferences` | Notification settings |
+
+### Workflows
+| Endpoint | Description |
+|----------|-------------|
 | `GET/POST /api/workflows` | Manage workflows |
 | `POST /api/workflows/execute` | Execute workflow action |
 
