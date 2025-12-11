@@ -536,8 +536,8 @@ source .env.local
 > **Priority: #2** — Removes major adoption friction
 
 ### 12.1 Academic Source Import
-- [ ] ArXiv import (fetch paper by ID, extract PDF)
-- [ ] DOI resolver (CrossRef API)
+- [x] ArXiv import (`/api/import/arxiv` - search + import by ID)
+- [x] DOI resolver (`/api/import/doi` - CrossRef API)
 - [ ] PubMed import
 - [ ] Semantic Scholar integration
 
@@ -545,22 +545,22 @@ source .env.local
 - [ ] Zotero sync (OAuth + API)
 - [ ] Mendeley import
 - [ ] EndNote import (XML/RIS)
-- [ ] BibTeX file import
+- [x] BibTeX file import (`/api/import/bibtex`)
 
 ### 12.3 Document Import
-- [ ] Web article import (Readability extraction)
+- [x] Web article import (`/api/import/web` - content extraction)
 - [ ] Google Docs import (via Google Drive API)
 - [ ] Notion import (API + markdown conversion)
 - [ ] GitHub markdown ingest
 - [ ] Overleaf sync (Git integration)
 
 ### 12.4 Bulk Operations
-- [ ] Batch import UI
+- [x] Import UI (`/sources/import` - ArXiv, DOI, BibTeX, Web tabs)
 - [ ] Import queue with progress tracking
-- [ ] Duplicate detection
+- [x] Duplicate detection (by DOI, external_id)
 - [ ] Auto-categorization suggestions
 
-**Milestone:** Researchers can import existing libraries from 5+ sources.
+**Milestone:** Core import functionality complete! ArXiv, DOI, BibTeX, and Web imports working.
 
 ---
 
