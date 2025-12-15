@@ -477,7 +477,11 @@ source .env.local
 - [ ] RLS policy review
 
 ### 10.3 User Experience
-- [ ] Onboarding flow
+- [x] Onboarding flow (`OnboardingWizard.tsx`, `OnboardingCheck.tsx`)
+  - Multi-step wizard for first-time users
+  - Workspace and project creation
+  - Key features overview
+  - Skip option with status persistence
 - [x] Keyboard shortcuts (`useKeyboardShortcuts` hook)
   - Cmd/Ctrl+K: Ask Project
   - Cmd/Ctrl+S: Save document
@@ -1143,7 +1147,7 @@ interface VeltUser {
 ### Short-term (Polish)
 4. **Test comments** - inline comments with @mentions
 5. **Test presence** - cursor tracking and user indicators
-6. **Onboarding flow** - First-time user experience
+6. ~~**Onboarding flow** - First-time user experience~~ ✅
 7. ~~**Jump to source** links in Ask-Project results~~ ✅
 
 ### Medium-term (Yjs Deprecation)
