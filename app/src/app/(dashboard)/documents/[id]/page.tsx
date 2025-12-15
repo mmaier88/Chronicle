@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, use, useRef, useMemo } from 'react'
-import { Editor } from '@/components/editor'
+import { VeltEditor } from '@/components/editor/VeltEditor'
 import { AskProject } from '@/components/ask/AskProject'
 import { CitationDialog } from '@/components/editor/CitationDialog'
 import { CitationPanel } from '@/components/citations/CitationPanel'
@@ -32,6 +32,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
     title: string
     content: string
     project_id?: string
+    workspace_id?: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -125,10 +126,16 @@ export default function DocumentPage({ params }: DocumentPageProps) {
           content: '<p>Start writing your research...</p>'
         })
       } else {
-        // Try to fetch from database
+        // Try to fetch from database with workspace info
         const { data, error } = await supabase
           .from('documents')
-          .select('id, title, content')
+          .select(`
+            id,
+            title,
+            content,
+            project_id,
+            projects!inner(workspace_id)
+          `)
           .eq('id', id)
           .single()
 
@@ -160,10 +167,15 @@ export default function DocumentPage({ params }: DocumentPageProps) {
             `
           })
         } else {
+          const projects = data.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
+          const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
+
           setDocument({
             id: data.id,
             title: data.title,
-            content: data.content || ''
+            content: data.content || '',
+            project_id: data.project_id,
+            workspace_id: workspaceId
           })
         }
       }
@@ -368,13 +380,15 @@ export default function DocumentPage({ params }: DocumentPageProps) {
       </header>
 
       {/* Editor */}
-      <main className="max-w-5xl mx-auto px-4 py-8" ref={editorRef}>
-        <Editor
+      <main className="max-w-7xl mx-auto px-4 py-8" ref={editorRef}>
+        <VeltEditor
           content={document.content}
           onChange={handleContentChange}
           placeholder="Start writing your research..."
           documentId={document.id}
+          workspaceId={document.workspace_id}
           onCitationClick={handleCitationClick}
+          showCommentsSidebar={true}
         />
       </main>
 

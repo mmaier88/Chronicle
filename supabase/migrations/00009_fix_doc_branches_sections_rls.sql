@@ -5,6 +5,12 @@
 -- RLS was enabled on these tables but no policies existed, blocking all operations.
 -- =============================================================================
 
+-- Drop existing policies if they exist (idempotent)
+DROP POLICY IF EXISTS "Document members can view branches" ON doc_branches;
+DROP POLICY IF EXISTS "Editors can manage branches" ON doc_branches;
+DROP POLICY IF EXISTS "Document members can view sections" ON doc_sections;
+DROP POLICY IF EXISTS "Editors can manage sections" ON doc_sections;
+
 -- doc_branches policies
 CREATE POLICY "Document members can view branches"
   ON doc_branches FOR SELECT

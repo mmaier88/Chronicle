@@ -144,7 +144,7 @@ source .env.local
 - [x] Editor toolbar with formatting controls
 - [x] Document page with save functionality
 
-### 2.2 Yjs Multiplayer
+### 2.2 Yjs Multiplayer (Legacy - Being Replaced by Velt)
 - [x] Yjs + y-websocket packages installed
 - [x] `useCollaboration` hook (`hooks/useCollaboration.ts`)
   - WebSocket provider setup
@@ -163,18 +163,41 @@ source .env.local
   - Hosted on Hetzner at `ws://138.199.231.3:1234`
   - Custom y-websocket implementation with pm2
   - Document persistence in memory
-  - [ ] SSL via Caddy (after DNS setup)
-- [ ] Branch-aware document state
 
-### 2.3 Document Management UI
+> **Note:** Yjs infrastructure is being replaced by Velt SDK. See Phase 19 for migration status.
+
+### 2.3 Velt Collaboration (NEW - Replacing Yjs)
+- [x] Velt SDK packages installed
+  - `@veltdev/react` - Core React SDK
+  - `@veltdev/tiptap-velt-comments` - Tiptap integration
+  - `@veltdev/tiptap-crdt-react` - CRDT support
+- [x] Credentials stored in 1Password (`RB - Staging` vault)
+- [x] Environment variables configured
+  - `NEXT_PUBLIC_VELT_API_KEY` in `.env.local` and Vercel production
+- [x] `VeltProvider.tsx` wrapper component
+- [x] `useVeltAuth.ts` hook for Supabase → Velt user sync
+- [x] `VeltEditor.tsx` - New collaborative editor with:
+  - TiptapVeltComments extension
+  - BubbleMenu for adding comments
+  - VeltPresence indicators
+  - VeltCursor tracking
+  - VeltCommentsSidebar
+  - Preserved custom extensions (Citation, AISpan, SlashCommand)
+- [x] `VeltPresenceDisplay.tsx` - Enhanced presence UI
+- [ ] Wrap app with VeltProvider in root layout
+- [ ] Update document pages to use VeltEditor
+- [ ] Test real-time collaboration with multiple users
+
+### 2.4 Document Management UI
 - [x] Document page with editor (`/documents/[id]`)
 - [x] Quick actions on dashboard
 - [ ] Document tree sidebar
-- [ ] Branch switcher
+- [x] Branch switcher (`BranchSelector.tsx`)
 - [ ] Section navigation
-- [ ] Version history panel
+- [x] Version history panel (`VersionHistoryPanel.tsx`)
+- [x] Merge request panel (`MergeRequestPanel.tsx`)
 
-**Milestone:** Phase 2 Complete! Editor functional with formatting. Yjs multiplayer infrastructure ready.
+**Milestone:** Phase 2 Complete! Editor functional with formatting. Velt collaboration infrastructure ready, pending activation.
 
 ---
 
@@ -616,20 +639,53 @@ source .env.local
 - [x] AI-powered merge suggestions (`PUT .../merge`)
 - [x] Merge with conflict resolution (`POST .../merge`)
 
-### 14.3 Version Lineage
+### 14.3 Version Lineage (Git-Style Versioning)
 - [x] Branch tree structure (parent/children tracking)
-- [ ] Version history timeline
-- [ ] Restore previous versions
+- [x] Database schema for versioning (`00010_document_versioning.sql`)
+  - `doc_snapshots` - Version snapshots with CRDT state
+  - `doc_diffs` - Computed diffs between snapshots
+  - `merge_requests` - PR-style merge workflow
+  - `merge_request_comments` - Discussion on MRs
+- [x] Snapshot API (`/api/documents/[id]/snapshots`)
+  - GET: List version history
+  - POST: Create version snapshot with commit message
+- [x] Snapshot detail API (`/api/documents/[id]/snapshots/[snapshotId]`)
+  - GET: Get specific snapshot with CRDT state
+  - DELETE: Delete snapshot (with permission check)
+- [x] Merge Request API (`/api/documents/[id]/merge-requests`)
+  - GET: List merge requests
+  - POST: Create merge request
+- [x] Merge Request detail API (`/api/documents/[id]/merge-requests/[mrId]`)
+  - GET: Get MR details with comments
+  - PATCH: Update MR (title, description, status)
+- [x] Merge execution API (`/api/documents/[id]/merge-requests/[mrId]/merge`)
+  - POST: Execute merge operation
+- [ ] Restore previous versions (UI pending)
 - [ ] Named checkpoints/tags
 - [ ] Export specific versions
 
-### 14.4 Collaboration on Branches
-- [x] Track merge history (merged_at, merged_by)
-- [ ] Branch-specific permissions
-- [ ] Merge request workflow
-- [ ] Branch comments and discussion
+### 14.4 Version History UI
+- [x] `VersionHistoryPanel.tsx` - Git-style commit log
+  - Timeline view of snapshots
+  - Commit messages and metadata
+  - View/restore snapshot actions
+- [x] `BranchSelector.tsx` - Branch switching dropdown
+  - List all branches
+  - Create new branch option
+  - Current branch indicator
+- [x] `MergeRequestPanel.tsx` - PR-style merge interface
+  - List open/merged/closed MRs
+  - Create MR form
+  - Status badges
+- [ ] `DiffViewer.tsx` - Side-by-side diff view
 
-**Milestone:** Core branching and merging complete! APIs for create, diff, merge with AI assistance.
+### 14.5 Collaboration on Branches
+- [x] Track merge history (merged_at, merged_by)
+- [x] Merge request workflow with status tracking
+- [ ] Branch-specific permissions
+- [ ] MR comments and discussion (schema ready)
+
+**Milestone:** Full Git-style versioning system with snapshots, merge requests, and version history UI!
 
 ---
 
@@ -882,15 +938,86 @@ source .env.local
 
 ---
 
+## Phase 19: Velt Collaboration Migration (Current)
+
+> **Priority: Active** — Replacing Yjs with production-ready collaboration SDK
+
+### 19.1 Velt Core Setup ✅
+- [x] Install Velt SDK packages
+  - `@veltdev/react` - Core React SDK
+  - `@veltdev/tiptap-velt-comments` - Tiptap integration
+  - `@veltdev/tiptap-crdt-react` - CRDT support
+- [x] Credentials stored in 1Password (`RB - Staging` vault, item: `Velt API Credentials`)
+- [x] Environment variables configured
+  - `NEXT_PUBLIC_VELT_API_KEY` in `.env.local`
+  - `NEXT_PUBLIC_VELT_API_KEY` in Vercel production
+
+### 19.2 Components Created ✅
+- [x] `VeltProvider.tsx` - App wrapper with Velt context
+- [x] `useVeltAuth.ts` - Supabase → Velt user sync hook
+- [x] `VeltEditor.tsx` - Collaborative editor with:
+  - TiptapVeltComments extension
+  - BubbleMenu for inline comments
+  - VeltPresence indicators
+  - VeltCursor tracking
+  - VeltCommentsSidebar
+  - VeltNotificationsTool
+  - All existing extensions preserved (Citation, AISpan, SlashCommand)
+- [x] `VeltPresenceDisplay.tsx` - Enhanced presence UI
+
+### 19.3 Activation Steps (Pending)
+- [ ] Wrap app with VeltProvider in root layout (`app/layout.tsx`)
+- [ ] Update document pages to use VeltEditor
+- [ ] Test real-time collaboration with multiple users
+- [ ] Test comment creation and threads
+- [ ] Verify presence indicators work
+- [ ] Run `supabase db push` to apply versioning migration
+
+### 19.4 Yjs Deprecation (Future)
+- [ ] Mark Yjs components as deprecated
+- [ ] Remove Yjs WebSocket server dependency
+- [ ] Uninstall Yjs packages:
+  ```bash
+  npm uninstall yjs y-websocket y-protocols @tiptap/extension-collaboration @tiptap/extension-collaboration-cursor
+  ```
+- [ ] Archive old collaboration files:
+  - `app/src/hooks/useCollaboration.ts`
+  - `app/src/components/collaboration/CollaborativeEditor.tsx`
+
+### 19.5 Velt User Object Shape
+```typescript
+interface VeltUser {
+  userId: string       // Supabase user.id
+  name: string         // user.user_metadata.full_name
+  email: string        // user.email
+  photoUrl?: string    // user.user_metadata.avatar_url
+  organizationId?: string // workspace_id
+}
+```
+
+### 19.6 Resources
+- [Velt Documentation](https://docs.velt.dev)
+- [Velt + Tiptap Guide](https://docs.velt.dev/tiptap)
+- [Velt MCP](https://docs.velt.dev/mcp/mcp)
+
+**Milestone:** Velt infrastructure ready. Pending: App integration and testing.
+
+---
+
 ## Architecture Overview
 
 ```
 [Browser: Next.js App]
-  ├── Tiptap Editor (Yjs multiplayer)
+  ├── Tiptap Editor (Velt collaboration)
+  │     ├── VeltProvider context
+  │     ├── VeltEditor with TiptapVeltComments
+  │     ├── Presence indicators & cursors
+  │     └── Comments sidebar
   ├── AI Actions (/summarize, /rewrite, personas)
   ├── Source Panel (PDF ingestion, evidence)
   ├── Ask-Project Sidebar
   ├── Arguments & Semantic Diff Panels
+  ├── Version History (Git-style snapshots)
   └── Safety Dashboard (risk scoring)
 
           │ fetch / websocket
@@ -904,7 +1031,7 @@ source .env.local
 [Supabase Backend]
   ├── Postgres (pgvector)
   ├── Auth
-  ├── Realtime (Yjs awareness)
+  ├── Realtime
   ├── Storage (PDFs)
   └── Edge Functions:
         • embed_source
@@ -920,6 +1047,7 @@ source .env.local
           │ outgoing API calls
           ▼
 
+[Velt API] — real-time collaboration, presence, comments
 [Voyage API] — embeddings
 [Anthropic API] — LLM reasoning
 ```
@@ -933,12 +1061,24 @@ source .env.local
 | `next` | React framework |
 | `@supabase/supabase-js` | Backend client |
 | `@tiptap/react` | Rich text editor |
-| `yjs` | CRDT for collaboration |
+| `@veltdev/react` | Real-time collaboration SDK |
+| `@veltdev/tiptap-velt-comments` | Tiptap comments integration |
+| `@veltdev/tiptap-crdt-react` | CRDT synchronization |
 | `@anthropic-ai/sdk` | Claude API |
 | `voyageai` | Embedding API |
-| `pdf-parse` | PDF text extraction |
+| `pdfjs-dist` | PDF text extraction |
+| `react-pdf` | PDF viewing |
+| `react-force-graph-2d` | Knowledge graph visualization |
 | `tailwindcss` | Styling |
 | `shadcn/ui` | Component library |
+| `lucide-react` | Icon library |
+
+### Legacy (Pending Removal)
+| Package | Status |
+|---------|--------|
+| `yjs` | Being replaced by Velt |
+| `y-websocket` | Being replaced by Velt |
+| `@tiptap/extension-collaboration` | Being replaced by Velt |
 
 ---
 
@@ -978,10 +1118,36 @@ source .env.local
 
 ## Next Steps
 
-1. **Week 1:** Server setup and Supabase project creation
-2. **Week 2:** Database schema migration
-3. **Week 3:** Next.js scaffold with auth
-4. **Week 4:** Begin Tiptap editor integration
+### Immediate (Velt Activation)
+1. **Wrap app with VeltProvider** in `app/layout.tsx`
+2. **Update document pages** to use VeltEditor instead of legacy editor
+3. **Run database migration**: `supabase db push` for versioning tables
+4. **Test collaboration** with multiple browser sessions
+
+### Short-term (Velt Polish)
+5. **Test comments** - inline comments with @mentions
+6. **Test presence** - cursor tracking and user indicators
+7. **Integrate version history panel** into document UI
+8. **Add "Create Version" button** to save snapshots
+
+### Medium-term (Yjs Deprecation)
+9. **Mark Yjs components deprecated**
+10. **Shut down y-websocket server** on Hetzner
+11. **Remove Yjs packages** from dependencies
+12. **Archive old collaboration files**
+
+### Completed Milestones
+- [x] Phase 1-9: Foundation through Automations
+- [x] Phase 10: Polish & UX improvements
+- [x] Phase 11: Teams & Access Control
+- [x] Phase 12: Research Data Import
+- [x] Phase 13: Real-time AI Guardrails
+- [x] Phase 14: Document Branching & Merging (Git-style versioning)
+- [x] Phase 15: Knowledge Graphing
+- [x] Phase 16: Global Search & Intelligence
+- [x] Phase 17: Research Workflows
+- [x] Phase 18: Multi-Agent Reasoning
+- [x] Phase 19.1-19.2: Velt infrastructure setup
 
 ---
 

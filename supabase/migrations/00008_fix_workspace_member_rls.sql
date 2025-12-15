@@ -10,6 +10,9 @@
 -- This migration adds a policy that allows workspace owners to insert themselves.
 -- =============================================================================
 
+-- Drop policy if it already exists (idempotent)
+drop policy if exists "Workspace owner can add self as first member" on workspace_members;
+
 -- Allow workspace owner to insert themselves as first member
 create policy "Workspace owner can add self as first member"
   on workspace_members for insert
