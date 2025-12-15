@@ -1,3 +1,8 @@
+/**
+ * @deprecated This hook is deprecated and will be removed in a future version.
+ * Use Velt SDK for collaboration instead. See VeltEditor.tsx and useVeltAuth.ts.
+ * The Yjs WebSocket server at ws://138.199.231.3:1234 will be shut down.
+ */
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'

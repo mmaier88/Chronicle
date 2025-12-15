@@ -994,8 +994,11 @@ source .env.local
 - [ ] Test comment creation and threads
 - [ ] Verify presence indicators work
 
-### 19.4 Yjs Deprecation (Future)
-- [ ] Mark Yjs components as deprecated
+### 19.4 Yjs Deprecation (In Progress)
+- [x] Mark Yjs components as deprecated
+  - `useCollaboration.ts` - @deprecated notice added
+  - `CollaborativeEditor.tsx` - @deprecated notice added
+  - `CollaboratorPresence.tsx` - @deprecated notice added
 - [ ] Remove Yjs WebSocket server dependency
 - [ ] Uninstall Yjs packages:
   ```bash
@@ -1151,10 +1154,17 @@ interface VeltUser {
 7. ~~**Jump to source** links in Ask-Project results~~ ✅
 
 ### Medium-term (Yjs Deprecation)
-8. **Mark Yjs components deprecated**
+8. ~~**Mark Yjs components deprecated**~~ ✅
 9. **Shut down y-websocket server** on Hetzner
 10. **Remove Yjs packages** from dependencies
 11. **Archive old collaboration files**
+
+### Bug Fixes (December 2025)
+- [x] **Workflows schema mismatch** - Renamed `type` to `workflow_type`, added `last_run_at`/`next_run_at`, renamed `schedule_cron` to `schedule` (migration 00012)
+- [x] **Environment file trailing newlines** - Fixed literal `\n` in API key values
+- [x] **/documents/new and 404 handling** - UUID validation, redirect special IDs, proper 404 page
+- [x] **Dashboard stats** - Real document/source counts across workspaces
+- [x] **GuardrailsPanel integration** - Added to document page with toolbar button (Ctrl+Shift+G)
 
 ### Completed Milestones
 - [x] Phase 1-9: Foundation through Automations

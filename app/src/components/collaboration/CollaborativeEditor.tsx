@@ -1,3 +1,8 @@
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * Use VeltEditor.tsx instead for real-time collaboration.
+ * The Yjs WebSocket server will be shut down.
+ */
 'use client'
 
 import { useEffect, useMemo } from 'react'
