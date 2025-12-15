@@ -278,7 +278,7 @@ source .env.local
 - [x] Query input with history
 - [x] Answer display with source citations
 - [x] Similarity scores per result
-- [ ] "Jump to source" links
+- [x] "Jump to source" links (View in source button opens PDFViewerModal at page)
 - [ ] Contradiction highlighting
 
 ### 4.4 Cross-Document Search
@@ -1136,15 +1136,15 @@ interface VeltUser {
 ## Next Steps
 
 ### Immediate (UX Improvements)
-1. **Document tree sidebar** - Navigate documents within a project
-2. **Section navigation** - Jump to headings within a document
+1. ~~**Document tree sidebar** - Navigate documents within a project~~ ✅
+2. ~~**Section navigation** - Jump to headings within a document~~ ✅
 3. **Test Velt collaboration** - Multi-user editing, comments, presence
 
 ### Short-term (Polish)
 4. **Test comments** - inline comments with @mentions
 5. **Test presence** - cursor tracking and user indicators
 6. **Onboarding flow** - First-time user experience
-7. **Jump to source** links in Ask-Project results
+7. ~~**Jump to source** links in Ask-Project results~~ ✅
 
 ### Medium-term (Yjs Deprecation)
 8. **Mark Yjs components deprecated**
