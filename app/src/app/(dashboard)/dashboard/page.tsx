@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { OnboardingCheck } from '@/components/onboarding'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -15,6 +16,11 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
 
   return (
+    <OnboardingCheck
+      userId={user?.id || ''}
+      userName={user?.user_metadata?.full_name}
+      hasWorkspaces={Boolean(workspaces && workspaces.length > 0)}
+    >
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
@@ -200,5 +206,6 @@ export default async function DashboardPage() {
         </div>
       </div>
     </div>
+    </OnboardingCheck>
   )
 }
