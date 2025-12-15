@@ -191,9 +191,16 @@ source .env.local
 ### 2.4 Document Management UI
 - [x] Document page with editor (`/documents/[id]`)
 - [x] Quick actions on dashboard
-- [ ] Document tree sidebar
+- [x] Document tree sidebar (`DocumentTreeSidebar.tsx`)
+  - Search documents in project
+  - Group by recent/older
+  - Quick navigation between documents
+  - Keyboard shortcut (Ctrl+Shift+D)
 - [x] Branch switcher (`BranchSelector.tsx`)
-- [ ] Section navigation
+- [x] Section navigation (`TableOfContents.tsx`)
+  - Auto-extract headings from content
+  - Scroll to heading on click
+  - Keyboard shortcut (Ctrl+Shift+T)
 - [x] Version history panel (`VersionHistoryPanel.tsx`)
 - [x] Merge request panel (`MergeRequestPanel.tsx`)
 
@@ -669,6 +676,7 @@ source .env.local
   - Timeline view of snapshots
   - Commit messages and metadata
   - View/restore snapshot actions
+  - Compare mode for selecting two versions
 - [x] `BranchSelector.tsx` - Branch switching dropdown
   - List all branches
   - Create new branch option
@@ -677,7 +685,16 @@ source .env.local
   - List open/merged/closed MRs
   - Create MR form
   - Status badges
-- [ ] `DiffViewer.tsx` - Side-by-side diff view
+  - Integrated into document page header
+- [x] `DiffViewer.tsx` - Diff viewer component
+  - LCS-based line-by-line diff algorithm
+  - Color-coded additions/deletions
+  - Show/hide unchanged lines toggle
+  - Statistics (additions, deletions count)
+- [x] Branch selector integrated into document header
+- [x] Create Branch modal with name input
+- [x] Restore version functionality from snapshots
+- [x] Create Merge Request modal from branches
 
 ### 14.5 Collaboration on Branches
 - [x] Track merge history (merged_at, merged_by)
@@ -965,13 +982,13 @@ source .env.local
   - All existing extensions preserved (Citation, AISpan, SlashCommand)
 - [x] `VeltPresenceDisplay.tsx` - Enhanced presence UI
 
-### 19.3 Activation Steps (Pending)
-- [ ] Wrap app with VeltProvider in root layout (`app/layout.tsx`)
-- [ ] Update document pages to use VeltEditor
+### 19.3 Activation Steps
+- [x] Wrap app with VeltProvider in root layout (`app/layout.tsx`)
+- [x] Update document pages to use VeltEditor
+- [x] Run `supabase db push` to apply versioning migration
 - [ ] Test real-time collaboration with multiple users
 - [ ] Test comment creation and threads
 - [ ] Verify presence indicators work
-- [ ] Run `supabase db push` to apply versioning migration
 
 ### 19.4 Yjs Deprecation (Future)
 - [ ] Mark Yjs components as deprecated
@@ -1118,23 +1135,22 @@ interface VeltUser {
 
 ## Next Steps
 
-### Immediate (Velt Activation)
-1. **Wrap app with VeltProvider** in `app/layout.tsx`
-2. **Update document pages** to use VeltEditor instead of legacy editor
-3. **Run database migration**: `supabase db push` for versioning tables
-4. **Test collaboration** with multiple browser sessions
+### Immediate (UX Improvements)
+1. **Document tree sidebar** - Navigate documents within a project
+2. **Section navigation** - Jump to headings within a document
+3. **Test Velt collaboration** - Multi-user editing, comments, presence
 
-### Short-term (Velt Polish)
-5. **Test comments** - inline comments with @mentions
-6. **Test presence** - cursor tracking and user indicators
-7. **Integrate version history panel** into document UI
-8. **Add "Create Version" button** to save snapshots
+### Short-term (Polish)
+4. **Test comments** - inline comments with @mentions
+5. **Test presence** - cursor tracking and user indicators
+6. **Onboarding flow** - First-time user experience
+7. **Jump to source** links in Ask-Project results
 
 ### Medium-term (Yjs Deprecation)
-9. **Mark Yjs components deprecated**
-10. **Shut down y-websocket server** on Hetzner
-11. **Remove Yjs packages** from dependencies
-12. **Archive old collaboration files**
+8. **Mark Yjs components deprecated**
+9. **Shut down y-websocket server** on Hetzner
+10. **Remove Yjs packages** from dependencies
+11. **Archive old collaboration files**
 
 ### Completed Milestones
 - [x] Phase 1-9: Foundation through Automations
@@ -1142,12 +1158,12 @@ interface VeltUser {
 - [x] Phase 11: Teams & Access Control
 - [x] Phase 12: Research Data Import
 - [x] Phase 13: Real-time AI Guardrails
-- [x] Phase 14: Document Branching & Merging (Git-style versioning)
+- [x] Phase 14: Document Branching & Merging (Git-style versioning with DiffViewer)
 - [x] Phase 15: Knowledge Graphing
 - [x] Phase 16: Global Search & Intelligence
 - [x] Phase 17: Research Workflows
 - [x] Phase 18: Multi-Agent Reasoning
-- [x] Phase 19.1-19.2: Velt infrastructure setup
+- [x] Phase 19.1-19.3: Velt collaboration activated
 
 ---
 

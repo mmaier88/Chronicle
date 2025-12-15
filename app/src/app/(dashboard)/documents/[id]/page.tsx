@@ -9,7 +9,9 @@ import { ArgumentPanel } from '@/components/arguments/ArgumentPanel'
 import { SafetyPanel } from '@/components/safety/SafetyPanel'
 import { EvidencePanel } from '@/components/evidence/EvidencePanel'
 import { KeyboardShortcutsHelp } from '@/components/help/KeyboardShortcutsHelp'
-import { VersionHistoryPanel, BranchSelector } from '@/components/versioning'
+import { VersionHistoryPanel, BranchSelector, DiffViewer, MergeRequestPanel } from '@/components/versioning'
+import { DocumentTreeSidebar, TableOfContents } from '@/components/navigation'
+import { PDFViewerModal } from '@/components/pdf/PDFViewerModal'
 import { createClient } from '@/lib/supabase/client'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import Link from 'next/link'
@@ -56,6 +58,19 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [createBranchOpen, setCreateBranchOpen] = useState(false)
   const [branchName, setBranchName] = useState('')
   const [creatingBranch, setCreatingBranch] = useState(false)
+  const [diffViewerOpen, setDiffViewerOpen] = useState(false)
+  const [compareFromId, setCompareFromId] = useState<string | null>(null)
+  const [compareToId, setCompareToId] = useState<string | null>(null)
+  const [mergePanelOpen, setMergePanelOpen] = useState(false)
+  const [createMergeRequestOpen, setCreateMergeRequestOpen] = useState(false)
+  const [mrTitle, setMrTitle] = useState('')
+  const [mrDescription, setMrDescription] = useState('')
+  const [mrTargetBranch, setMrTargetBranch] = useState<string | null>(null)
+  const [creatingMergeRequest, setCreatingMergeRequest] = useState(false)
+  const [docTreeOpen, setDocTreeOpen] = useState(false)
+  const [tocOpen, setTocOpen] = useState(false)
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
+  const [pdfViewerSource, setPdfViewerSource] = useState<{ url: string; title: string; page?: number } | null>(null)
   const editorRef = useRef<HTMLDivElement>(null)
 
   // Keyboard shortcuts
@@ -119,8 +134,28 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         setShortcutsHelpOpen(false)
         setVersionPanelOpen(false)
         setCreateVersionOpen(false)
+        setDiffViewerOpen(false)
+        setMergePanelOpen(false)
+        setCreateMergeRequestOpen(false)
+        setDocTreeOpen(false)
+        setTocOpen(false)
+        setPdfViewerOpen(false)
       },
       description: 'Close panels'
+    },
+    {
+      key: 'd',
+      ctrl: true,
+      shift: true,
+      handler: () => setDocTreeOpen(prev => !prev),
+      description: 'Toggle document tree'
+    },
+    {
+      key: 't',
+      ctrl: true,
+      shift: true,
+      handler: () => setTocOpen(prev => !prev),
+      description: 'Toggle table of contents'
     },
     {
       key: '?',
@@ -325,6 +360,47 @@ export default function DocumentPage({ params }: DocumentPageProps) {
     }
   }
 
+  const handleCompareSnapshots = (fromSnapshotId: string, toSnapshotId: string) => {
+    setCompareFromId(fromSnapshotId)
+    setCompareToId(toSnapshotId)
+    setDiffViewerOpen(true)
+    setVersionPanelOpen(false)
+  }
+
+  const handleCreateMergeRequest = async () => {
+    if (!document || creatingMergeRequest || !mrTitle.trim() || !currentBranchId) return
+
+    setCreatingMergeRequest(true)
+    try {
+      const response = await fetch(`/api/documents/${document.id}/merge-requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: mrTitle.trim(),
+          description: mrDescription.trim() || null,
+          source_branch_id: currentBranchId,
+          target_branch_id: mrTargetBranch || null, // null = main branch
+        })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to create merge request')
+      }
+
+      setCreateMergeRequestOpen(false)
+      setMrTitle('')
+      setMrDescription('')
+      setMrTargetBranch(null)
+      setMergePanelOpen(true)
+    } catch (error) {
+      console.error('Failed to create merge request:', error)
+      alert(error instanceof Error ? error.message : 'Failed to create merge request')
+    } finally {
+      setCreatingMergeRequest(false)
+    }
+  }
+
   const handleCitationInsert = async (sourceId: string, pageNumber?: number) => {
     // Fetch source title
     const supabase = createClient()
@@ -344,6 +420,43 @@ export default function DocumentPage({ params }: DocumentPageProps) {
 
     setCitations(prev => [...prev, newCitation])
     setSelectedText('')
+  }
+
+  const handleViewSource = async (sourceId: string, pageNumber?: number) => {
+    try {
+      const supabase = createClient()
+      const { data: source, error } = await supabase
+        .from('sources')
+        .select('id, title, file_path, file_type')
+        .eq('id', sourceId)
+        .single()
+
+      if (error || !source) {
+        console.error('Failed to fetch source:', error)
+        return
+      }
+
+      // Get signed URL for the file
+      if (source.file_path) {
+        const { data: signedUrl, error: urlError } = await supabase.storage
+          .from('sources')
+          .createSignedUrl(source.file_path, 3600) // 1 hour expiry
+
+        if (urlError || !signedUrl?.signedUrl) {
+          console.error('Failed to get signed URL:', urlError)
+          return
+        }
+
+        setPdfViewerSource({
+          url: signedUrl.signedUrl,
+          title: source.title,
+          page: pageNumber
+        })
+        setPdfViewerOpen(true)
+      }
+    } catch (error) {
+      console.error('Error opening source:', error)
+    }
   }
 
   if (loading) {
@@ -374,6 +487,19 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setDocTreeOpen(prev => !prev)}
+                className={`p-2 rounded-lg transition-colors ${
+                  docTreeOpen
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+                title="Document tree (Ctrl+Shift+D)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                </svg>
+              </button>
               <Link
                 href="/dashboard"
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -468,6 +594,16 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 <span className="hidden md:inline">History</span>
               </button>
               <button
+                onClick={() => setMergePanelOpen(true)}
+                className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="Merge Requests"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span className="hidden md:inline">Merge</span>
+              </button>
+              <button
                 onClick={() => setCreateVersionOpen(true)}
                 className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/40 flex items-center gap-2"
                 title="Create Version"
@@ -494,6 +630,19 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                   </svg>
                 )}
                 <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
+              </button>
+              <button
+                onClick={() => setTocOpen(prev => !prev)}
+                className={`p-2 rounded-lg transition-colors ${
+                  tocOpen
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+                title="Table of contents (Ctrl+Shift+T)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
               </button>
               <button
                 onClick={() => setShortcutsHelpOpen(true)}
@@ -527,6 +676,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         projectId={document.project_id}
         isOpen={askPanelOpen}
         onClose={() => setAskPanelOpen(false)}
+        onViewSource={handleViewSource}
       />
 
       {/* Citation Dialog */}
@@ -624,6 +774,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                   console.log('View snapshot:', snapshotId)
                 }}
                 onRestoreSnapshot={handleRestoreVersion}
+                onCompareSnapshots={handleCompareSnapshots}
               />
             </div>
           </div>
@@ -735,6 +886,160 @@ export default function DocumentPage({ params }: DocumentPageProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Diff Viewer Modal */}
+      {diffViewerOpen && compareFromId && compareToId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDiffViewerOpen(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl mx-4 h-[80vh] flex flex-col overflow-hidden">
+            <DiffViewer
+              documentId={document.id}
+              fromSnapshotId={compareFromId}
+              toSnapshotId={compareToId}
+              onClose={() => setDiffViewerOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Merge Request Panel Sidebar */}
+      {mergePanelOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black/20" onClick={() => setMergePanelOpen(false)} />
+          <div className="absolute right-0 top-0 bottom-0 w-96 bg-white dark:bg-gray-900 shadow-xl flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Merge Requests</h2>
+              <button
+                onClick={() => setMergePanelOpen(false)}
+                className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <MergeRequestPanel
+                documentId={document.id}
+                onMergeRequestSelect={(mrId) => {
+                  console.log('Selected merge request:', mrId)
+                  // TODO: Open merge request detail view
+                }}
+                onCreateMergeRequest={() => {
+                  if (!currentBranchId) {
+                    alert('Please select a branch first')
+                    return
+                  }
+                  setCreateMergeRequestOpen(true)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Merge Request Modal */}
+      {createMergeRequestOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setCreateMergeRequestOpen(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Create Merge Request
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Request to merge your branch changes into the main document.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={mrTitle}
+                  onChange={(e) => setMrTitle(e.target.value)}
+                  placeholder="e.g., Add introduction section"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={mrDescription}
+                  onChange={(e) => setMrDescription(e.target.value)}
+                  placeholder="Describe your changes..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Merging into: <span className="font-medium">main</span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setCreateMergeRequestOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateMergeRequest}
+                disabled={creatingMergeRequest || !mrTitle.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg disabled:opacity-50 flex items-center gap-2"
+              >
+                {creatingMergeRequest && (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                )}
+                {creatingMergeRequest ? 'Creating...' : 'Create Merge Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Tree Sidebar */}
+      {document.project_id && document.workspace_id && (
+        <DocumentTreeSidebar
+          projectId={document.project_id}
+          workspaceId={document.workspace_id}
+          currentDocumentId={document.id}
+          isOpen={docTreeOpen}
+          onClose={() => setDocTreeOpen(false)}
+          onCreateDocument={() => {
+            // Navigate to create new document
+            window.location.href = `/workspace/${document.workspace_id}/project/${document.project_id}/document/new`
+          }}
+        />
+      )}
+
+      {/* Table of Contents Sidebar */}
+      <TableOfContents
+        content={document.content}
+        editorRef={editorRef}
+        isOpen={tocOpen}
+        onClose={() => setTocOpen(false)}
+      />
+
+      {/* PDF Viewer Modal for viewing sources */}
+      {pdfViewerSource && (
+        <PDFViewerModal
+          isOpen={pdfViewerOpen}
+          url={pdfViewerSource.url}
+          title={pdfViewerSource.title}
+          initialPage={pdfViewerSource.page}
+          onClose={() => {
+            setPdfViewerOpen(false)
+            setPdfViewerSource(null)
+          }}
+        />
       )}
     </div>
   )

@@ -7,6 +7,8 @@ interface RelevantChunk {
   content: string
   source_id: string
   source_title: string
+  page_number: number | null
+  chunk_index: number
   similarity: number
 }
 
@@ -22,9 +24,10 @@ interface AskProjectProps {
   projectId?: string
   isOpen: boolean
   onClose: () => void
+  onViewSource?: (sourceId: string, pageNumber?: number) => void
 }
 
-export function AskProject({ projectId, isOpen, onClose }: AskProjectProps) {
+export function AskProject({ projectId, isOpen, onClose, onViewSource }: AskProjectProps) {
   const [query, setQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [response, setResponse] = useState<AskResponse | null>(null)
@@ -177,6 +180,11 @@ export function AskProject({ projectId, isOpen, onClose }: AskProjectProps) {
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
                         [{index + 1}] {chunk.source_title}
+                        {chunk.page_number && (
+                          <span className="text-gray-400 font-normal ml-1">
+                            (p. {chunk.page_number})
+                          </span>
+                        )}
                       </span>
                       <span className="text-xs text-gray-400">
                         {Math.round(chunk.similarity * 100)}% match
@@ -185,6 +193,17 @@ export function AskProject({ projectId, isOpen, onClose }: AskProjectProps) {
                     <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-4">
                       {chunk.content}
                     </p>
+                    <div className="flex items-center justify-end mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={() => onViewSource?.(chunk.source_id, chunk.page_number || undefined)}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        View in source
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

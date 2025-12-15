@@ -8,6 +8,8 @@ interface RelevantChunk {
   content: string
   source_id: string
   source_title: string
+  page_number: number | null
+  chunk_index: number
   similarity: number
 }
 
@@ -66,12 +68,16 @@ export async function POST(request: NextRequest) {
       content: string
       source_id: string
       source_title: string
+      page_number: number | null
+      chunk_index: number
       similarity: number
     }) => ({
       id: chunk.id,
       content: chunk.content,
       source_id: chunk.source_id,
       source_title: chunk.source_title,
+      page_number: chunk.page_number,
+      chunk_index: chunk.chunk_index,
       similarity: chunk.similarity
     }))
 
