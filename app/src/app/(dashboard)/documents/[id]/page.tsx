@@ -9,7 +9,7 @@ import { ArgumentPanel } from '@/components/arguments/ArgumentPanel'
 import { SafetyPanel } from '@/components/safety/SafetyPanel'
 import { EvidencePanel } from '@/components/evidence/EvidencePanel'
 import { KeyboardShortcutsHelp } from '@/components/help/KeyboardShortcutsHelp'
-import { VersionHistoryPanel } from '@/components/versioning'
+import { VersionHistoryPanel, BranchSelector } from '@/components/versioning'
 import { createClient } from '@/lib/supabase/client'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import Link from 'next/link'
@@ -52,6 +52,10 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [versionMessage, setVersionMessage] = useState('')
   const [creatingVersion, setCreatingVersion] = useState(false)
   const [versionRefreshKey, setVersionRefreshKey] = useState(0)
+  const [currentBranchId, setCurrentBranchId] = useState<string | undefined>()
+  const [createBranchOpen, setCreateBranchOpen] = useState(false)
+  const [branchName, setBranchName] = useState('')
+  const [creatingBranch, setCreatingBranch] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
 
   // Keyboard shortcuts
@@ -268,6 +272,59 @@ export default function DocumentPage({ params }: DocumentPageProps) {
     }
   }
 
+  const handleCreateBranch = async () => {
+    if (!document || creatingBranch || !branchName.trim()) return
+
+    setCreatingBranch(true)
+    try {
+      const response = await fetch(`/api/documents/${document.id}/branches`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: branchName.trim(),
+          parent_branch_id: currentBranchId
+        })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to create branch')
+      }
+
+      const data = await response.json()
+      setCurrentBranchId(data.branch.id)
+      setCreateBranchOpen(false)
+      setBranchName('')
+    } catch (error) {
+      console.error('Failed to create branch:', error)
+      alert(error instanceof Error ? error.message : 'Failed to create branch')
+    } finally {
+      setCreatingBranch(false)
+    }
+  }
+
+  const handleRestoreVersion = async (snapshotId: string) => {
+    if (!document) return
+
+    try {
+      const response = await fetch(`/api/documents/${document.id}/snapshots/${snapshotId}`)
+      if (!response.ok) throw new Error('Failed to fetch snapshot')
+
+      const data = await response.json()
+      if (data.snapshot?.crdt_state) {
+        // Restore content from snapshot
+        const content = typeof data.snapshot.crdt_state === 'string'
+          ? data.snapshot.crdt_state
+          : JSON.stringify(data.snapshot.crdt_state)
+        setDocument({ ...document, content })
+        setVersionPanelOpen(false)
+      }
+    } catch (error) {
+      console.error('Failed to restore version:', error)
+      alert('Failed to restore version')
+    }
+  }
+
   const handleCitationInsert = async (sourceId: string, pageNumber?: number) => {
     // Fetch source title
     const supabase = createClient()
@@ -329,8 +386,14 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 type="text"
                 value={document.title}
                 onChange={handleTitleChange}
-                className="text-lg font-semibold text-gray-900 dark:text-white bg-transparent border-none focus:outline-none focus:ring-0 w-64"
+                className="text-lg font-semibold text-gray-900 dark:text-white bg-transparent border-none focus:outline-none focus:ring-0 w-48"
                 placeholder="Document title"
+              />
+              <BranchSelector
+                documentId={document.id}
+                currentBranchId={currentBranchId}
+                onBranchChange={setCurrentBranchId}
+                onCreateBranch={() => setCreateBranchOpen(true)}
               />
             </div>
             <div className="flex items-center space-x-1 sm:space-x-3">
@@ -556,12 +619,11 @@ export default function DocumentPage({ params }: DocumentPageProps) {
               <VersionHistoryPanel
                 key={versionRefreshKey}
                 documentId={document.id}
+                branchId={currentBranchId}
                 onViewSnapshot={(snapshotId) => {
                   console.log('View snapshot:', snapshotId)
                 }}
-                onRestoreSnapshot={(snapshotId) => {
-                  console.log('Restore snapshot:', snapshotId)
-                }}
+                onRestoreSnapshot={handleRestoreVersion}
               />
             </div>
           </div>
@@ -615,6 +677,60 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                   </svg>
                 )}
                 {creatingVersion ? 'Creating...' : 'Create Version'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Branch Modal */}
+      {createBranchOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setCreateBranchOpen(false)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Create Branch
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Create a new branch to work on changes without affecting the main document.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Branch name
+              </label>
+              <input
+                type="text"
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+                placeholder="e.g., draft-introduction"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && branchName.trim()) {
+                    handleCreateBranch()
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setCreateBranchOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateBranch}
+                disabled={creatingBranch || !branchName.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg disabled:opacity-50 flex items-center gap-2"
+              >
+                {creatingBranch && (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                )}
+                {creatingBranch ? 'Creating...' : 'Create Branch'}
               </button>
             </div>
           </div>
