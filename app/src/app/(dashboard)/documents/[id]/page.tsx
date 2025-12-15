@@ -14,6 +14,7 @@ import { KeyboardShortcutsHelp } from '@/components/help/KeyboardShortcutsHelp'
 import { VersionHistoryPanel, BranchSelector, DiffViewer, MergeRequestPanel } from '@/components/versioning'
 import { DocumentTreeSidebar, TableOfContents } from '@/components/navigation'
 import { PDFViewerModal } from '@/components/pdf/PDFViewerModal'
+import { VeltPresenceDisplay } from '@/components/collaboration/VeltPresenceDisplay'
 import { createClient } from '@/lib/supabase/client'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import Link from 'next/link'
@@ -544,6 +545,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                   Saved {lastSaved.toLocaleTimeString()}
                 </span>
               )}
+              <VeltPresenceDisplay showCursors={true} maxAvatars={4} />
               <button
                 onClick={() => setEvidencePanelOpen(true)}
                 className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
