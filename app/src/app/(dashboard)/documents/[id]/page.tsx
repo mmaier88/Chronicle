@@ -5,7 +5,9 @@ import { VeltEditor } from '@/components/editor/VeltEditor'
 import { AskProject } from '@/components/ask/AskProject'
 import { CitationDialog } from '@/components/editor/CitationDialog'
 import { CitationPanel } from '@/components/citations/CitationPanel'
+import { CitationExportPanel } from '@/components/citations/CitationExportPanel'
 import { ArgumentPanel } from '@/components/arguments/ArgumentPanel'
+import { GuardrailsPanel } from '@/components/guardrails/GuardrailsPanel'
 import { SafetyPanel } from '@/components/safety/SafetyPanel'
 import { EvidencePanel } from '@/components/evidence/EvidencePanel'
 import { KeyboardShortcutsHelp } from '@/components/help/KeyboardShortcutsHelp'
@@ -15,6 +17,7 @@ import { PDFViewerModal } from '@/components/pdf/PDFViewerModal'
 import { createClient } from '@/lib/supabase/client'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface DocumentPageProps {
   params: Promise<{ id: string }>
@@ -30,6 +33,7 @@ interface Citation {
 
 export default function DocumentPage({ params }: DocumentPageProps) {
   const { id } = use(params)
+  const router = useRouter()
   const [document, setDocument] = useState<{
     id: string
     title: string
@@ -38,6 +42,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
     workspace_id?: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [askPanelOpen, setAskPanelOpen] = useState(false)
@@ -69,6 +74,8 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [creatingMergeRequest, setCreatingMergeRequest] = useState(false)
   const [docTreeOpen, setDocTreeOpen] = useState(false)
   const [tocOpen, setTocOpen] = useState(false)
+  const [guardrailsPanelOpen, setGuardrailsPanelOpen] = useState(false)
+  const [citationExportOpen, setCitationExportOpen] = useState(false)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [pdfViewerSource, setPdfViewerSource] = useState<{ url: string; title: string; page?: number } | null>(null)
   const editorRef = useRef<HTMLDivElement>(null)
@@ -139,9 +146,18 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         setCreateMergeRequestOpen(false)
         setDocTreeOpen(false)
         setTocOpen(false)
+        setGuardrailsPanelOpen(false)
+        setCitationExportOpen(false)
         setPdfViewerOpen(false)
       },
       description: 'Close panels'
+    },
+    {
+      key: 'g',
+      ctrl: true,
+      shift: true,
+      handler: () => setGuardrailsPanelOpen(prev => !prev),
+      description: 'Toggle Guardrails'
     },
     {
       key: 'd',
@@ -169,76 +185,57 @@ export default function DocumentPage({ params }: DocumentPageProps) {
 
   useEffect(() => {
     async function loadDocument() {
+      // Handle /documents/new - redirect to dashboard
+      if (id === 'new' || id === 'demo') {
+        router.replace('/dashboard')
+        return
+      }
+
+      // Validate UUID format to avoid DB errors
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(id)) {
+        setNotFound(true)
+        setLoading(false)
+        return
+      }
+
       const supabase = createClient()
 
-      // For now, create a mock document if it doesn't exist
-      // Later this will fetch from the database
-      if (id === 'new') {
-        setDocument({
-          id: 'new',
-          title: 'Untitled Document',
-          content: '<p>Start writing your research...</p>'
-        })
-      } else {
-        // Try to fetch from database with workspace info
-        const { data, error } = await supabase
-          .from('documents')
-          .select(`
-            id,
-            title,
-            content,
-            project_id,
-            projects!inner(workspace_id)
-          `)
-          .eq('id', id)
-          .single()
+      // Fetch from database with workspace info
+      const { data, error } = await supabase
+        .from('documents')
+        .select(`
+          id,
+          title,
+          content,
+          project_id,
+          projects!inner(workspace_id)
+        `)
+        .eq('id', id)
+        .single()
 
-        if (error || !data) {
-          // Create demo document for testing
-          setDocument({
-            id,
-            title: 'Demo Document',
-            content: `
-              <h1>Welcome to ResearchBase</h1>
-              <p>This is your AI-powered research environment. Start writing and use the toolbar above to format your text.</p>
-              <h2>Features</h2>
-              <ul>
-                <li><strong>Rich text editing</strong> - Format your text with headings, lists, and more</li>
-                <li><strong>AI assistance</strong> - Use slash commands to summarize, rewrite, or expand text</li>
-                <li><strong>Citations</strong> - Link your claims to source evidence</li>
-                <li><strong>Collaboration</strong> - Work together in real-time</li>
-              </ul>
-              <blockquote>
-                <p>"The best research is collaborative research." - ResearchBase</p>
-              </blockquote>
-              <h2>Getting Started</h2>
-              <p>Try using the toolbar above or these keyboard shortcuts:</p>
-              <ul>
-                <li><code>Cmd+B</code> for <strong>bold</strong></li>
-                <li><code>Cmd+I</code> for <em>italic</em></li>
-                <li><code>Cmd+U</code> for <u>underline</u></li>
-              </ul>
-            `
-          })
-        } else {
-          const projects = data.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
-          const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
-
-          setDocument({
-            id: data.id,
-            title: data.title,
-            content: data.content || '',
-            project_id: data.project_id,
-            workspace_id: workspaceId
-          })
-        }
+      if (error || !data) {
+        setNotFound(true)
+        setLoading(false)
+        return
       }
+
+      const projects = data.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
+      const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
+
+      setDocument({
+        id: data.id,
+        title: data.title,
+        content: data.content || '',
+        project_id: data.project_id,
+        workspace_id: workspaceId
+      })
 
       setLoading(false)
     }
 
     loadDocument()
-  }, [id])
+  }, [id, router])
 
   const handleContentChange = async (content: string) => {
     if (!document) return
@@ -467,14 +464,33 @@ export default function DocumentPage({ params }: DocumentPageProps) {
     )
   }
 
-  if (!document) {
+  if (notFound || !document) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Document not found</h2>
-          <Link href="/dashboard" className="mt-4 text-blue-600 hover:text-blue-500">
-            Return to dashboard
-          </Link>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Document Not Found</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            The document you're looking for doesn't exist or you don't have permission to view it.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/dashboard"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            >
+              Go to Dashboard
+            </Link>
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-medium"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -547,6 +563,16 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
                 <span className="hidden md:inline">Safety</span>
+              </button>
+              <button
+                onClick={() => setGuardrailsPanelOpen(true)}
+                className="p-2 sm:px-3 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+                title="AI Guardrails (Ctrl+Shift+G)"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="hidden md:inline">Guardrails</span>
               </button>
               <button
                 onClick={() => setArgumentPanelOpen(true)}
@@ -722,6 +748,30 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         isOpen={safetyPanelOpen}
         onClose={() => setSafetyPanelOpen(false)}
       />
+
+      {/* Guardrails Panel */}
+      {guardrailsPanelOpen && (
+        <div className="fixed inset-y-0 right-0 w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl z-50 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-semibold text-gray-900 dark:text-white">AI Guardrails</h2>
+            <button
+              onClick={() => setGuardrailsPanelOpen(false)}
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <GuardrailsPanel
+              text={document.content}
+              documentId={document.id}
+              projectId={document.project_id}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Evidence Panel */}
       <EvidencePanel

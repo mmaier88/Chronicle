@@ -15,6 +15,41 @@ export default async function DashboardPage() {
     `)
     .order('created_at', { ascending: false })
 
+  // Get workspace IDs for counting
+  const workspaceIds = workspaces?.map(w => w.id) || []
+
+  // Fetch document count (across all user's workspaces)
+  let documentCount = 0
+  let sourceCount = 0
+
+  if (workspaceIds.length > 0) {
+    // Get projects in user's workspaces
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('id')
+      .in('workspace_id', workspaceIds)
+
+    const projectIds = projects?.map(p => p.id) || []
+
+    if (projectIds.length > 0) {
+      // Count documents
+      const { count: docCount } = await supabase
+        .from('documents')
+        .select('id', { count: 'exact', head: true })
+        .in('project_id', projectIds)
+
+      documentCount = docCount || 0
+
+      // Count sources
+      const { count: srcCount } = await supabase
+        .from('sources')
+        .select('id', { count: 'exact', head: true })
+        .in('project_id', projectIds)
+
+      sourceCount = srcCount || 0
+    }
+  }
+
   return (
     <OnboardingCheck
       userId={user?.id || ''}
@@ -190,7 +225,7 @@ export default async function DashboardPage() {
         </div>
         <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            0
+            {documentCount}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Documents
@@ -198,7 +233,7 @@ export default async function DashboardPage() {
         </div>
         <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            0
+            {sourceCount}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Sources
