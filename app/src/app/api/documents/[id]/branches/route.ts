@@ -168,15 +168,51 @@ export async function POST(
     const body = await request.json()
     const { name, parent_branch_id, copy_content = true } = body
 
-    if (!name || !parent_branch_id) {
-      return NextResponse.json({ error: 'name and parent_branch_id are required' }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ error: 'Branch name is required' }, { status: 400 })
+    }
+
+    // If no parent_branch_id, find or create the main branch
+    let actualParentBranchId = parent_branch_id
+
+    if (!actualParentBranchId) {
+      // Try to find the main branch
+      const { data: mainBranch } = await supabase
+        .from('doc_branches')
+        .select('id')
+        .eq('document_id', id)
+        .eq('is_main', true)
+        .single()
+
+      if (mainBranch) {
+        actualParentBranchId = mainBranch.id
+      } else {
+        // Create a main branch first
+        const { data: newMainBranch, error: mainError } = await supabase
+          .from('doc_branches')
+          .insert({
+            document_id: id,
+            name: 'main',
+            is_main: true,
+            created_by: user.id,
+          })
+          .select()
+          .single()
+
+        if (mainError) {
+          console.error('Error creating main branch:', mainError)
+          return NextResponse.json({ error: 'Failed to create main branch' }, { status: 500 })
+        }
+
+        actualParentBranchId = newMainBranch.id
+      }
     }
 
     // Verify parent branch exists and belongs to this document
     const { data: parentBranch, error: parentError } = await supabase
       .from('doc_branches')
       .select('id, document_id')
-      .eq('id', parent_branch_id)
+      .eq('id', actualParentBranchId)
       .eq('document_id', id)
       .single()
 
@@ -190,7 +226,7 @@ export async function POST(
       .insert({
         document_id: id,
         name,
-        parent_branch_id,
+        parent_branch_id: actualParentBranchId,
         is_main: false,
         created_by: user.id,
       })
@@ -207,7 +243,7 @@ export async function POST(
       const { data: parentSections } = await supabase
         .from('doc_sections')
         .select('order_index, title, content_json, content_text')
-        .eq('branch_id', parent_branch_id)
+        .eq('branch_id', actualParentBranchId)
         .order('order_index')
 
       if (parentSections && parentSections.length > 0) {
@@ -230,7 +266,7 @@ export async function POST(
       p_document_id: id,
       p_target_type: 'branch',
       p_target_id: branch.id,
-      p_details: { name, parent_branch_id, copy_content },
+      p_details: { name, parent_branch_id: actualParentBranchId, copy_content },
     })
 
     return NextResponse.json({ branch }, { status: 201 })

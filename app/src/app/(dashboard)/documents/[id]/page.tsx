@@ -251,6 +251,15 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         workspace_id: workspaceId
       })
 
+      // Fetch main branch ID for this document
+      const branchResponse = await fetch(`/api/documents/${data.id}/branches`)
+      if (branchResponse.ok) {
+        const branchData = await branchResponse.json()
+        if (branchData.main_branch_id) {
+          setCurrentBranchId(branchData.main_branch_id)
+        }
+      }
+
       setLoading(false)
     }
 
