@@ -54,29 +54,24 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get all branches for the document
+    // Get all branches for the document (simplified query - no joins)
     const { data: branches, error } = await supabase
       .from('doc_branches')
-      .select(`
-        id,
-        document_id,
-        name,
-        parent_branch_id,
-        is_main,
-        created_by,
-        created_at,
-        merged_at,
-        merged_by,
-        user_profiles!doc_branches_created_by_fkey (
-          display_name
-        )
-      `)
+      .select('id, document_id, name, parent_branch_id, is_main, created_by, created_at, merged_at, merged_by')
       .eq('document_id', id)
       .order('created_at', { ascending: true })
 
     if (error) {
       console.error('Error fetching branches:', error)
       return NextResponse.json({ error: 'Failed to fetch branches' }, { status: 500 })
+    }
+
+    if (!branches || branches.length === 0) {
+      console.log('No branches found for document:', id)
+      return NextResponse.json({
+        branches: [],
+        main_branch_id: null,
+      })
     }
 
     // Get section counts for each branch
@@ -91,20 +86,17 @@ export async function GET(
       countsByBranch[section.branch_id] = (countsByBranch[section.branch_id] || 0) + 1
     }
 
-    // Build branch tree structure
-    const branchMap = new Map<string, Branch & { children: string[]; section_count: number; creator_name?: string }>()
-    for (const branch of branches) {
-      const profile = Array.isArray(branch.user_profiles) ? branch.user_profiles[0] : branch.user_profiles
-      branchMap.set(branch.id, {
-        ...branch,
-        children: [],
-        section_count: countsByBranch[branch.id] || 0,
-        creator_name: profile?.display_name,
-      })
-    }
+    // Build branch list with section counts
+    const branchList = branches.map(branch => ({
+      ...branch,
+      children: [] as string[],
+      section_count: countsByBranch[branch.id] || 0,
+      creator_name: undefined, // Skip user profile lookup for speed
+    }))
 
     // Link children to parents
-    for (const branch of branchMap.values()) {
+    const branchMap = new Map(branchList.map(b => [b.id, b]))
+    for (const branch of branchList) {
       if (branch.parent_branch_id && branchMap.has(branch.parent_branch_id)) {
         branchMap.get(branch.parent_branch_id)!.children.push(branch.id)
       }
@@ -114,7 +106,7 @@ export async function GET(
     const mainBranch = branches.find(b => b.is_main)
 
     return NextResponse.json({
-      branches: Array.from(branchMap.values()),
+      branches: branchList,
       main_branch_id: mainBranch?.id,
     })
 

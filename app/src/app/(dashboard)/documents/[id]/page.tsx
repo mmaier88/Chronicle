@@ -203,34 +203,36 @@ export default function DocumentPage({ params }: DocumentPageProps) {
 
       const supabase = createClient()
 
-      // Fetch from database with workspace info
-      const { data, error } = await supabase
-        .from('documents')
-        .select(`
-          id,
-          name,
-          project_id,
-          projects!inner(workspace_id)
-        `)
-        .eq('id', id)
-        .single()
+      // Parallel fetch: document, user, and branches
+      const [docResult, userResult, branchResponse] = await Promise.all([
+        supabase
+          .from('documents')
+          .select(`id, name, project_id, projects!inner(workspace_id)`)
+          .eq('id', id)
+          .single(),
+        supabase.auth.getUser(),
+        fetch(`/api/documents/${id}/branches`).catch(() => null)
+      ])
+
+      const { data, error } = docResult
+      const { data: { user } } = userResult
 
       if (error || !data) {
+        console.error('Document fetch error:', error)
         setNotFound(true)
         setLoading(false)
+        return
+      }
+
+      if (!user) {
+        router.replace('/login')
         return
       }
 
       const projects = data.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
       const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
 
-      // SECURITY: Verify user has access to this document's workspace
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.replace('/login')
-        return
-      }
-
+      // Check membership
       const { data: membership } = await supabase
         .from('workspace_members')
         .select('role')
@@ -244,34 +246,39 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         return
       }
 
-      // Fetch branches and content in parallel
-      const branchResponse = await fetch(`/api/documents/${data.id}/branches`)
+      // Process branches response
       let mainBranchId: string | undefined
       let documentContent = ''
 
-      if (branchResponse.ok) {
-        const branchData = await branchResponse.json()
-        mainBranchId = branchData.main_branch_id
+      if (branchResponse && branchResponse.ok) {
+        try {
+          const branchData = await branchResponse.json()
+          mainBranchId = branchData.main_branch_id
+          console.log('Branches loaded:', branchData.branches?.length || 0, 'main:', mainBranchId)
+        } catch (e) {
+          console.error('Failed to parse branches:', e)
+        }
+      } else {
+        console.error('Branches fetch failed:', branchResponse?.status)
+      }
 
-        // Fetch content from main branch sections
-        if (mainBranchId) {
-          const { data: sections } = await supabase
-            .from('doc_sections')
-            .select('content_json, content_text, order_index')
-            .eq('branch_id', mainBranchId)
-            .order('order_index')
+      // Fetch content from main branch sections
+      if (mainBranchId) {
+        const { data: sections, error: sectionsError } = await supabase
+          .from('doc_sections')
+          .select('content_json, content_text, order_index')
+          .eq('branch_id', mainBranchId)
+          .order('order_index')
 
-          if (sections && sections.length > 0) {
-            // Convert content_json to HTML for the editor
-            // For now, use content_text or a simple conversion
-            documentContent = sections.map(s => {
-              if (s.content_json && typeof s.content_json === 'object') {
-                // TipTap JSON - will be handled by editor
-                return JSON.stringify(s.content_json)
-              }
-              return s.content_text || ''
-            }).join('\n\n')
-          }
+        if (sectionsError) {
+          console.error('Sections fetch error:', sectionsError)
+        } else if (sections && sections.length > 0) {
+          documentContent = sections.map(s => {
+            if (s.content_json && typeof s.content_json === 'object') {
+              return JSON.stringify(s.content_json)
+            }
+            return s.content_text || ''
+          }).join('\n\n')
         }
       }
 
