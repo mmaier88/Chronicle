@@ -61,6 +61,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   const [creatingVersion, setCreatingVersion] = useState(false)
   const [versionRefreshKey, setVersionRefreshKey] = useState(0)
   const [currentBranchId, setCurrentBranchId] = useState<string | undefined>()
+  const [mainBranchId, setMainBranchId] = useState<string | undefined>()
   const [createBranchOpen, setCreateBranchOpen] = useState(false)
   const [branchName, setBranchName] = useState('')
   const [creatingBranch, setCreatingBranch] = useState(false)
@@ -243,21 +244,48 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         return
       }
 
+      // Fetch branches and content in parallel
+      const branchResponse = await fetch(`/api/documents/${data.id}/branches`)
+      let mainBranchId: string | undefined
+      let documentContent = ''
+
+      if (branchResponse.ok) {
+        const branchData = await branchResponse.json()
+        mainBranchId = branchData.main_branch_id
+
+        // Fetch content from main branch sections
+        if (mainBranchId) {
+          const { data: sections } = await supabase
+            .from('doc_sections')
+            .select('content_json, content_text, order_index')
+            .eq('branch_id', mainBranchId)
+            .order('order_index')
+
+          if (sections && sections.length > 0) {
+            // Convert content_json to HTML for the editor
+            // For now, use content_text or a simple conversion
+            documentContent = sections.map(s => {
+              if (s.content_json && typeof s.content_json === 'object') {
+                // TipTap JSON - will be handled by editor
+                return JSON.stringify(s.content_json)
+              }
+              return s.content_text || ''
+            }).join('\n\n')
+          }
+        }
+      }
+
       setDocument({
         id: data.id,
-        title: data.name, // DB column is 'name', UI uses 'title'
-        content: '', // Content is stored in doc_sections
+        title: data.name,
+        content: documentContent,
         project_id: data.project_id,
         workspace_id: workspaceId
       })
 
-      // Fetch main branch ID for this document
-      const branchResponse = await fetch(`/api/documents/${data.id}/branches`)
-      if (branchResponse.ok) {
-        const branchData = await branchResponse.json()
-        if (branchData.main_branch_id) {
-          setCurrentBranchId(branchData.main_branch_id)
-        }
+      if (mainBranchId) {
+        setCurrentBranchId(mainBranchId)
+        setMainBranchId(mainBranchId)
       }
 
       setLoading(false)
@@ -321,7 +349,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   }
 
   const handleCreateVersion = async () => {
-    if (!document || creatingVersion) return
+    if (!document || creatingVersion || !currentBranchId) return
 
     setCreatingVersion(true)
     try {
@@ -329,7 +357,9 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: document.content,
+          branch_id: currentBranchId,
+          crdt_state: document.content,
+          content_text: document.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
           commit_message: versionMessage || `Version saved on ${new Date().toLocaleString()}`
         })
       })
@@ -413,7 +443,13 @@ export default function DocumentPage({ params }: DocumentPageProps) {
   }
 
   const handleCreateMergeRequest = async () => {
-    if (!document || creatingMergeRequest || !mrTitle.trim() || !currentBranchId) return
+    if (!document || creatingMergeRequest || !mrTitle.trim() || !currentBranchId || !mainBranchId) return
+
+    // Can't merge main into main
+    if (currentBranchId === mainBranchId && !mrTargetBranch) {
+      alert('Cannot create merge request from main branch to itself. Please switch to a different branch first.')
+      return
+    }
 
     setCreatingMergeRequest(true)
     try {
@@ -424,7 +460,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
           title: mrTitle.trim(),
           description: mrDescription.trim() || null,
           source_branch_id: currentBranchId,
-          target_branch_id: mrTargetBranch || null, // null = main branch
+          target_branch_id: mrTargetBranch || mainBranchId, // Default to main branch
         })
       })
 
@@ -1028,6 +1064,10 @@ export default function DocumentPage({ params }: DocumentPageProps) {
                 onCreateMergeRequest={() => {
                   if (!currentBranchId) {
                     alert('Please select a branch first')
+                    return
+                  }
+                  if (currentBranchId === mainBranchId) {
+                    alert('You are on the main branch. Create a new branch first to make changes, then create a merge request.')
                     return
                   }
                   setCreateMergeRequestOpen(true)

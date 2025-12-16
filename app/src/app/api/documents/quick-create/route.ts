@@ -16,12 +16,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => ({}))
     const { title } = body
 
-    if (!title || !title.trim()) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
-    }
+    // Generate default title if not provided
+    const documentTitle = title?.trim() || `Untitled ${new Date().toLocaleDateString()}`
 
     // Step 1: Get or create workspace
     let workspaceId: string
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
     const { data: document, error: docError } = await supabase
       .from('documents')
       .insert({
-        name: title.trim(),
+        name: documentTitle,
         project_id: projectId,
         created_by: user.id,
       })

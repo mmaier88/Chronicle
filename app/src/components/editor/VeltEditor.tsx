@@ -316,8 +316,11 @@ export function VeltEditor({
               <MessageSquare className="w-4 h-4" />
               Comments
             </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Select text and click Comment to add
+            </p>
           </div>
-          <VeltCommentsSidebar />
+          <VeltCommentsSidebar embedMode={true} />
         </div>
       )}
     </div>
