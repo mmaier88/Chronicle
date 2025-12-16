@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic()
+import { getAnthropicClient } from '@/lib/anthropic'
 
 interface ExtractedEntity {
   name: string
@@ -56,6 +54,31 @@ export async function POST(request: NextRequest) {
 
     if (!member || !['owner', 'admin', 'editor'].includes(member.role)) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
+    }
+
+    // SECURITY: If document_id is provided, verify it belongs to this workspace
+    if (document_id) {
+      const { data: doc } = await supabase
+        .from('documents')
+        .select('id, projects!inner(workspace_id)')
+        .eq('id', document_id)
+        .single()
+
+      if (!doc) {
+        return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+      }
+
+      const projects = doc.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
+      const docWorkspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
+
+      if (docWorkspaceId !== workspace_id) {
+        return NextResponse.json({ error: 'Document does not belong to this workspace' }, { status: 400 })
+      }
+    }
+
+    const anthropic = getAnthropicClient()
+    if (!anthropic) {
+      return NextResponse.json({ error: 'Anthropic API key not configured' }, { status: 500 })
     }
 
     // Use AI to extract entities and relationships

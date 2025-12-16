@@ -68,6 +68,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ workflows: AVAILABLE_WORKFLOWS })
     }
 
+    // SECURITY: Verify user has access to this project's workspace
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('workspace_id')
+      .eq('id', projectId)
+      .single()
+
+    if (projectError || !project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', project.workspace_id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
     // Get project workflows from database
     const { data: workflows, error } = await supabase
       .from('workflows')
@@ -76,18 +98,9 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching workflows:', error)
-      // Return default workflows if table doesn't exist or error
       return NextResponse.json({
-        workflows: AVAILABLE_WORKFLOWS.map(w => ({
-          id: `${projectId}-${w.type}`,
-          projectId,
-          workflowType: w.type,
-          name: w.name,
-          description: w.description,
-          schedule: w.schedule,
-          enabled: w.defaultEnabled
-        }))
-      })
+        error: 'Failed to fetch workflows'
+      }, { status: 500 })
     }
 
     // Merge with available workflows to show all options
@@ -160,18 +173,9 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error upserting workflow:', error)
-      // Return success anyway for demo purposes
       return NextResponse.json({
-        workflow: {
-          id: `${projectId}-${workflowType}`,
-          projectId,
-          workflowType,
-          name: workflowDef.name,
-          description: workflowDef.description,
-          schedule: workflowDef.schedule,
-          enabled: enabled ?? false
-        }
-      })
+        error: 'Failed to save workflow'
+      }, { status: 500 })
     }
 
     return NextResponse.json({

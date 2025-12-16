@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q')
     const workspaceId = searchParams.get('workspace_id')
     const types = searchParams.get('types')?.split(',') || ['document', 'source', 'entity', 'section']
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0') || 0)
 
     if (!query || query.trim().length < 2) {
       return NextResponse.json({ error: 'Query must be at least 2 characters' }, { status: 400 })
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Search document sections (full-text)
+    // Search document sections (full-text) - filter by workspace server-side
     if (types.includes('section')) {
       const { data: sections } = await supabase
         .from('doc_sections')
@@ -98,12 +98,13 @@ export async function GET(request: NextRequest) {
           created_at,
           document:documents!inner(id, title, workspace_id)
         `)
+        .in('documents.workspace_id', targetWorkspaces)
         .or(`title.ilike.%${searchTerm}%,content_text.ilike.%${searchTerm}%`)
         .limit(limit)
 
       sections?.forEach(section => {
         const doc = section.document as unknown as { id: string; title: string; workspace_id: string } | null
-        if (!doc || !targetWorkspaces.includes(doc.workspace_id)) return
+        if (!doc) return
 
         const contentText = section.content_text || ''
         const matchIndex = contentText.toLowerCase().indexOf(searchTerm)

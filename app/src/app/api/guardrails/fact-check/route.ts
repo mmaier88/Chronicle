@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic()
+import { getAnthropicClient } from '@/lib/anthropic'
 
 interface FactCheckResult {
   claim: string
@@ -33,6 +31,35 @@ export async function POST(request: NextRequest) {
     // Either analyze full text or check specific claims
     if (!text && (!claims || claims.length === 0)) {
       return NextResponse.json({ error: 'text or claims required' }, { status: 400 })
+    }
+
+    // SECURITY: If project_id is provided, verify user has access to its workspace
+    if (project_id) {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('workspace_id')
+        .eq('id', project_id)
+        .single()
+
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', project.workspace_id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (!membership) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+    }
+
+    const anthropic = getAnthropicClient()
+    if (!anthropic) {
+      return NextResponse.json({ error: 'Anthropic API key not configured' }, { status: 500 })
     }
 
     let claimsToCheck: string[] = claims || []

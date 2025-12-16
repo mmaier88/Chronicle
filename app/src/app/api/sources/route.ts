@@ -14,17 +14,39 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
 
-    // Build query
-    let query = supabase
-      .from('sources')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (projectId) {
-      query = query.eq('project_id', projectId)
+    // SECURITY: projectId is required to prevent leaking sources across workspaces
+    if (!projectId) {
+      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
     }
 
-    const { data: sources, error } = await query
+    // SECURITY: Verify user has access to this project's workspace
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('workspace_id')
+      .eq('id', projectId)
+      .single()
+
+    if (projectError || !project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', project.workspace_id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    // Build query - now always filtered by projectId
+    const { data: sources, error } = await supabase
+      .from('sources')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Database error:', error)

@@ -53,9 +53,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, project_id } = body
+    const { title, name, project_id } = body
 
-    if (!title) {
+    // Support both 'title' and 'name' for backwards compatibility
+    const documentName = title || name
+
+    if (!documentName) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     }
 
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
     const { data: document, error: createError } = await supabase
       .from('documents')
       .insert({
-        title,
+        name: documentName,
         project_id,
         created_by: user.id,
       })
@@ -147,7 +150,7 @@ export async function POST(request: NextRequest) {
           p_document_id: document.id,
           p_target_type: 'document',
           p_target_id: document.id,
-          p_details: { title: document.title },
+          p_details: { name: document.name },
         })
       } catch (err) {
         console.error('Failed to log activity:', err)

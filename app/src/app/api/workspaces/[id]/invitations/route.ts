@@ -154,8 +154,17 @@ export async function POST(
       p_details: { email: email.toLowerCase(), role },
     })
 
-    // TODO: Send invitation email
-    // For now, return the invitation token (in production, this would be sent via email)
+    // Send invitation email (stub - logs to console in development)
+    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/invite/${invitation.token}`
+    console.log(`📧 Invitation email would be sent:
+      To: ${email}
+      Workspace ID: ${id}
+      Role: ${role}
+      URL: ${inviteUrl}
+      Expires: ${invitation.expires_at}
+    `)
+    // In production, integrate with email service (Resend, SendGrid, etc.)
+    // await sendEmail({ to: email, subject: `You've been invited to ${workspaceName}`, ... })
 
     return NextResponse.json({
       invitation: {
@@ -163,8 +172,8 @@ export async function POST(
         email: invitation.email,
         role: invitation.role,
         expires_at: invitation.expires_at,
-        // Only include token in development/for testing
-        invite_url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/invite/${invitation.token}`,
+        // Only include URL in development/for testing
+        invite_url: inviteUrl,
       }
     }, { status: 201 })
 

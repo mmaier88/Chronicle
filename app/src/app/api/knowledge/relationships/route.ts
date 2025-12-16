@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
     const workspaceId = searchParams.get('workspace_id')
     const entityId = searchParams.get('entity_id')
     const relationshipType = searchParams.get('type')
-    const limit = parseInt(searchParams.get('limit') || '100')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '100') || 100))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0') || 0)
 
     if (!workspaceId) {
       return NextResponse.json({ error: 'workspace_id required' }, { status: 400 })

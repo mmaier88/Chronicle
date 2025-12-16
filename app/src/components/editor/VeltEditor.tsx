@@ -11,9 +11,9 @@ import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
 import {
   useCommentAnnotations,
+  useVeltClient,
   VeltCommentsSidebar,
   VeltPresence,
-  VeltCursor,
   VeltNotificationsTool,
 } from '@veltdev/react'
 import {
@@ -26,7 +26,7 @@ import { Citation } from './extensions/Citation'
 import { AISpan } from './extensions/AISpan'
 import { SlashCommand } from './extensions/SlashCommand'
 import { useVeltAuth } from '@/hooks/useVeltAuth'
-import { MessageSquare, Users } from 'lucide-react'
+import { MessageSquare, Users, MousePointer2 } from 'lucide-react'
 
 interface VeltEditorProps {
   content?: string
@@ -52,6 +52,7 @@ export function VeltEditor({
   const [isAIProcessing, setIsAIProcessing] = useState(false)
   const [aiError, setAIError] = useState<string | null>(null)
   const [showPresence, setShowPresence] = useState(true)
+  const [showLiveSelection, setShowLiveSelection] = useState(true)
   const editorRef = useRef<TiptapEditor | null>(null)
 
   // Initialize Velt authentication
@@ -60,8 +61,23 @@ export function VeltEditor({
     workspaceId
   })
 
+  // Get Velt client for Live Selection
+  const { client: veltClient } = useVeltClient()
+
   // Get comment annotations from Velt
   const commentAnnotations = useCommentAnnotations()
+
+  // Enable/disable Live Selection based on toggle
+  useEffect(() => {
+    if (veltClient && isAuthenticated) {
+      const selectionElement = veltClient.getSelectionElement()
+      if (showLiveSelection) {
+        selectionElement.enableLiveSelection()
+      } else {
+        selectionElement.disableLiveSelection()
+      }
+    }
+  }, [veltClient, isAuthenticated, showLiveSelection])
 
   const handleAICommand = useCallback(async (action: string, text: string) => {
     if (!text.trim()) {
@@ -214,6 +230,17 @@ export function VeltEditor({
               <Users className="w-4 h-4" />
             </button>
 
+            {/* Live Selection Toggle */}
+            <button
+              onClick={() => setShowLiveSelection(!showLiveSelection)}
+              className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                showLiveSelection ? 'text-blue-600' : 'text-gray-400'
+              }`}
+              title="Toggle live selection (see what others are editing)"
+            >
+              <MousePointer2 className="w-4 h-4" />
+            </button>
+
             {/* Velt Notifications */}
             {isAuthenticated && <VeltNotificationsTool />}
           </div>
@@ -246,8 +273,7 @@ export function VeltEditor({
 
         <EditorContent editor={editor} />
 
-        {/* Velt Cursor for real-time cursor tracking */}
-        {isAuthenticated && <VeltCursor />}
+        {/* VeltCursor is now at root level in VeltProvider */}
 
         {/* AI Processing Indicator */}
         {isAIProcessing && (

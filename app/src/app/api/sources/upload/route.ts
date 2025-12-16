@@ -23,6 +23,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 })
     }
 
+    // SECURITY: If projectId is provided, verify user has access to its workspace
+    if (projectId) {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('workspace_id')
+        .eq('id', projectId)
+        .single()
+
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', project.workspace_id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (!membership) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+    }
+
     // Generate unique filename
     const timestamp = Date.now()
     const filename = `${user.id}/${projectId || 'default'}/${timestamp}-${file.name}`

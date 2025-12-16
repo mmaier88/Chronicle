@@ -207,8 +207,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         .from('documents')
         .select(`
           id,
-          title,
-          content,
+          name,
           project_id,
           projects!inner(workspace_id)
         `)
@@ -224,10 +223,30 @@ export default function DocumentPage({ params }: DocumentPageProps) {
       const projects = data.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
       const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
 
+      // SECURITY: Verify user has access to this document's workspace
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace('/login')
+        return
+      }
+
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', workspaceId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (!membership) {
+        setNotFound(true)
+        setLoading(false)
+        return
+      }
+
       setDocument({
         id: data.id,
-        title: data.title,
-        content: data.content || '',
+        title: data.name, // DB column is 'name', UI uses 'title'
+        content: '', // Content is stored in doc_sections
         project_id: data.project_id,
         workspace_id: workspaceId
       })
@@ -252,11 +271,30 @@ export default function DocumentPage({ params }: DocumentPageProps) {
 
     setSaving(true)
 
-    // Simulate save - in production this would save to Supabase
-    await new Promise(resolve => setTimeout(resolve, 500))
+    try {
+      const supabase = createClient()
 
-    setLastSaved(new Date())
-    setSaving(false)
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          name: document.title, // DB column is 'name'
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', document.id)
+
+      if (error) {
+        console.error('Save failed:', error)
+        alert('Failed to save document. Please try again.')
+        return
+      }
+
+      setLastSaved(new Date())
+    } catch (err) {
+      console.error('Save error:', err)
+      alert('Failed to save document. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

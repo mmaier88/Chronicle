@@ -29,16 +29,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify user has access to the document/project
+    // SECURITY: Verify user has access to the document's workspace
     if (documentId) {
       const { data: doc, error: docError } = await supabase
         .from('documents')
-        .select('id, user_id')
+        .select(`
+          id,
+          projects!inner(workspace_id)
+        `)
         .eq('id', documentId)
         .single()
 
-      if (docError || !doc || doc.user_id !== user.id) {
-        return NextResponse.json({ error: 'Document not found or access denied' }, { status: 403 })
+      if (docError || !doc) {
+        return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+      }
+
+      const projects = doc.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
+      const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', workspaceId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (!membership) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 

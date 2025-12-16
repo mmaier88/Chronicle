@@ -30,8 +30,8 @@ export async function GET(
     }
 
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0') || 0)
     const targetType = searchParams.get('target_type')
 
     let query = supabase

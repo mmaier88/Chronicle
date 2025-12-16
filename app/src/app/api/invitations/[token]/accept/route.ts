@@ -38,9 +38,12 @@ export async function POST(
       return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 })
     }
 
-    // Check if email matches (optional - can be configured)
-    // For now, we allow any authenticated user to accept
-    // In production, you might want to verify email matches
+    // SECURITY: Verify email matches the invitation
+    if (invitation.email.toLowerCase() !== user.email?.toLowerCase()) {
+      return NextResponse.json({
+        error: 'This invitation was sent to a different email address'
+      }, { status: 403 })
+    }
 
     // Check if already a member
     const { data: existingMember } = await supabase

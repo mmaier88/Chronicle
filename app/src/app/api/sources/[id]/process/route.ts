@@ -137,15 +137,31 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get source record
+    // Get source record with project/workspace info
     const { data: source, error: sourceError } = await supabase
       .from('sources')
-      .select('*')
+      .select(`
+        *,
+        projects!inner(workspace_id)
+      `)
       .eq('id', id)
       .single()
 
     if (sourceError || !source) {
       return NextResponse.json({ error: 'Source not found' }, { status: 404 })
+    }
+
+    // SECURITY: Verify user has access to this source's workspace
+    const workspaceId = (source.projects as { workspace_id: string }).workspace_id
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     // Update status to processing

@@ -50,10 +50,17 @@ export default function AutomationsPage() {
       .select('id, name, workspace_id')
       .order('created_at', { ascending: false })
 
-    if (projectsError || !data?.length) {
-      // Use demo project for testing
-      setProjects([{ id: 'demo-project', name: 'Demo Project', workspaceId: 'demo' }])
-      setSelectedProject('demo-project')
+    if (projectsError) {
+      setError('Failed to load projects')
+      setLoading(false)
+      return
+    }
+
+    if (!data?.length) {
+      setProjects([])
+      setError('No projects found. Create a project first to use automations.')
+      setLoading(false)
+      return
     } else {
       setProjects(data.map(p => ({ id: p.id, name: p.name, workspaceId: p.workspace_id })))
       setSelectedProject(data[0].id)

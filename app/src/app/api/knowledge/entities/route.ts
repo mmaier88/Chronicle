@@ -17,11 +17,23 @@ export async function GET(request: NextRequest) {
     const workspaceId = searchParams.get('workspace_id')
     const entityType = searchParams.get('type')
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0') || 0)
 
     if (!workspaceId) {
       return NextResponse.json({ error: 'workspace_id required' }, { status: 400 })
+    }
+
+    // SECURITY: Verify user has access to this workspace
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     let query = supabase

@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic()
+import { getAnthropicClient } from '@/lib/anthropic'
 
 interface CitationSuggestion {
   claim_text: string
@@ -34,6 +32,11 @@ export async function POST(request: NextRequest) {
 
     if (!text || text.trim().length === 0) {
       return NextResponse.json({ error: 'text is required' }, { status: 400 })
+    }
+
+    const anthropic = getAnthropicClient()
+    if (!anthropic) {
+      return NextResponse.json({ error: 'Anthropic API key not configured' }, { status: 500 })
     }
 
     // Truncate very long text

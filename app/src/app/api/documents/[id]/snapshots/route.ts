@@ -34,8 +34,8 @@ export async function GET(
 
     const { searchParams } = new URL(request.url)
     const branchId = searchParams.get('branch_id')
-    const limit = parseInt(searchParams.get('limit') || '50', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0)
 
     // Build query
     let query = supabase

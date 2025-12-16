@@ -41,6 +41,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }
 
+    // SECURITY: If documentId is provided, verify user has access to its workspace
+    if (documentId) {
+      const { data: doc } = await supabase
+        .from('documents')
+        .select('id, projects!inner(workspace_id)')
+        .eq('id', documentId)
+        .single()
+
+      if (!doc) {
+        return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+      }
+
+      const projects = doc.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
+      const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
+
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', workspaceId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (!membership) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+    }
+
     // Strip HTML tags for analysis
     const plainText = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 

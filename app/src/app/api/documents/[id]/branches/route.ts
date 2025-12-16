@@ -29,6 +29,31 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // SECURITY: Verify user has access to this document's workspace
+    const { data: doc } = await supabase
+      .from('documents')
+      .select('id, projects!inner(workspace_id)')
+      .eq('id', id)
+      .single()
+
+    if (!doc) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+    }
+
+    const projects = doc.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
+    const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
+
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
     // Get all branches for the document
     const { data: branches, error } = await supabase
       .from('doc_branches')
@@ -113,6 +138,31 @@ export async function POST(
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // SECURITY: Verify user has access to this document's workspace
+    const { data: doc } = await supabase
+      .from('documents')
+      .select('id, projects!inner(workspace_id)')
+      .eq('id', id)
+      .single()
+
+    if (!doc) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+    }
+
+    const projects = doc.projects as unknown as { workspace_id: string } | { workspace_id: string }[]
+    const workspaceId = Array.isArray(projects) ? projects[0]?.workspace_id : projects?.workspace_id
+
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     const body = await request.json()

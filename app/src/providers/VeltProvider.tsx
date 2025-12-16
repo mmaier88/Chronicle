@@ -1,6 +1,6 @@
 'use client'
 
-import { VeltProvider as VP } from '@veltdev/react'
+import { VeltProvider as VP, VeltComments, VeltCursor } from '@veltdev/react'
 import { ReactNode } from 'react'
 
 interface VeltProviderProps {
@@ -17,6 +17,10 @@ export function VeltProvider({ children }: VeltProviderProps) {
 
   return (
     <VP apiKey={apiKey}>
+      {/* VeltComments is REQUIRED at root level for comments to work */}
+      <VeltComments textMode={true} />
+      {/* VeltCursor shows other users' cursors */}
+      <VeltCursor />
       {children}
     </VP>
   )
