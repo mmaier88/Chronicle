@@ -5,23 +5,24 @@
 
 ---
 
+## Deployment
+
+**Platform:** Vercel (only)
+**Database:** Supabase (`ambrhrajlgogvfysztrw`)
+
+---
+
 ## Implementation Summary
 
 Chronicle is an AI-native book writing system. All phases complete.
-
-### Infrastructure
-- Hetzner Server: `Chronicle` (138.199.231.3)
-- Supabase Project: `ambrhrajlgogvfysztrw`
-- Database: Chronicle schema applied
 
 ---
 
 ## Phase 1: Foundation Reset ✅
 
-- [x] Database schema reset (books, chapters, sections, milestones, embeddings)
+- [x] Database schema (books, chapters, sections, milestones, embeddings)
 - [x] Tiptap schema with custom nodes
-- [x] File cleanup - removed all ResearchBase components
-- [x] Renamed to Chronicle
+- [x] Project setup and cleanup
 
 ---
 
@@ -89,15 +90,15 @@ Chronicle is an AI-native book writing system. All phases complete.
 
 ---
 
-## Success Criteria
+## Environment Variables (Vercel)
 
-1. ✅ User can create a book with constitution
-2. ✅ Constitution must be locked before chapters
-3. ✅ Chapters scaffold before writing
-4. ✅ Sections have draft/canonical states
-5. ✅ AI generates structured output only
-6. ✅ Only canonical content gets embedded
-7. ✅ Consistency checks work
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+ANTHROPIC_API_KEY
+VOYAGE_API_KEY
+```
 
 ---
 
