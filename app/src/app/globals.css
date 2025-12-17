@@ -318,3 +318,190 @@ button,
   background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
   background-size: 200% 100%;
 }
+
+/* ============================================
+   Chronicle Custom Block Styles
+   ============================================ */
+
+/* Claim Blocks */
+.ProseMirror .claim-block {
+  border-left: 4px solid;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+  position: relative;
+}
+
+.ProseMirror .claim-block.claim-pro {
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.ProseMirror .claim-block.claim-con {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.ProseMirror .claim-block.claim-neutral {
+  border-left-color: #6b7280;
+  background: rgba(107, 114, 128, 0.1);
+}
+
+.ProseMirror .claim-block.canonical {
+  border-left-width: 6px;
+}
+
+.ProseMirror .claim-block.draft {
+  border-left-style: dashed;
+}
+
+.ProseMirror .claim-block::before {
+  content: "◎ Claim";
+  position: absolute;
+  top: -0.6rem;
+  left: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0.25rem;
+  background: var(--background);
+  color: #6b7280;
+}
+
+/* Motif Blocks */
+.ProseMirror .motif-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.ProseMirror .motif-block:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+}
+
+/* Thread Blocks */
+.ProseMirror .thread-block {
+  border: 2px solid;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  position: relative;
+}
+
+.ProseMirror .thread-block.thread-open {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.ProseMirror .thread-block.thread-hinted {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.ProseMirror .thread-block.thread-resolved {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.ProseMirror .thread-block .thread-indicator {
+  position: absolute;
+  top: -0.75rem;
+  left: 1rem;
+  background: var(--background);
+  padding: 0 0.5rem;
+  font-size: 1rem;
+}
+
+.ProseMirror .thread-block .thread-content {
+  padding-left: 0.5rem;
+}
+
+/* Note Blocks (NOT embedded) */
+.ProseMirror .note-block {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  overflow: hidden;
+}
+
+.ProseMirror .note-block .note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: #fde68a;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ProseMirror .note-block .note-type-indicator {
+  color: #92400e;
+}
+
+.ProseMirror .note-block .note-badge {
+  background: #dc2626;
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+}
+
+.ProseMirror .note-block .note-content {
+  padding: 0.75rem;
+}
+
+.ProseMirror .note-block.collapsed .note-content {
+  display: none;
+}
+
+.ProseMirror .note-block.note-todo .note-header {
+  background: #dbeafe;
+}
+
+.ProseMirror .note-block.note-research .note-header {
+  background: #e0e7ff;
+}
+
+.ProseMirror .note-block.note-question .note-header {
+  background: #fce7f3;
+}
+
+/* Dark mode for custom blocks */
+@media (prefers-color-scheme: dark) {
+  .ProseMirror .claim-block.claim-pro {
+    background: rgba(34, 197, 94, 0.15);
+  }
+
+  .ProseMirror .claim-block.claim-con {
+    background: rgba(239, 68, 68, 0.15);
+  }
+
+  .ProseMirror .claim-block.claim-neutral {
+    background: rgba(107, 114, 128, 0.15);
+  }
+
+  .ProseMirror .note-block {
+    background: #422006;
+    border-color: #854d0e;
+  }
+
+  .ProseMirror .note-block .note-header {
+    background: #78350f;
+  }
+
+  .ProseMirror .note-block .note-type-indicator {
+    color: #fcd34d;
+  }
+}
