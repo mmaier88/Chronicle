@@ -18,6 +18,21 @@ interface SectionEditorProps {
   chapter: Chapter
 }
 
+// Convert basic markdown to HTML for TipTap
+function markdownToHtml(markdown: string): string {
+  return markdown
+    // Convert **bold** to <strong>
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Convert *italic* to <em>
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Convert paragraphs (double newlines)
+    .split(/\n\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 0)
+    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+    .join('')
+}
+
 export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [isPromoting, setIsPromoting] = useState(false)
@@ -95,15 +110,17 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
       const result = data.result
 
       if (typeof result === 'object' && result.prose) {
-        // Insert generated prose
-        editor.commands.setContent(result.prose)
+        // Convert markdown to HTML for TipTap
+        const html = markdownToHtml(result.prose)
+        editor.commands.setContent(html)
 
         // If claims were suggested, show them
         if (result.claims && result.claims.length > 0) {
           console.log('Suggested claims:', result.claims)
         }
       } else if (typeof result === 'string') {
-        editor.commands.setContent(result)
+        const html = markdownToHtml(result)
+        editor.commands.setContent(html)
       }
     } catch (error) {
       console.error('Generation error:', error)

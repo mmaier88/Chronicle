@@ -2,10 +2,12 @@
 
 export type BookStatus = 'drafting' | 'editing' | 'final'
 export type BookGenre = 'non_fiction' | 'literary_fiction'
+export type BookSource = 'author' | 'vibe'
 export type ContentStatus = 'draft' | 'locked' | 'canonical'
 export type MilestoneVersion = 'v1' | 'v2' | 'final'
 export type ClaimBlockType = 'assertion' | 'definition' | 'premise' | 'inference' | 'counterclaim'
 export type ClaimStance = 'pro' | 'con' | 'neutral'
+export type VibeJobStatus = 'queued' | 'running' | 'failed' | 'complete'
 
 export interface Constitution {
   central_thesis: string | null
@@ -22,6 +24,7 @@ export interface Book {
   owner_id: string
   title: string
   genre: BookGenre
+  source: BookSource
   core_question: string | null
   status: BookStatus
   constitution_json: Constitution
@@ -121,4 +124,60 @@ export interface AIJob {
   error_message: string | null
   created_at: string
   completed_at: string | null
+}
+
+// =============================================================================
+// VIBE FLOW TYPES
+// =============================================================================
+
+export interface VibeCharacter {
+  name: string
+  tagline: string
+}
+
+export interface VibeWarnings {
+  violence: 'none' | 'low' | 'medium' | 'high'
+  romance: 'none' | 'low' | 'medium' | 'high'
+}
+
+export interface VibePreview {
+  title: string
+  logline: string
+  blurb: string
+  cast: VibeCharacter[]
+  setting: string
+  promise: string[]
+  warnings: VibeWarnings
+}
+
+export interface VibeJob {
+  id: string
+  user_id: string
+  book_id: string | null
+  genre: BookGenre
+  user_prompt: string
+  preview: VibePreview
+  status: VibeJobStatus
+  step: string | null
+  progress: number
+  story_synopsis: string | null
+  error: string | null
+  attempt: number
+  created_at: string
+  updated_at: string
+  started_at: string | null
+  completed_at: string | null
+}
+
+// Vibe chapter/section plan for generation
+export interface VibeChapterPlan {
+  title: string
+  purpose: string
+  sections: VibeSectionPlan[]
+}
+
+export interface VibeSectionPlan {
+  title: string
+  goal: string
+  target_words: number
 }
