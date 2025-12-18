@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { VibePreview, Constitution, VibeChapterPlan } from '@/types/chronicle'
 import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
+import { QUICK_POLISH_PROMPT } from '@/lib/polish-pipeline'
 
 const anthropic = new Anthropic()
 
@@ -254,6 +255,30 @@ Remember: The rewrite should feel MORE human, not less. Ground abstractions in p
   return message.content[0].type === 'text' ? message.content[0].text : prose
 }
 
+// Apply last 10% polish to prose
+async function polishProse(
+  prose: string,
+  characters: { name: string; tagline: string }[]
+): Promise<string> {
+  const characterContext = characters.length > 0
+    ? `\n\nCHARACTERS TO ADD MESS BEATS FOR:\n${characters.map(c => `- ${c.name}: ${c.tagline}`).join('\n')}`
+    : ''
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4096,
+    system: `${QUICK_POLISH_PROMPT}${characterContext}`,
+    messages: [{
+      role: 'user',
+      content: `Polish this prose:\n\n${prose}`
+    }],
+  })
+
+  return message.content[0].type === 'text'
+    ? message.content[0].text.trim()
+    : prose
+}
+
 // Convert markdown to HTML
 function markdownToHtml(markdown: string): string {
   return markdown
@@ -465,6 +490,9 @@ export async function POST(
         finalProse = await rewriteSection(result.prose, consistency.issues, constitution, section.goal || '')
         await updateJob(supabase, jobId, { attempt: vibeJob.attempt + 1 })
       }
+
+      // Apply last 10% polish pass
+      finalProse = await polishProse(finalProse, preview.cast)
 
       // Convert to HTML and save
       const htmlContent = markdownToHtml(finalProse)

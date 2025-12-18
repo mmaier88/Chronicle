@@ -199,6 +199,49 @@ Chronicle is an AI-native book writing system with two flows:
 
 ---
 
+## Phase 13: Last 10% Literary Polish Pipeline 🚧
+
+**Goal:** Multi-pass editorial refinement to go from "very good" to "publishable / unmistakably human."
+
+### Global Hard Rules
+
+- [x] **G1 - Don't name the theme**: Cut "X disguised as Y", "she realized that..." (max 1 per 1200 words)
+- [x] **G2 - Reduce crafted aphorisms**: Replace 70% of TED-talk lines with contradiction/awkwardness
+- [x] **G3 - Add controlled messiness**: 2-4 mess beats per 2500-4000 words (petty impulse, defensive lie, misread)
+- [x] **G4 - Trim 10-15%**: Cut reiteration, redundant metaphors, internal explanation
+
+### Detection Heuristics (Smell Pass)
+
+- [x] **H1 - Theme-label sentences**: Flag "X disguised as Y", "It wasn't A. It was B."
+- [x] **H2 - Over-clean metaphor chains**: Flag 3+ metaphors resolving too neatly
+- [x] **H3 - Character coherence problem**: Flag always-calm, always-reasonable characters
+- [x] **H4 - Duplicate setup paragraphs**: Flag restated emotions
+- [x] **H5 - Motif overuse**: Count per 1000 words, flag if >6
+
+### 7-Pass Editorial Pipeline
+
+- [x] **Pass 1 - Structural Tightening**: Remove pre-turn padding, fix scene endings
+- [x] **Pass 2 - Line Restraint**: Roughen 40%+ of "crafted" sentences
+- [x] **Pass 3 - Dialogue Subtext**: Add misfires, interruptions, physical action
+- [x] **Pass 4 - Character Mess Beats**: Inject 2-4 imperfections per section
+- [x] **Pass 5 - Motif Governance**: Limit motif density, ensure transformation not looping
+- [x] **Pass 6 - Anti-Aphorism Sweep**: Replace quotable lines with scene detail + silence
+- [x] **Pass 7 - Rhythm Pass**: Ensure varied sentence lengths per page
+
+### Rewrite Patterns
+
+- [x] **P1 - Replace "She realized..."**: Show via action (hand stops, cup clinks, body reacts first)
+- [x] **P2 - Remove "X disguised as Y"**: Replace with image + unspoken reaction + contradiction
+- [x] **P3 - Character flaws**: Add assumptions, slightly selfish lines, too-quick solutions
+
+### Implementation
+
+- [x] `lib/polish-pipeline.ts` - Multi-pass refinement prompts
+- [x] `POST /api/ai/polish` - Polish endpoint for section refinement
+- [x] Integrated polish pass into `/api/vibe/job/[jobId]/tick` after initial write
+
+---
+
 ## API Endpoints
 
 | Endpoint | Status |
@@ -206,6 +249,7 @@ Chronicle is an AI-native book writing system with two flows:
 | `POST /api/ai/generate` | ✅ |
 | `POST /api/ai/extract` | ✅ |
 | `POST /api/ai/consistency` | ✅ |
+| `POST /api/ai/polish` | ✅ |
 | `POST /api/embed` | ✅ |
 | `POST /api/books/[id]/constitution/lock` | ✅ |
 | `POST /api/books/[id]/chapters/[chId]/lock` | ✅ |
