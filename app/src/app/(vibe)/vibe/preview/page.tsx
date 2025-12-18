@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, RefreshCw, Sparkles, Loader2, User, MapPin, Heart } from 'lucide-react'
+import { Sparkles, RefreshCw, Loader2, Wand2 } from 'lucide-react'
 import { VibePreview, BookGenre } from '@/types/chronicle'
 
 interface VibeDraft {
@@ -51,18 +51,17 @@ export default function VibePreviewPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Failed to improve preview')
+        setError(data.error || 'Something went sideways')
         return
       }
 
       setEditedPreview(data.preview)
-      // Update localStorage
       localStorage.setItem('vibe_draft', JSON.stringify({
         ...draft,
         preview: data.preview,
       }))
     } catch {
-      setError('Failed to connect. Please try again.')
+      setError('Couldn\'t connect. Let\'s try again.')
     } finally {
       setIsImproving(false)
     }
@@ -87,7 +86,7 @@ export default function VibePreviewPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Failed to regenerate preview')
+        setError(data.error || 'Something went sideways')
         return
       }
 
@@ -97,7 +96,7 @@ export default function VibePreviewPage() {
         preview: data.preview,
       }))
     } catch {
-      setError('Failed to connect. Please try again.')
+      setError('Couldn\'t connect. Let\'s try again.')
     } finally {
       setIsRegenerating(false)
     }
@@ -123,16 +122,15 @@ export default function VibePreviewPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Failed to create job')
+        setError(data.error || 'Something went sideways')
         setIsCreating(false)
         return
       }
 
-      // Clear localStorage and redirect to generating page
       localStorage.removeItem('vibe_draft')
       router.push(`/vibe/generating/${data.job_id}`)
     } catch {
-      setError('Failed to connect. Please try again.')
+      setError('Couldn\'t connect. Let\'s try again.')
       setIsCreating(false)
     }
   }
@@ -145,230 +143,209 @@ export default function VibePreviewPage() {
   if (!draft || !editedPreview) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
       </div>
     )
   }
 
+  const isWorking = isImproving || isRegenerating || isCreating
+
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Back button */}
-      <button
-        onClick={() => router.push('/vibe/new')}
-        className="flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-6"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to prompt
-      </button>
+    <div className="max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="mb-10">
+        <h1 className="font-serif text-3xl md:text-4xl text-amber-950 tracking-tight mb-3">
+          Your back cover
+        </h1>
+        <p className="text-amber-700/70 text-lg">
+          Make it sound like a book you&apos;d actually pick up. No spoilers here.
+        </p>
+      </div>
 
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Your Book Preview</h1>
-          <p className="text-gray-600">
-            This is the &quot;back of book&quot; preview. Edit it to your liking—no spoilers included!
-          </p>
+      {/* Preview Card */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-amber-100 shadow-xl shadow-amber-100/30 overflow-hidden">
+        {/* Title */}
+        <div className="p-6 border-b border-amber-50">
+          <label className="block text-xs font-medium text-amber-500 uppercase tracking-wide mb-2">
+            Title
+          </label>
+          <input
+            type="text"
+            value={editedPreview.title}
+            onChange={(e) => updateField('title', e.target.value)}
+            disabled={isWorking}
+            className="w-full font-serif text-2xl md:text-3xl text-amber-950 border-0 p-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-amber-300"
+            placeholder="Your title..."
+          />
         </div>
 
-        {/* Preview Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* Title */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Title</label>
-            <input
-              type="text"
-              value={editedPreview.title}
-              onChange={(e) => updateField('title', e.target.value)}
-              className="w-full text-2xl font-bold text-gray-900 border-0 p-0 focus:ring-0 bg-transparent"
-            />
-          </div>
+        {/* Logline */}
+        <div className="p-6 border-b border-amber-50">
+          <label className="block text-xs font-medium text-amber-500 uppercase tracking-wide mb-2">
+            Logline
+          </label>
+          <input
+            type="text"
+            value={editedPreview.logline}
+            onChange={(e) => updateField('logline', e.target.value)}
+            disabled={isWorking}
+            className="w-full text-lg text-amber-800 border-0 p-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-amber-300"
+            placeholder="One sentence hook..."
+          />
+        </div>
 
-          {/* Logline */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Logline</label>
-            <input
-              type="text"
-              value={editedPreview.logline}
-              onChange={(e) => updateField('logline', e.target.value)}
-              className="w-full text-lg text-gray-700 border-0 p-0 focus:ring-0 bg-transparent"
-            />
-          </div>
+        {/* Blurb */}
+        <div className="p-6 border-b border-amber-50">
+          <label className="block text-xs font-medium text-amber-500 uppercase tracking-wide mb-2">
+            Back cover blurb
+          </label>
+          <textarea
+            value={editedPreview.blurb}
+            onChange={(e) => updateField('blurb', e.target.value)}
+            disabled={isWorking}
+            rows={5}
+            className="w-full text-amber-800 leading-relaxed border-0 p-0 bg-transparent focus:ring-0 focus:outline-none resize-none placeholder:text-amber-300"
+            placeholder="The story that draws readers in..."
+          />
+        </div>
 
-          {/* Blurb */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Back Cover Blurb</label>
-            <textarea
-              value={editedPreview.blurb}
-              onChange={(e) => updateField('blurb', e.target.value)}
-              rows={6}
-              className="w-full text-gray-700 border-0 p-0 focus:ring-0 bg-transparent resize-none leading-relaxed"
-            />
-          </div>
-
-          {/* Cast */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-3">
-              <User className="w-3 h-3 inline mr-1" />
-              Main Cast
-            </label>
-            <div className="space-y-3">
-              {editedPreview.cast.map((character, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <input
-                    type="text"
-                    value={character.name}
-                    onChange={(e) => {
-                      const newCast = [...editedPreview.cast]
-                      newCast[idx] = { ...newCast[idx], name: e.target.value }
-                      updateField('cast', newCast)
-                    }}
-                    className="w-1/3 font-medium text-gray-900 border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                    placeholder="Name"
-                  />
-                  <input
-                    type="text"
-                    value={character.tagline}
-                    onChange={(e) => {
-                      const newCast = [...editedPreview.cast]
-                      newCast[idx] = { ...newCast[idx], tagline: e.target.value }
-                      updateField('cast', newCast)
-                    }}
-                    className="flex-1 text-gray-600 border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                    placeholder="Description"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Setting */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-2">
-              <MapPin className="w-3 h-3 inline mr-1" />
-              Setting
-            </label>
-            <textarea
-              value={editedPreview.setting}
-              onChange={(e) => updateField('setting', e.target.value)}
-              rows={2}
-              className="w-full text-gray-700 border-0 p-0 focus:ring-0 bg-transparent resize-none"
-            />
-          </div>
-
-          {/* Promise */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-3">
-              <Heart className="w-3 h-3 inline mr-1" />
-              What to Expect
-            </label>
-            <div className="space-y-2">
-              {editedPreview.promise.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="text-purple-500">•</span>
-                  <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => {
-                      const newPromise = [...editedPreview.promise]
-                      newPromise[idx] = e.target.value
-                      updateField('promise', newPromise)
-                    }}
-                    className="flex-1 text-gray-700 border-0 p-0 focus:ring-0 bg-transparent"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Warnings */}
-          <div className="p-6 bg-gray-50">
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-3">Content Levels</label>
-            <div className="flex gap-6">
-              <div>
-                <span className="text-sm text-gray-600">Violence: </span>
-                <select
-                  value={editedPreview.warnings.violence}
-                  onChange={(e) => updateField('warnings', { ...editedPreview.warnings, violence: e.target.value })}
-                  className="text-sm border border-gray-200 rounded px-2 py-1"
-                >
-                  <option value="none">None</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
+        {/* Cast */}
+        <div className="p-6 border-b border-amber-50">
+          <label className="block text-xs font-medium text-amber-500 uppercase tracking-wide mb-4">
+            ✨ Main cast
+          </label>
+          <div className="space-y-3">
+            {editedPreview.cast.map((character, idx) => (
+              <div key={idx} className="flex gap-3">
+                <input
+                  type="text"
+                  value={character.name}
+                  onChange={(e) => {
+                    const newCast = [...editedPreview.cast]
+                    newCast[idx] = { ...newCast[idx], name: e.target.value }
+                    updateField('cast', newCast)
+                  }}
+                  disabled={isWorking}
+                  className="w-1/3 font-medium text-amber-950 bg-amber-50/50 border border-amber-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-300"
+                  placeholder="Name"
+                />
+                <input
+                  type="text"
+                  value={character.tagline}
+                  onChange={(e) => {
+                    const newCast = [...editedPreview.cast]
+                    newCast[idx] = { ...newCast[idx], tagline: e.target.value }
+                    updateField('cast', newCast)
+                  }}
+                  disabled={isWorking}
+                  className="flex-1 text-amber-700 bg-amber-50/50 border border-amber-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-300"
+                  placeholder="Who they are..."
+                />
               </div>
-              <div>
-                <span className="text-sm text-gray-600">Romance: </span>
-                <select
-                  value={editedPreview.warnings.romance}
-                  onChange={(e) => updateField('warnings', { ...editedPreview.warnings, romance: e.target.value })}
-                  className="text-sm border border-gray-200 rounded px-2 py-1"
-                >
-                  <option value="none">None</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
-          </div>
-        )}
+        {/* Setting */}
+        <div className="p-6 border-b border-amber-50">
+          <label className="block text-xs font-medium text-amber-500 uppercase tracking-wide mb-2">
+            🌍 Setting
+          </label>
+          <textarea
+            value={editedPreview.setting}
+            onChange={(e) => updateField('setting', e.target.value)}
+            disabled={isWorking}
+            rows={2}
+            className="w-full text-amber-800 border-0 p-0 bg-transparent focus:ring-0 focus:outline-none resize-none placeholder:text-amber-300"
+            placeholder="Where and when..."
+          />
+        </div>
 
-        {/* Actions */}
-        <div className="flex gap-4">
+        {/* Promise */}
+        <div className="p-6">
+          <label className="block text-xs font-medium text-amber-500 uppercase tracking-wide mb-4">
+            💫 What to expect
+          </label>
+          <div className="space-y-2">
+            {editedPreview.promise.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <span className="text-amber-400">•</span>
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    const newPromise = [...editedPreview.promise]
+                    newPromise[idx] = e.target.value
+                    updateField('promise', newPromise)
+                  }}
+                  disabled={isWorking}
+                  className="flex-1 text-amber-800 border-0 p-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-amber-300"
+                  placeholder="A promise to readers..."
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="mt-8 space-y-4">
+        {/* Secondary actions */}
+        <div className="flex gap-3">
           <button
             onClick={handleImprove}
-            disabled={isImproving || isRegenerating || isCreating}
-            className="flex-1 py-3 border border-purple-300 text-purple-700 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-purple-50 disabled:opacity-50"
+            disabled={isWorking}
+            className="flex-1 py-3 bg-white border border-amber-200 text-amber-700 rounded-full font-medium flex items-center justify-center gap-2 hover:bg-amber-50 hover:border-amber-300 disabled:opacity-50 transition-all duration-200"
           >
             {isImproving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4" />
+              <Wand2 className="w-4 h-4" />
             )}
-            Improve
+            Improve wording
           </button>
           <button
             onClick={handleRegenerate}
-            disabled={isImproving || isRegenerating || isCreating}
-            className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-50"
+            disabled={isWorking}
+            className="flex-1 py-3 bg-white border border-amber-200 text-amber-700 rounded-full font-medium flex items-center justify-center gap-2 hover:bg-amber-50 hover:border-amber-300 disabled:opacity-50 transition-all duration-200"
           >
             {isRegenerating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
-            Regenerate
+            Try another
           </button>
         </div>
 
+        {/* Primary CTA */}
         <button
           onClick={handleGenerate}
-          disabled={isImproving || isRegenerating || isCreating}
-          className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-50"
+          disabled={isWorking}
+          className="w-full py-4 bg-gradient-to-r from-amber-600 to-rose-500 text-white rounded-full font-medium text-lg flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-[1.01] transition-all duration-200"
         >
           {isCreating ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Creating Book...
+              Setting things in motion...
             </>
           ) : (
             <>
-              Generate My Book
-              <ArrowRight className="w-5 h-5" />
+              <Sparkles className="w-5 h-5" />
+              Generate my book
             </>
           )}
         </button>
 
-        <p className="text-center text-xs text-gray-500">
-          This will generate a ~30 page book based on your preview. The process takes a few minutes.
+        <p className="text-center text-sm text-amber-500">
+          This will create a ~30 page book. Takes a few minutes.
         </p>
       </div>
     </div>

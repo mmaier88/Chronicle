@@ -2,29 +2,30 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BookOpen, Feather, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
+import { Feather, BookOpen, Sparkles, Loader2, Shuffle } from 'lucide-react'
 import { BookGenre } from '@/types/chronicle'
 
-const GENRES: { value: BookGenre; label: string; description: string; icon: React.ReactNode }[] = [
+const GENRES: { value: BookGenre; label: string; emoji: string; vibe: string }[] = [
   {
     value: 'literary_fiction',
     label: 'Literary Fiction',
-    description: 'Character-driven stories with rich themes and emotional depth',
-    icon: <Feather className="w-6 h-6" />
+    emoji: '✨',
+    vibe: 'Character-driven, thematic depth',
   },
   {
     value: 'non_fiction',
     label: 'Non-Fiction',
-    description: 'Essays, memoirs, and explorations of real-world ideas',
-    icon: <BookOpen className="w-6 h-6" />
+    emoji: '📖',
+    vibe: 'Essays, ideas, real-world tales',
   },
 ]
 
-const PROMPT_EXAMPLES = [
-  "A disgraced knight seeking redemption in a kingdom where magic is forbidden",
-  "A coffee shop owner who discovers their regular customers are all time travelers",
-  "An exploration of solitude through the lens of lighthouse keepers across history",
-  "A musician who can only compose when they forget who they are",
+const PROMPT_SEEDS = [
+  "A lighthouse keeper who starts receiving letters from someone who shouldn't exist...",
+  "Two strangers meet at the same café every morning but never speak—until one day, one of them doesn't show up.",
+  "A retired astronaut opens a bookshop in a small town, but the books keep rewriting themselves.",
+  "In a city where it rains every day, one person wakes up to sunshine and realizes they're the only one who notices.",
+  "A chef discovers their grandmother's recipe book contains more than just recipes.",
 ]
 
 export default function VibeNewPage() {
@@ -33,6 +34,11 @@ export default function VibeNewPage() {
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleSurpriseMe = () => {
+    const randomPrompt = PROMPT_SEEDS[Math.floor(Math.random() * PROMPT_SEEDS.length)]
+    setPrompt(randomPrompt)
+  }
 
   const handleSubmit = async () => {
     if (!selectedGenre || !prompt.trim()) return
@@ -53,7 +59,7 @@ export default function VibeNewPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Failed to generate preview')
+        setError(data.error || 'Something went wrong')
         setIsGenerating(false)
         return
       }
@@ -66,85 +72,82 @@ export default function VibeNewPage() {
       }))
 
       router.push('/vibe/preview')
-    } catch (err) {
-      setError('Failed to connect. Please try again.')
+    } catch {
+      setError('Couldn\'t connect. Let\'s try that again.')
       setIsGenerating(false)
     }
   }
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      {/* Back button */}
-      <button
-        onClick={() => router.push('/vibe')}
-        className="flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-8"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </button>
+  const isValid = selectedGenre && prompt.trim().length >= 20
 
-      <div className="space-y-8">
-        {/* Step 1: Genre */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">1. Choose your genre</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+  return (
+    <div className="max-w-xl mx-auto">
+      {/* Header */}
+      <div className="mb-12">
+        <h1 className="font-serif text-3xl md:text-4xl text-amber-950 tracking-tight mb-3">
+          Let&apos;s create something magic
+        </h1>
+        <p className="text-amber-700/70 text-lg">
+          Pick a genre. Give us a vibe. We&apos;ll write the rest.
+        </p>
+      </div>
+
+      <div className="space-y-10">
+        {/* Genre Picker */}
+        <section>
+          <label className="block text-sm font-medium text-amber-800 mb-4">
+            What kind of story?
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
             {GENRES.map((genre) => (
               <button
                 key={genre.value}
                 onClick={() => setSelectedGenre(genre.value)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                disabled={isGenerating}
+                className={`p-5 rounded-2xl text-left transition-all duration-200 ${
                   selectedGenre === genre.value
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'bg-white border-2 border-amber-500 shadow-lg shadow-amber-100'
+                    : 'bg-white/50 border-2 border-transparent hover:bg-white hover:border-amber-200'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
-                  selectedGenre === genre.value ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {genre.icon}
-                </div>
-                <h3 className="font-medium text-gray-900">{genre.label}</h3>
-                <p className="text-sm text-gray-500 mt-1">{genre.description}</p>
+                <span className="text-2xl mb-2 block">{genre.emoji}</span>
+                <h3 className="font-serif text-lg text-amber-950 mb-1">{genre.label}</h3>
+                <p className="text-sm text-amber-600/70">{genre.vibe}</p>
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Step 2: Prompt */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">2. Describe your story</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Give us 1-5 sentences about your concept. Don&apos;t worry about perfection—we&apos;ll help shape it.
-          </p>
+        {/* Prompt Input */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-sm font-medium text-amber-800">
+              What&apos;s the vibe?
+            </label>
+            <button
+              onClick={handleSurpriseMe}
+              disabled={isGenerating}
+              className="flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-800 transition-colors"
+            >
+              <Shuffle className="w-3.5 h-3.5" />
+              Surprise me
+            </button>
+          </div>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A story about..."
-            className="w-full h-32 p-4 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 resize-none"
+            placeholder="A disgraced knight returns to a city that no longer believes in heroes..."
             disabled={isGenerating}
+            className="w-full h-36 p-5 bg-white/70 border-2 border-amber-100 rounded-2xl text-amber-950 placeholder:text-amber-400 focus:outline-none focus:border-amber-300 focus:bg-white resize-none transition-all duration-200"
           />
-
-          {/* Example prompts */}
-          <div className="mt-4">
-            <p className="text-xs text-gray-500 mb-2">Need inspiration? Try one of these:</p>
-            <div className="flex flex-wrap gap-2">
-              {PROMPT_EXAMPLES.map((example, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setPrompt(example)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                  disabled={isGenerating}
-                >
-                  {example.slice(0, 40)}...
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+          <p className="text-sm text-amber-500 mt-2">
+            1–5 sentences. Don&apos;t overthink it.
+          </p>
+        </section>
 
         {/* Error */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm">
             {error}
           </div>
         )}
@@ -152,24 +155,24 @@ export default function VibeNewPage() {
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={!selectedGenre || !prompt.trim() || isGenerating}
-          className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all"
+          disabled={!isValid || isGenerating}
+          className="w-full py-4 bg-gradient-to-r from-amber-600 to-rose-500 text-white rounded-full font-medium text-lg flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-amber-500/30 hover:scale-[1.01] transition-all duration-200"
         >
           {isGenerating ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Generating Preview...
+              Creating your back cover...
             </>
           ) : (
             <>
-              Generate Preview
-              <ArrowRight className="w-5 h-5" />
+              <Sparkles className="w-5 h-5" />
+              Create my back cover
             </>
           )}
         </button>
 
-        <p className="text-center text-xs text-gray-500">
-          We&apos;ll create a spoiler-free preview you can review before generating the full book.
+        <p className="text-center text-sm text-amber-500">
+          You&apos;ll get to edit everything on the next step.
         </p>
       </div>
     </div>

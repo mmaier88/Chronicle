@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Sparkles, LogOut, User, BookOpen } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 
 export default async function VibeLayout({
   children,
@@ -16,41 +16,36 @@ export default async function VibeLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-6">
-              <Link href="/vibe" className="flex items-center gap-2 text-xl font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                <Sparkles className="w-6 h-6 text-purple-600" />
-                Vibe a Book
-              </Link>
-              <Link href="/books" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
-                <BookOpen className="w-4 h-4" />
-                Author Mode
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <User className="w-4 h-4" />
-                {user.email}
-              </div>
-              <form action="/api/auth/signout" method="POST">
-                <button
-                  type="submit"
-                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign out
-                </button>
-              </form>
-            </div>
-          </div>
+    <div className="min-h-screen bg-amber-50/40">
+      {/* Minimal header */}
+      <header className="sticky top-0 z-50 bg-amber-50/80 backdrop-blur-sm border-b border-amber-100/50">
+        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link
+            href="/vibe"
+            className="flex items-center gap-2 text-amber-900 hover:text-amber-700 transition-colors"
+          >
+            <Sparkles className="w-5 h-5 text-amber-600" />
+            <span className="font-serif text-lg font-medium tracking-tight">Vibe a Book</span>
+          </Link>
+
+          <Link
+            href="/books"
+            className="text-sm text-amber-700/60 hover:text-amber-800 transition-colors"
+          >
+            Author mode
+          </Link>
         </div>
-      </nav>
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      </header>
+
+      {/* Main content */}
+      <main className="max-w-4xl mx-auto px-6 py-12">
         {children}
       </main>
+
+      {/* Subtle footer */}
+      <footer className="max-w-4xl mx-auto px-6 py-8 text-center">
+        <p className="text-xs text-amber-600/50">Made with curiosity</p>
+      </footer>
     </div>
   )
 }

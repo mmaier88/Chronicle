@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Loader2, CheckCircle, XCircle, BookOpen, Sparkles, RefreshCw } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, BookOpen, Sparkles, RefreshCw, Feather } from 'lucide-react'
 
 interface JobStatus {
   id: string
@@ -14,15 +14,15 @@ interface JobStatus {
 }
 
 const STEP_LABELS: Record<string, string> = {
-  created: 'Initializing...',
-  constitution: 'Creating story DNA...',
-  plan: 'Planning chapters...',
-  finalize: 'Finalizing book...',
-  complete: 'Complete!',
+  created: 'Setting the stage...',
+  constitution: 'Finding the voice...',
+  plan: 'Mapping the arc...',
+  finalize: 'Adding final touches...',
+  complete: 'Your story awaits!',
 }
 
 function getStepLabel(step: string | null | undefined): string {
-  if (!step) return 'Starting...'
+  if (!step) return 'Gathering inspiration...'
   if (STEP_LABELS[step]) return STEP_LABELS[step]
 
   // Parse write_chX_sY
@@ -30,7 +30,7 @@ function getStepLabel(step: string | null | undefined): string {
   if (writeMatch) {
     const ch = parseInt(writeMatch[1]) + 1
     const s = parseInt(writeMatch[2]) + 1
-    return `Writing Chapter ${ch}, Section ${s}...`
+    return `Writing Chapter ${ch}, Scene ${s}...`
   }
 
   return step
@@ -116,66 +116,66 @@ export default function VibeGeneratingPage() {
   return (
     <div className="max-w-xl mx-auto text-center py-12">
       {/* Icon */}
-      <div className="mb-8">
+      <div className="mb-10">
         {status?.status === 'complete' ? (
-          <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-100 to-rose-100 rounded-full flex items-center justify-center shadow-lg shadow-amber-100/50">
+            <CheckCircle className="w-12 h-12 text-amber-600" />
           </div>
         ) : status?.status === 'failed' ? (
-          <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
-            <XCircle className="w-10 h-10 text-red-600" />
+          <div className="w-24 h-24 mx-auto bg-rose-50 rounded-full flex items-center justify-center">
+            <XCircle className="w-12 h-12 text-rose-500" />
           </div>
         ) : (
-          <div className="w-20 h-20 mx-auto bg-purple-100 rounded-full flex items-center justify-center relative">
-            <Sparkles className="w-10 h-10 text-purple-600" />
-            <div className="absolute inset-0 rounded-full border-4 border-purple-300 border-t-purple-600 animate-spin" />
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-100 to-rose-100 rounded-full flex items-center justify-center relative shadow-lg shadow-amber-100/50">
+            <Feather className="w-10 h-10 text-amber-700" />
+            <div className="absolute inset-0 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin" />
           </div>
         )}
       </div>
 
       {/* Title */}
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+      <h1 className="font-serif text-3xl md:text-4xl text-amber-950 tracking-tight mb-3">
         {status?.status === 'complete'
-          ? 'Your Book is Ready!'
+          ? 'Your book is ready!'
           : status?.status === 'failed'
-          ? 'Generation Failed'
-          : 'Creating Your Book'}
+          ? 'Something went sideways'
+          : 'Crafting your story'}
       </h1>
 
       {/* Step label */}
-      <p className="text-gray-600 mb-8">
+      <p className="text-lg text-amber-700/70 mb-10">
         {status?.status === 'complete'
-          ? 'Redirecting to your book...'
+          ? 'Taking you there now...'
           : status?.status === 'failed'
-          ? status.error || 'An error occurred'
+          ? status.error || 'We hit a snag.'
           : getStepLabel(status?.step)}
       </p>
 
       {/* Progress bar */}
       {status && status.status !== 'failed' && (
-        <div className="mb-8">
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+        <div className="mb-10">
+          <div className="h-2 bg-amber-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-500 ease-out"
               style={{ width: `${status.progress}%` }}
             />
           </div>
-          <p className="text-sm text-gray-500 mt-2">{status.progress}% complete</p>
+          <p className="text-sm text-amber-600/70 mt-3">{status.progress}% there</p>
         </div>
       )}
 
       {/* Error state */}
       {(error || status?.status === 'failed') && (
         <div className="space-y-4">
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error || status?.error || 'An error occurred during generation'}
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm">
+            {error || status?.error || "The muses got distracted. Let's try again."}
           </div>
           <button
             onClick={handleRetry}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-amber-950 text-amber-50 rounded-full font-medium hover:bg-amber-900 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
-            Try Again
+            Try again
           </button>
         </div>
       )}
@@ -184,21 +184,34 @@ export default function VibeGeneratingPage() {
       {status?.status === 'complete' && status.book_id && (
         <button
           onClick={() => router.push(`/vibe/read/${status.book_id}`)}
-          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-600 to-rose-500 text-white rounded-full font-medium text-lg shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-[1.02] transition-all duration-200"
         >
           <BookOpen className="w-5 h-5" />
-          Read Your Book
+          Start reading
         </button>
       )}
 
       {/* Loading hints */}
       {status?.status === 'running' && (
-        <div className="mt-12 p-6 bg-white rounded-xl border border-gray-200">
-          <h3 className="font-medium text-gray-900 mb-2">While you wait...</h3>
-          <p className="text-sm text-gray-600">
-            We&apos;re writing each section, checking for consistency, and ensuring
-            your characters stay true to themselves. This typically takes 2-5 minutes.
+        <div className="mt-12 p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-amber-100">
+          <h3 className="font-serif text-lg text-amber-900 mb-2">While you wait...</h3>
+          <p className="text-sm text-amber-700/70 leading-relaxed">
+            We&apos;re writing each scene, checking for consistency, and making sure
+            your characters stay true to themselves. This usually takes 2-5 minutes.
           </p>
+        </div>
+      )}
+
+      {/* Subtle ambient decoration */}
+      {status?.status === 'running' && (
+        <div className="mt-8 flex justify-center gap-1">
+          {[...Array(3)].map((_, i) => (
+            <span
+              key={i}
+              className="w-1.5 h-1.5 bg-amber-300 rounded-full animate-pulse"
+              style={{ animationDelay: `${i * 0.3}s` }}
+            />
+          ))}
         </div>
       )}
     </div>
