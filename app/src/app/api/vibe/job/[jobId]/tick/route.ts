@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { VibePreview, Constitution, VibeChapterPlan } from '@/types/chronicle'
+import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
 
 const anthropic = new Anthropic()
 
@@ -127,13 +128,18 @@ async function writeSection(
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
-    system: `You are writing a section of a book. Write engaging, publication-ready prose.
+    system: `You are a literary fiction writer crafting a section of a book. Your prose must feel human-authored, not AI-generated.
 
+${PROSE_SYSTEM_PROMPT}
+
+BOOK-SPECIFIC GUIDANCE:
 Voice: ${constitution.narrative_voice}
-Avoid: ${constitution.taboo_simplifications}
 Theme: ${constitution.central_thesis}
+Avoid: ${constitution.taboo_simplifications}
 
-Write approximately ${targetWords} words. The prose should flow naturally and advance the story.
+Write approximately ${targetWords} words.
+
+${PROSE_QUALITY_CHECKLIST}
 
 After the prose, provide a 1-2 sentence synopsis update for the "story so far".
 
@@ -156,7 +162,9 @@ Story so far: ${storySynopsis || 'Beginning of story'}
 ${context}
 
 Characters: ${preview.cast.map(c => `${c.name}: ${c.tagline}`).join('; ')}
-Setting: ${preview.setting}`
+Setting: ${preview.setting}
+
+Remember: Ground every moment in sensory detail. End on action or image, not explanation. Make dialogue messy and human. Vary your sentence rhythm.`
     }],
   })
 
@@ -218,8 +226,17 @@ async function rewriteSection(
     max_tokens: 4096,
     system: `Rewrite this section to fix the identified issues while maintaining the same general content and flow.
 
+${PROSE_SYSTEM_PROMPT}
+
 Voice: ${constitution.narrative_voice}
 Goal: ${sectionGoal}
+
+REVISION FOCUS:
+1. Fix the specific issues listed
+2. Add sensory detail to any paragraph missing it
+3. If any paragraph ends on a "realization" or moral, replace with action/image
+4. Ensure dialogue has pauses, stutters, or interruptions
+5. Vary sentence rhythm
 
 Return ONLY the rewritten prose, no JSON wrapper.`,
     messages: [{
@@ -228,7 +245,9 @@ Return ONLY the rewritten prose, no JSON wrapper.`,
 ${prose}
 
 Issues to fix:
-${issues.map((i, idx) => `${idx + 1}. ${i}`).join('\n')}`
+${issues.map((i, idx) => `${idx + 1}. ${i}`).join('\n')}
+
+Remember: The rewrite should feel MORE human, not less. Ground abstractions in physical reality.`
     }],
   })
 

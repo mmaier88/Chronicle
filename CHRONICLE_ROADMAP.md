@@ -159,6 +159,46 @@ Chronicle is an AI-native book writing system with two flows:
 
 ---
 
+## Phase 12: Prose Quality (De-AI-ification) 🚧
+
+**Goal:** Make generated prose feel authored by a real human, not an AI.
+
+### Voice & Style Rules
+
+- [x] Literary but grounded voice
+- [x] Concrete sensory imagery over abstract nouns
+- [x] Dynamic variance in sentence rhythm
+- [x] End scenes on action/image, not moral conclusions
+
+### Dialogue Rules
+
+- [x] Every line carries subtext (hidden agenda)
+- [x] Include micro-pauses, interruptions, non-verbal cues
+- [x] Contradiction between words and action
+
+### Quality Checks (Built into prompts)
+
+- [x] Sensory detail every paragraph (visual, sound, texture, smell, kinesthetic)
+- [x] Emotional complexity: character thoughts contain contradiction/uncertainty
+- [x] Character agency: hidden agendas drive choices
+- [x] No "thesis endings" (moral conclusions at paragraph/scene ends)
+
+### Revision Workflow (Multi-pass)
+
+- [x] Pass 1: Sensory enrichment
+- [x] Pass 2: Dialogue subtext injection
+- [x] Pass 3: Scene shape (action/image endings)
+- [x] Pass 4: Rhythm tuning (short beats, fragments)
+- [x] Pass 5: Cut restated thematic conclusions
+
+### Implementation
+
+- [x] `lib/prose-guidelines.ts` - Centralized prose writing prompts
+- [x] Updated `/api/vibe/job/[jobId]/tick` with humanization rules
+- [x] Updated `/api/ai/generate` for author mode
+
+---
+
 ## API Endpoints
 
 | Endpoint | Status |

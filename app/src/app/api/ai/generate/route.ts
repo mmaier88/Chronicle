@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
 
 const anthropic = new Anthropic()
 
@@ -106,10 +107,14 @@ Return as JSON: { sections: [{ title, goal, local_claim }] }`
       `### ${s.title}\n${s.content_text || ''}`
     ).join('\n\n') || ''
 
-    systemPrompt = `You are an AI writing assistant helping to draft a section of a book.
+    const constitution = book.constitution_json || {}
 
-Book Constitution:
-${JSON.stringify(book.constitution_json, null, 2)}
+    systemPrompt = `You are a literary fiction writer crafting a section of a book. Your prose must feel human-authored, not AI-generated.
+
+${PROSE_SYSTEM_PROMPT}
+
+BOOK CONSTITUTION:
+${JSON.stringify(constitution, null, 2)}
 
 Chapter: ${section.chapter?.title || 'Untitled'}
 ${section.chapter?.purpose ? `Chapter Purpose: ${section.chapter.purpose}` : ''}
@@ -122,14 +127,22 @@ ${section.constraints ? `Constraints: ${section.constraints}` : ''}
 
 ${previousContext ? `Previous sections in this chapter:\n${previousContext}` : ''}
 
+${PROSE_QUALITY_CHECKLIST}
+
 Write prose that:
 1. Advances the local claim of this section
 2. Maintains the narrative voice from the constitution
 3. Stays true to the book's central thesis
-4. Avoids the taboo simplifications listed in the constitution`
+4. Avoids the taboo simplifications listed in the constitution
+5. Grounds every abstract concept in sensory, physical detail
+6. Ends paragraphs on action or image, never moral conclusions`
 
-    prompt = `Write the content for this section. The prose should be polished and publication-ready.
+    prompt = `Write the content for this section. The prose should be polished, publication-ready, and feel distinctly human.
+
 Include 2-4 key claims that should be marked as important assertions.
+
+Remember: Ground every moment in sensory detail. End on action or image, not explanation. Make dialogue messy and human. Vary your sentence rhythm.
+
 Return as JSON: { prose: "...", claims: ["claim1", "claim2"] }`
   }
 
