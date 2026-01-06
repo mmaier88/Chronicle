@@ -1,6 +1,6 @@
-import { getUser } from '@/lib/supabase/server'
+import { getUser, createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Sparkles, BookOpen, User, LogOut, Library, Wand2 } from 'lucide-react'
+import { Sparkles, User, LogOut, Library, Wand2 } from 'lucide-react'
 import './app-theme.css'
 
 export default async function CreateLayout({
@@ -9,6 +9,15 @@ export default async function CreateLayout({
   children: React.ReactNode
 }) {
   const { user, isDevUser } = await getUser()
+
+  // Check if user has any books (for showing Remix link)
+  const supabase = await createClient()
+  const { count: bookCount } = await supabase
+    .from('books')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', user?.id)
+
+  const hasBooks = (bookCount || 0) > 0
 
   return (
     <div className="app-container">
@@ -26,10 +35,12 @@ export default async function CreateLayout({
               <span>Your Stories</span>
             </Link>
 
-            <Link href="/create/books" className="app-nav-link">
-              <Wand2 />
-              <span>Remix</span>
-            </Link>
+            {hasBooks && (
+              <Link href="/create/books" className="app-nav-link">
+                <Wand2 />
+                <span>Remix</span>
+              </Link>
+            )}
           </div>
 
           <div className="app-user">

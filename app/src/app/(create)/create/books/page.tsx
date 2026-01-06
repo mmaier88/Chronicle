@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Book } from '@/types/chronicle'
 import Link from 'next/link'
-import { BookOpen, Clock, FileText } from 'lucide-react'
-import { CreateBookButton } from '@/components/books/CreateBookButton'
+import { BookOpen, Clock, FileText, Wand2 } from 'lucide-react'
 
 export default async function BooksPage() {
   const supabase = await createClient()
@@ -22,20 +21,20 @@ export default async function BooksPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 className="app-heading-1">Your Books</h1>
-          <p className="app-body" style={{ marginTop: '0.25rem', opacity: 0.7 }}>Create and manage your book projects</p>
-        </div>
-        <CreateBookButton />
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 className="app-heading-1">Remix</h1>
+        <p className="app-body" style={{ marginTop: '0.25rem', opacity: 0.7 }}>
+          Edit and republish your stories
+        </p>
       </div>
 
       {typedBooks.length === 0 ? (
         <div className="app-card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <BookOpen style={{ width: 48, height: 48, color: 'var(--amber-warm)', margin: '0 auto 1rem', opacity: 0.6 }} />
-          <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>No books yet</h3>
-          <p className="app-body-sm" style={{ marginBottom: '1rem' }}>Get started by creating your first book project</p>
-          <CreateBookButton />
+          <Wand2 style={{ width: 48, height: 48, color: 'var(--amber-warm)', margin: '0 auto 1rem', opacity: 0.6 }} />
+          <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>No stories to remix yet</h3>
+          <p className="app-body-sm">
+            Create a story first, then come back here to edit and republish it
+          </p>
         </div>
       ) : (
         <div className="app-grid-3">
