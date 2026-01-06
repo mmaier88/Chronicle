@@ -38,16 +38,15 @@ export default async function LandingPage() {
             </svg>
           </Link>
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="landing-footer">
-        <p className="footer-brand">Chronicle</p>
-        <div className="footer-links">
-          <Link href="/imprint">Imprint</Link>
-          <Link href="/privacy">Privacy Policy</Link>
-        </div>
-      </footer>
+        {/* Footer */}
+        <footer className="landing-footer">
+          <div className="footer-links">
+            <Link href="/imprint">Imprint</Link>
+            <Link href="/privacy">Privacy Policy</Link>
+          </div>
+        </footer>
+      </section>
     </div>
   )
 }

@@ -2,19 +2,19 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 import { Queue } from 'bullmq';
-import { Redis } from 'ioredis';
 
 const router = Router();
 
 // Initialize Prisma
 const prisma = new PrismaClient();
 
-// Initialize Redis and Queue
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null
+// Initialize Queue with connection config (BullMQ creates its own Redis connection)
+const bookQueue = new Queue('chronicle-books', {
+  connection: {
+    host: process.env.REDIS_HOST || 'redis',
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+  }
 });
-
-const bookQueue = new Queue('chronicle-books', { connection: redis });
 
 /**
  * Request body schema for creating a book
