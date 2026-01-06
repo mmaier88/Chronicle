@@ -1,13 +1,13 @@
 import { Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
-import IORedis from 'ioredis';
+import { Redis } from 'ioredis';
 import { Orchestrator, BookJobInput } from './orchestrator.js';
 
 // Initialize Prisma
 const prisma = new PrismaClient();
 
 // Initialize Redis connection
-const redis = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: null
 });
 

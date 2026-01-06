@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import IORedis from 'ioredis';
+import { Redis } from 'ioredis';
 
 const router = Router();
 
 // Initialize clients
 const prisma = new PrismaClient();
-const redis = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
   lazyConnect: true
 });

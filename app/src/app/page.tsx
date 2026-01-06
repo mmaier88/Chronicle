@@ -44,8 +44,8 @@ export default async function LandingPage() {
       <footer className="landing-footer">
         <p className="footer-brand">Chronicle</p>
         <div className="footer-links">
-          <Link href="/legal">Imprint</Link>
-          <Link href="/legal">Privacy Policy</Link>
+          <Link href="/imprint">Imprint</Link>
+          <Link href="/privacy">Privacy Policy</Link>
         </div>
       </footer>
     </div>
