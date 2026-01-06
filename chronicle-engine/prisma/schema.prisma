@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Job status enumeration
+enum JobStatus {
+  queued
+  running
+  succeeded
+  failed
+}
+
+/// Book generation job - tracks the overall generation process
+model BookJob {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  /// Current job status
+  status      JobStatus @default(queued)
+
+  /// Progress (0-100)
+  progress    Int       @default(0)
+
+  /// Human-readable progress message
+  message     String    @default("Queued")
+
+  /// Input parameters as JSON
+  /// { prompt: string, genre: string, target_length_words: number, voice?: string }
+  input       Json
+
+  /// Reference to final output (null until succeeded)
+  manuscriptId String?  @unique @map("manuscript_id")
+  manuscript   Manuscript? @relation(fields: [manuscriptId], references: [id])
+
+  /// Error message if failed
+  error       String?
+
+  /// All checkpoints for this job
+  checkpoints NarrativeCheckpoint[]
+
+  @@map("book_jobs")
+}
+
+/// Checkpoint - snapshot of NarrativeState at a point in generation
+model NarrativeCheckpoint {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  /// Parent job
+  jobId       String    @map("job_id")
+  job         BookJob   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  /// Phase identifier (e.g., "act1_scene3_after_edit")
+  phase       String
+
+  /// Full NarrativeState as JSON
+  narrativeState Json   @map("narrative_state")
+
+  /// Scene metadata for accepted scenes (not full text unless debugging)
+  acceptedScenes Json   @default("[]") @map("accepted_scenes")
+
+  /// Debug notes (internal only)
+  notes       Json      @default("{}")
+
+  @@index([jobId])
+  @@map("narrative_checkpoints")
+}
+
+/// Final manuscript output
+model Manuscript {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  /// The complete book text
+  content     String
+
+  /// Statistics as JSON
+  /// { word_count: number, chapter_count: number, act_count: number }
+  stats       Json
+
+  /// Title derived during generation
+  title       String
+
+  /// Blurb/summary
+  blurb       String?
+
+  /// The job that created this manuscript
+  job         BookJob?
+
+  @@map("manuscripts")
+}
+
+/// Scene storage for debugging (optional - scenes typically discarded after editing)
+model RawScene {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  /// Job reference
+  jobId       String    @map("job_id")
+
+  /// Scene identifier
+  sceneId     String    @map("scene_id")
+
+  /// Raw text before editing
+  rawText     String    @map("raw_text")
+
+  /// Edited text after Editor pass
+  editedText  String?   @map("edited_text")
+
+  /// Fingerprint JSON
+  fingerprint Json?
+
+  /// Editor decision: ACCEPT, REWRITE, MERGE, REGENERATE, DROP
+  decision    String?
+
+  /// Whether this scene was included in final manuscript
+  included    Boolean   @default(false)
+
+  @@index([jobId])
+  @@index([sceneId])
+  @@map("raw_scenes")
+}

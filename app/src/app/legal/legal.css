@@ -1,0 +1,141 @@
+.legal-page {
+  --night-deepest: #0a0f18;
+  --night-deep: #141e30;
+  --moon-light: #faf6ed;
+  --moon-mid: #f5f0e6;
+  --moon-soft: #e8e0d0;
+  --amber-warm: #d4a574;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  min-height: 100vh;
+  background: var(--night-deep);
+  color: var(--moon-mid);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+}
+
+.legal-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 2rem 5rem;
+}
+
+.legal-back {
+  display: inline-block;
+  font-size: 0.9rem;
+  color: var(--amber-warm);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: opacity 0.2s;
+}
+
+.legal-back:hover {
+  opacity: 0.8;
+}
+
+.legal-title {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  font-weight: 500;
+  color: var(--moon-light);
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.legal-subtitle {
+  font-size: 1.1rem;
+  color: var(--moon-soft);
+  opacity: 0.7;
+  margin-bottom: 3rem;
+}
+
+.legal-section {
+  margin-bottom: 3rem;
+}
+
+.legal-section h2 {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--moon-light);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(250, 246, 237, 0.1);
+}
+
+.legal-section h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--moon-light);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.legal-section h4 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--amber-warm);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.legal-section p {
+  margin-bottom: 1rem;
+  color: var(--moon-soft);
+}
+
+.legal-section ul {
+  margin: 0.75rem 0 1rem 1.5rem;
+  color: var(--moon-soft);
+}
+
+.legal-section li {
+  margin-bottom: 0.4rem;
+}
+
+.legal-note {
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.legal-address {
+  background: rgba(250, 246, 237, 0.03);
+  border: 1px solid rgba(250, 246, 237, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.legal-address p {
+  margin-bottom: 0.25rem;
+}
+
+.legal-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 165, 116, 0.3), transparent);
+  margin: 4rem 0;
+}
+
+.legal-footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(250, 246, 237, 0.08);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .legal-container {
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  .legal-title {
+    font-size: 2rem;
+  }
+
+  .legal-section h2 {
+    font-size: 1.5rem;
+  }
+}

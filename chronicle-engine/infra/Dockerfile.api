@@ -1,0 +1,55 @@
+# Chronicle API Dockerfile
+FROM node:20-alpine AS base
+
+# Install dependencies
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/core/package.json ./packages/core/
+COPY prisma ./prisma/
+
+# Install dependencies
+FROM base AS deps
+RUN npm install --frozen-lockfile 2>/dev/null || npm install
+
+# Build
+FROM deps AS builder
+COPY tsconfig.json ./
+COPY apps/api ./apps/api/
+COPY packages/core ./packages/core/
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build packages
+RUN npm run build --workspace=packages/core
+RUN npm run build --workspace=apps/api
+
+# Production image
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Copy built files
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/core/dist ./packages/core/dist
+COPY --from=builder /app/packages/core/package.json ./packages/core/
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/
+COPY --from=builder /app/prisma ./prisma
+
+# Generate Prisma client in production
+RUN npx prisma generate
+
+EXPOSE 3000
+
+CMD ["node", "apps/api/dist/index.js"]

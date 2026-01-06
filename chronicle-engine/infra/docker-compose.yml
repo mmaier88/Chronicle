@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: chronicle-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chronicle
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chronicle_secret}
+      POSTGRES_DB: chronicle
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chronicle -d chronicle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chronicle-net
+
+  # Redis for job queue
+  redis:
+    image: redis:7-alpine
+    container_name: chronicle-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chronicle-net
+
+  # Chronicle API
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    container_name: chronicle-api
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://chronicle:${POSTGRES_PASSWORD:-chronicle_secret}@postgres:5432/chronicle
+      REDIS_URL: redis://redis:6379
+      CHRONICLE_API_KEY: ${CHRONICLE_API_KEY}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - chronicle-net
+    labels:
+      - "caddy=chronicle.${DOMAIN:-localhost}"
+      - "caddy.reverse_proxy={{upstreams 3000}}"
+
+  # Chronicle Worker
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    container_name: chronicle-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://chronicle:${POSTGRES_PASSWORD:-chronicle_secret}@postgres:5432/chronicle
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-20250514}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chronicle-net
+
+  # Caddy reverse proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: chronicle-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    networks:
+      - chronicle-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  chronicle-net:
+    driver: bridge
