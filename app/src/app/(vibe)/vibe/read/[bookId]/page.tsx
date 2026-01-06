@@ -1,7 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Sparkles, Clock } from 'lucide-react'
+import { ArrowLeft, BookOpen, Sparkles, Clock, Headphones } from 'lucide-react'
+import { SectionAudioPlayer } from '@/components/audio/SectionAudioPlayer'
 
 interface Chapter {
   id: string
@@ -23,12 +24,13 @@ export default async function VibeReadPage({
   params: Promise<{ bookId: string }>
 }) {
   const { bookId } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isDevUser } = await getUser()
 
   if (!user) {
     notFound()
   }
+
+  const supabase = isDevUser ? createServiceClient() : await createClient()
 
   // Fetch book
   const { data: book, error: bookError } = await supabase
@@ -95,6 +97,10 @@ export default async function VibeReadPage({
             <Clock className="w-4 h-4" />
             ~{Math.ceil(totalWords / 250)} min read
           </span>
+          <span className="flex items-center gap-1.5">
+            <Headphones className="w-4 h-4" />
+            ~{Math.ceil(totalWords / 150)} min listen
+          </span>
         </div>
       </header>
 
@@ -139,9 +145,19 @@ export default async function VibeReadPage({
             <div className="space-y-8">
               {chapter.sections.map((section) => (
                 <div key={section.id}>
-                  {chapter.sections.length > 1 && (
-                    <h3 className="font-serif text-lg text-amber-900 mb-4">{section.title}</h3>
-                  )}
+                  <div className="flex items-center justify-between mb-4">
+                    {chapter.sections.length > 1 ? (
+                      <h3 className="font-serif text-lg text-amber-900">{section.title}</h3>
+                    ) : (
+                      <div />
+                    )}
+                    {section.content_text && (
+                      <SectionAudioPlayer
+                        sectionId={section.id}
+                        sectionTitle={section.title}
+                      />
+                    )}
+                  </div>
                   <div className="text-amber-900/90 leading-relaxed text-lg whitespace-pre-wrap font-serif">
                     {section.content_text || (
                       <span className="text-amber-400 italic">This section is still being written...</span>

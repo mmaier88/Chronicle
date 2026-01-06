@@ -48,14 +48,14 @@ export function CreateBookButton() {
     setTitle('')
     setCoreQuestion('')
     setIsOpen(false)
-    router.push(`/books/${data.id}`)
+    router.push(`/vibe/books/${data.id}`)
   }
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+        className="flex items-center gap-2 bg-amber-900 text-white px-4 py-2 rounded-lg hover:bg-amber-800 transition-colors"
       >
         <Plus className="w-4 h-4" />
         New Book
@@ -63,12 +63,12 @@ export function CreateBookButton() {
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">Create New Book</h2>
+          <div className="bg-amber-50 rounded-lg shadow-xl w-full max-w-md mx-4 border border-amber-200">
+            <div className="flex items-center justify-between p-4 border-b border-amber-200">
+              <h2 className="text-lg font-semibold text-amber-900">Create New Book</h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-amber-600 hover:text-amber-800"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -76,7 +76,7 @@ export function CreateBookButton() {
 
             <form onSubmit={handleCreate} className="p-4 space-y-4">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="title" className="block text-sm font-medium text-amber-800 mb-1">
                   Book Title *
                 </label>
                 <input
@@ -85,20 +85,20 @@ export function CreateBookButton() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter your book title"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent bg-white"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="genre" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="genre" className="block text-sm font-medium text-amber-800 mb-1">
                   Genre
                 </label>
                 <select
                   id="genre"
                   value={genre}
                   onChange={(e) => setGenre(e.target.value as BookGenre)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent bg-white"
                 >
                   <option value="non_fiction">Non-Fiction</option>
                   <option value="literary_fiction">Literary Fiction</option>
@@ -106,7 +106,7 @@ export function CreateBookButton() {
               </div>
 
               <div>
-                <label htmlFor="coreQuestion" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="coreQuestion" className="block text-sm font-medium text-amber-800 mb-1">
                   Core Question
                 </label>
                 <textarea
@@ -115,7 +115,7 @@ export function CreateBookButton() {
                   onChange={(e) => setCoreQuestion(e.target.value)}
                   placeholder="What central question does this book explore?"
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent resize-none bg-white"
                 />
               </div>
 
@@ -123,14 +123,14 @@ export function CreateBookButton() {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors text-amber-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading || !title.trim()}
-                  className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-amber-900 text-white rounded-lg hover:bg-amber-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Creating...' : 'Create Book'}
                 </button>

@@ -1,26 +1,34 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { VibePreview, BookGenre, Constitution } from '@/types/chronicle'
+
+type BookLength = 30 | 60 | 120 | 300
 
 interface CreateJobRequest {
   genre: BookGenre
   prompt: string
   preview: VibePreview
+  length?: BookLength
 }
 
 // Rate limit: max jobs per user per day
 const MAX_JOBS_PER_DAY = 5
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isDevUser } = await getUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Use service client for dev users to bypass RLS
+  const supabase = isDevUser ? createServiceClient() : await createClient()
+
   const body: CreateJobRequest = await request.json()
-  const { genre, prompt, preview } = body
+  const { genre, prompt, preview, length = 30 } = body
+
+  // Include length in preview for tick route to access
+  const previewWithLength = { ...preview, targetPages: length }
 
   if (!genre || !prompt || !preview) {
     return NextResponse.json({ error: 'Genre, prompt, and preview are required' }, { status: 400 })
@@ -78,7 +86,7 @@ export async function POST(request: NextRequest) {
       book_id: book.id,
       genre: genre,
       user_prompt: prompt,
-      preview: preview,
+      preview: previewWithLength,
       status: 'queued',
       step: 'created',
       progress: 0,
@@ -103,12 +111,13 @@ export async function POST(request: NextRequest) {
 
 // GET: List user's vibe jobs
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isDevUser } = await getUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const supabase = isDevUser ? createServiceClient() : await createClient()
 
   const { data: jobs, error } = await supabase
     .from('vibe_jobs')

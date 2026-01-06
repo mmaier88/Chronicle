@@ -30,6 +30,8 @@ export interface Book {
   constitution_json: Constitution
   constitution_locked: boolean
   constitution_locked_at: string | null
+  audio_voice_id: string | null
+  audio_voice_name: string | null
   created_at: string
   updated_at: string
 }
@@ -180,4 +182,31 @@ export interface VibeSectionPlan {
   title: string
   goal: string
   target_words: number
+}
+
+// =============================================================================
+// AUDIO TTS TYPES
+// =============================================================================
+
+export type AudioStatus = 'pending' | 'generating' | 'ready' | 'failed'
+
+export interface SectionAudio {
+  id: string
+  section_id: string
+  content_hash: string
+  storage_path: string
+  voice_id: string
+  voice_name: string | null
+  duration_seconds: number | null
+  file_size_bytes: number | null
+  status: AudioStatus
+  error_message: string | null
+  created_at: string
+  last_accessed_at: string
+}
+
+export interface AudioVoice {
+  id: string
+  name: string
+  description: string
 }

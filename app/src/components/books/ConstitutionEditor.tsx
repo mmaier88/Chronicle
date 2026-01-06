@@ -84,9 +84,9 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
   const isComplete = Object.values(constitution).every(v => v !== null && v !== '')
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-white/80 rounded-lg border border-amber-200/60 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Constitution</h2>
+        <h2 className="text-lg font-semibold text-amber-900">Constitution</h2>
         {book.constitution_locked ? (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Lock className="w-4 h-4" />
@@ -114,12 +114,12 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
       <div className="space-y-4">
         {CONSTITUTION_FIELDS.map(({ key, label, placeholder }) => (
           <div key={key}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-amber-800 mb-1">
               {label}
             </label>
             {book.constitution_locked ? (
-              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                {constitution[key] || <span className="text-gray-400">Not set</span>}
+              <p className="text-sm text-amber-700 bg-amber-50/50 p-3 rounded-lg">
+                {constitution[key] || <span className="text-amber-400">Not set</span>}
               </p>
             ) : (
               <textarea
@@ -127,7 +127,7 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
                 onChange={(e) => updateField(key, e.target.value)}
                 placeholder={placeholder}
                 rows={2}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent resize-none bg-white"
               />
             )}
           </div>
@@ -139,7 +139,7 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
           <button
             onClick={handleSave}
             disabled={isSaving || !hasChanges}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-amber-300 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-amber-800"
           >
             <Save className="w-4 h-4" />
             {isSaving ? 'Saving...' : 'Save Draft'}
@@ -147,7 +147,7 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
           <button
             onClick={handleLock}
             disabled={isLocking || !isComplete}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-900 text-white rounded-lg hover:bg-amber-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Lock className="w-4 h-4" />
             {isLocking ? 'Locking...' : 'Lock Constitution'}
@@ -156,7 +156,7 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
       )}
 
       {!book.constitution_locked && !isComplete && (
-        <p className="text-xs text-gray-500 mt-3 text-center">
+        <p className="text-xs text-amber-600/70 mt-3 text-center">
           Fill in all fields to enable locking
         </p>
       )}

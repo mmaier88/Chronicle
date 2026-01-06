@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Sparkles, BookOpen, Clock } from 'lucide-react'
 
 export default async function VibeLandingPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user } = await getUser()
 
   // Fetch user's recent vibe books
   const { data: vibeBooks } = await supabase
@@ -23,16 +23,16 @@ export default async function VibeLandingPage() {
           {/* Tiny sparkle accent */}
           <div className="flex items-center gap-2 text-amber-600 mb-6">
             <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium tracking-wide uppercase">Magic awaits</span>
+            <span className="text-sm font-medium tracking-wide uppercase">Stories made for you</span>
           </div>
 
           {/* Big editorial title */}
           <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-medium text-amber-950 tracking-tight leading-[1.1] mb-6">
-            Vibe a Book
+            Chronicle
           </h1>
 
           <p className="text-xl md:text-2xl text-amber-800/70 leading-relaxed mb-10 max-w-xl">
-            A short book, generated just for you. Pick a genre, give us a vibe, and we&apos;ll write the rest.
+            Original stories shaped around your taste. Share what you&apos;re drawn to, and we&apos;ll craft something magical just for you.
           </p>
 
           {/* CTA */}
@@ -42,7 +42,7 @@ export default async function VibeLandingPage() {
               className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-600 to-rose-500 text-white rounded-full font-medium text-lg shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-[1.02] transition-all duration-200"
             >
               <Sparkles className="w-5 h-5" />
-              Start creating
+              Find Your Story
             </Link>
           </div>
         </div>
@@ -52,9 +52,9 @@ export default async function VibeLandingPage() {
       <section>
         <div className="flex flex-wrap gap-3">
           {[
-            { icon: '✨', text: '~30 pages of magic' },
-            { icon: '🎭', text: 'Your vibe, your voice' },
-            { icon: '🤫', text: 'No outline spoilers' },
+            { icon: '✨', text: 'Stories that feel like you' },
+            { icon: '📖', text: 'Complete books, not snippets' },
+            { icon: '🌙', text: 'Crafted with care' },
           ].map((chip, idx) => (
             <div
               key={idx}
@@ -72,18 +72,18 @@ export default async function VibeLandingPage() {
         {[
           {
             step: '01',
-            title: 'Pick your vibe',
-            desc: 'Choose a genre and describe the feeling you want.',
+            title: 'Share what you\'re drawn to',
+            desc: 'Tell us the feeling, tone, or spark of an idea.',
           },
           {
             step: '02',
-            title: 'Edit the cover',
-            desc: 'You approve the back-cover blurb. No spoilers.',
+            title: 'Meet your story',
+            desc: 'Preview the back cover. Adjust if you like.',
           },
           {
             step: '03',
-            title: 'Read your book',
-            desc: 'We write it. You enjoy it. Simple as that.',
+            title: 'Discover what unfolds',
+            desc: 'Your book is crafted and ready to read.',
           },
         ].map((item, idx) => (
           <div key={idx} className="group">
@@ -102,7 +102,7 @@ export default async function VibeLandingPage() {
             {vibeBooks.map((book) => (
               <Link
                 key={book.id}
-                href={book.status === 'final' ? `/vibe/read/${book.id}` : `/books/${book.id}`}
+                href={book.status === 'final' ? `/vibe/read/${book.id}` : `/vibe/books/${book.id}`}
                 className="flex items-center justify-between p-5 bg-white/70 backdrop-blur-sm border border-amber-100 rounded-2xl hover:bg-white hover:shadow-lg hover:shadow-amber-100/50 transition-all duration-200 group"
               >
                 <div className="flex items-center gap-4">
@@ -138,12 +138,12 @@ export default async function VibeLandingPage() {
 
       {/* Bottom CTA */}
       <section className="text-center py-12">
-        <p className="text-amber-700/60 mb-6 text-lg">Ready to create something wonderful?</p>
+        <p className="text-amber-700/60 mb-6 text-lg">Ready to find your story?</p>
         <Link
           href="/vibe/new"
           className="inline-flex items-center gap-2 px-6 py-3 bg-amber-950 text-amber-50 rounded-full font-medium hover:bg-amber-900 transition-colors"
         >
-          Let&apos;s go
+          Let&apos;s begin
           <span className="text-amber-400">→</span>
         </Link>
       </section>

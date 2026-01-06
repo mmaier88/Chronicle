@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation'
 import { Sparkles, RefreshCw, Loader2, Wand2 } from 'lucide-react'
 import { VibePreview, BookGenre } from '@/types/chronicle'
 
+type BookLength = 30 | 60 | 120 | 300
+
 interface VibeDraft {
   genre: BookGenre
   prompt: string
   preview: VibePreview
+  length?: BookLength
 }
 
 export default function VibePreviewPage() {
@@ -116,6 +119,7 @@ export default function VibePreviewPage() {
           genre: draft.genre,
           prompt: draft.prompt,
           preview: editedPreview,
+          length: draft.length || 30,
         }),
       })
 
@@ -345,7 +349,7 @@ export default function VibePreviewPage() {
         </button>
 
         <p className="text-center text-sm text-amber-500">
-          This will create a ~30 page book. Takes a few minutes.
+          This will create a ~{draft.length || 30} page book. {(draft.length || 30) >= 120 ? 'This may take a while.' : 'Takes a few minutes.'}
         </p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { VibePreview, Constitution, VibeChapterPlan } from '@/types/chronicle'
@@ -8,9 +8,31 @@ import { QUICK_POLISH_PROMPT } from '@/lib/polish-pipeline'
 const anthropic = new Anthropic()
 
 const MAX_RETRIES = 3
-const TARGET_WORD_COUNT = 8500 // ~30 pages
-const CHAPTERS_TARGET = 7
-const SECTIONS_PER_CHAPTER = 2
+
+// Book length configurations
+type BookLength = 30 | 60 | 120 | 300
+
+interface BookConfig {
+  wordCount: number
+  chapters: number
+  sectionsPerChapter: number
+  wordsPerSection: number
+}
+
+function getBookConfig(targetPages: BookLength): BookConfig {
+  switch (targetPages) {
+    case 30:
+      return { wordCount: 8500, chapters: 7, sectionsPerChapter: 2, wordsPerSection: 600 }
+    case 60:
+      return { wordCount: 17000, chapters: 12, sectionsPerChapter: 2, wordsPerSection: 700 }
+    case 120:
+      return { wordCount: 34000, chapters: 20, sectionsPerChapter: 2, wordsPerSection: 850 }
+    case 300:
+      return { wordCount: 85000, chapters: 35, sectionsPerChapter: 3, wordsPerSection: 800 }
+    default:
+      return { wordCount: 8500, chapters: 7, sectionsPerChapter: 2, wordsPerSection: 600 }
+  }
+}
 
 interface VibeJob {
   id: string
@@ -71,14 +93,14 @@ Characters: ${preview.cast.map(c => `${c.name}: ${c.tagline}`).join('; ')}`
 }
 
 // Generate chapter/section plan
-async function generatePlan(preview: VibePreview, constitution: Constitution): Promise<VibeChapterPlan[]> {
-  const wordsPerSection = Math.round(TARGET_WORD_COUNT / (CHAPTERS_TARGET * SECTIONS_PER_CHAPTER))
+async function generatePlan(preview: VibePreview, constitution: Constitution, config: BookConfig): Promise<VibeChapterPlan[]> {
+  const targetPages = (preview as VibePreview & { targetPages?: number }).targetPages || 30
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
-    system: `You are planning a ~30 page book (${TARGET_WORD_COUNT} words total) with ${CHAPTERS_TARGET} chapters.
-Each chapter has ${SECTIONS_PER_CHAPTER} sections, each ~${wordsPerSection} words.
+    system: `You are planning a ~${targetPages} page book (${config.wordCount} words total) with ${config.chapters} chapters.
+Each chapter has ${config.sectionsPerChapter} sections, each ~${config.wordsPerSection} words.
 
 Return ONLY valid JSON array:
 [
@@ -86,7 +108,7 @@ Return ONLY valid JSON array:
     "title": "Chapter title",
     "purpose": "What this chapter accomplishes",
     "sections": [
-      { "title": "Section title", "goal": "What happens/is explored", "target_words": ${wordsPerSection} }
+      { "title": "Section title", "goal": "What happens/is explored", "target_words": ${config.wordsPerSection} }
     ]
   }
 ]
@@ -296,12 +318,13 @@ export async function POST(
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   const { jobId } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, isDevUser } = await getUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const supabase = isDevUser ? createServiceClient() : await createClient()
 
   // Fetch job
   const { data: job, error: jobError } = await supabase
@@ -384,7 +407,9 @@ export async function POST(
     // STEP: Plan chapters/sections
     if (step === 'plan') {
       const constitution = book.constitution_json as Constitution
-      const plan = await generatePlan(preview, constitution)
+      const targetPages = ((preview as VibePreview & { targetPages?: number }).targetPages || 30) as BookLength
+      const bookConfig = getBookConfig(targetPages)
+      const plan = await generatePlan(preview, constitution, bookConfig)
 
       // Create chapters and sections in DB
       for (let chIdx = 0; chIdx < plan.length; chIdx++) {

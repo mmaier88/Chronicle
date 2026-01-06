@@ -2,22 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Feather, BookOpen, Sparkles, Loader2, Shuffle } from 'lucide-react'
+import { Sparkles, Loader2, Shuffle } from 'lucide-react'
 import { BookGenre } from '@/types/chronicle'
 
-const GENRES: { value: BookGenre; label: string; emoji: string; vibe: string }[] = [
-  {
-    value: 'literary_fiction',
-    label: 'Literary Fiction',
-    emoji: '✨',
-    vibe: 'Character-driven, thematic depth',
-  },
-  {
-    value: 'non_fiction',
-    label: 'Non-Fiction',
-    emoji: '📖',
-    vibe: 'Essays, ideas, real-world tales',
-  },
+// Only literary fiction for now
+const DEFAULT_GENRE: BookGenre = 'literary_fiction'
+
+// Book length options
+type BookLength = 30 | 60 | 120 | 300
+
+const LENGTH_OPTIONS: { value: BookLength; label: string; description: string }[] = [
+  { value: 30, label: 'Short Story', description: '~30 pages · 15 min read' },
+  { value: 60, label: 'Novella', description: '~60 pages · 30 min read' },
+  { value: 120, label: 'Short Novel', description: '~120 pages · 1 hour read' },
+  { value: 300, label: 'Full Novel', description: '~300 pages · 2.5 hours read' },
 ]
 
 const PROMPT_SEEDS = [
@@ -30,8 +28,8 @@ const PROMPT_SEEDS = [
 
 export default function VibeNewPage() {
   const router = useRouter()
-  const [selectedGenre, setSelectedGenre] = useState<BookGenre | null>(null)
   const [prompt, setPrompt] = useState('')
+  const [length, setLength] = useState<BookLength>(30)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,7 +39,7 @@ export default function VibeNewPage() {
   }
 
   const handleSubmit = async () => {
-    if (!selectedGenre || !prompt.trim()) return
+    if (!prompt.trim()) return
 
     setIsGenerating(true)
     setError(null)
@@ -51,7 +49,7 @@ export default function VibeNewPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          genre: selectedGenre,
+          genre: DEFAULT_GENRE,
           prompt: prompt.trim(),
         }),
       })
@@ -66,9 +64,10 @@ export default function VibeNewPage() {
 
       // Store in localStorage for the preview page
       localStorage.setItem('vibe_draft', JSON.stringify({
-        genre: selectedGenre,
+        genre: DEFAULT_GENRE,
         prompt: prompt.trim(),
         preview: data.preview,
+        length: length,
       }))
 
       router.push('/vibe/preview')
@@ -78,51 +77,26 @@ export default function VibeNewPage() {
     }
   }
 
-  const isValid = selectedGenre && prompt.trim().length >= 20
+  const isValid = prompt.trim().length >= 20
 
   return (
     <div className="max-w-xl mx-auto">
       {/* Header */}
       <div className="mb-12">
         <h1 className="font-serif text-3xl md:text-4xl text-amber-950 tracking-tight mb-3">
-          Let&apos;s create something magic
+          Let&apos;s create something magical
         </h1>
         <p className="text-amber-700/70 text-lg">
-          Pick a genre. Give us a vibe. We&apos;ll write the rest.
+          Share what you&apos;re drawn to. We&apos;ll craft the rest.
         </p>
       </div>
 
       <div className="space-y-10">
-        {/* Genre Picker */}
-        <section>
-          <label className="block text-sm font-medium text-amber-800 mb-4">
-            What kind of story?
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {GENRES.map((genre) => (
-              <button
-                key={genre.value}
-                onClick={() => setSelectedGenre(genre.value)}
-                disabled={isGenerating}
-                className={`p-5 rounded-2xl text-left transition-all duration-200 ${
-                  selectedGenre === genre.value
-                    ? 'bg-white border-2 border-amber-500 shadow-lg shadow-amber-100'
-                    : 'bg-white/50 border-2 border-transparent hover:bg-white hover:border-amber-200'
-                }`}
-              >
-                <span className="text-2xl mb-2 block">{genre.emoji}</span>
-                <h3 className="font-serif text-lg text-amber-950 mb-1">{genre.label}</h3>
-                <p className="text-sm text-amber-600/70">{genre.vibe}</p>
-              </button>
-            ))}
-          </div>
-        </section>
-
         {/* Prompt Input */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <label className="block text-sm font-medium text-amber-800">
-              What&apos;s the vibe?
+              What are you drawn to?
             </label>
             <button
               onClick={handleSurpriseMe}
@@ -143,6 +117,30 @@ export default function VibeNewPage() {
           <p className="text-sm text-amber-500 mt-2">
             1–5 sentences. Don&apos;t overthink it.
           </p>
+        </section>
+
+        {/* Length Picker */}
+        <section>
+          <label className="block text-sm font-medium text-amber-800 mb-4">
+            How long should it be?
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            {LENGTH_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setLength(option.value)}
+                disabled={isGenerating}
+                className={`p-4 rounded-xl text-left transition-all duration-200 ${
+                  length === option.value
+                    ? 'bg-white border-2 border-amber-500 shadow-md'
+                    : 'bg-white/50 border-2 border-transparent hover:bg-white hover:border-amber-200'
+                }`}
+              >
+                <h3 className="font-medium text-amber-950">{option.label}</h3>
+                <p className="text-xs text-amber-600/70 mt-0.5">{option.description}</p>
+              </button>
+            ))}
+          </div>
         </section>
 
         {/* Error */}

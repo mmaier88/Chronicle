@@ -54,7 +54,7 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
       : '<p>Start writing your section here...</p>',
     editorProps: {
       attributes: {
-        class: 'prose prose-gray max-w-none focus:outline-none min-h-[400px] p-4',
+        class: 'prose prose-amber max-w-none focus:outline-none min-h-[400px] p-4',
       },
     },
     editable: section.status !== 'canonical',
@@ -201,47 +201,47 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
   return (
     <div className="grid gap-6 lg:grid-cols-4">
       <div className="lg:col-span-3">
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-white/80 rounded-lg border border-amber-200/60">
           {section.status !== 'canonical' && editor && (
-            <div className="flex items-center justify-between p-2 border-b border-gray-200">
+            <div className="flex items-center justify-between p-2 border-b border-amber-200/60">
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => editor.chain().focus().toggleBold().run()}
-                  className={`p-2 rounded hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-100' : ''}`}
+                  className={`p-2 rounded hover:bg-amber-100 ${editor.isActive('bold') ? 'bg-amber-100' : ''}`}
                   title="Bold"
                 >
-                  <Bold className="w-4 h-4" />
+                  <Bold className="w-4 h-4 text-amber-800" />
                 </button>
                 <button
                   onClick={() => editor.chain().focus().toggleItalic().run()}
-                  className={`p-2 rounded hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-100' : ''}`}
+                  className={`p-2 rounded hover:bg-amber-100 ${editor.isActive('italic') ? 'bg-amber-100' : ''}`}
                   title="Italic"
                 >
-                  <Italic className="w-4 h-4" />
+                  <Italic className="w-4 h-4 text-amber-800" />
                 </button>
                 <button
                   onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                  className={`p-2 rounded hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-100' : ''}`}
+                  className={`p-2 rounded hover:bg-amber-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-amber-100' : ''}`}
                   title="Heading"
                 >
-                  <Heading2 className="w-4 h-4" />
+                  <Heading2 className="w-4 h-4 text-amber-800" />
                 </button>
                 <button
                   onClick={() => editor.chain().focus().toggleBulletList().run()}
-                  className={`p-2 rounded hover:bg-gray-100 ${editor.isActive('bulletList') ? 'bg-gray-100' : ''}`}
+                  className={`p-2 rounded hover:bg-amber-100 ${editor.isActive('bulletList') ? 'bg-amber-100' : ''}`}
                   title="Bullet List"
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-4 h-4 text-amber-800" />
                 </button>
                 <button
                   onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                  className={`p-2 rounded hover:bg-gray-100 ${editor.isActive('orderedList') ? 'bg-gray-100' : ''}`}
+                  className={`p-2 rounded hover:bg-amber-100 ${editor.isActive('orderedList') ? 'bg-amber-100' : ''}`}
                   title="Numbered List"
                 >
-                  <ListOrdered className="w-4 h-4" />
+                  <ListOrdered className="w-4 h-4 text-amber-800" />
                 </button>
 
-                <div className="w-px h-6 bg-gray-200 mx-2" />
+                <div className="w-px h-6 bg-amber-200 mx-2" />
 
                 <button
                   onClick={() => editor.chain().focus().setClaimBlock({ stance: 'pro' }).run()}
@@ -279,7 +279,7 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50"
                   title="AI Generate Content"
                 >
                   {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -292,15 +292,15 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
           <EditorContent editor={editor} />
 
           {section.status !== 'canonical' && (
-            <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
-              <div className="text-sm text-gray-500">
+            <div className="flex items-center justify-between p-4 border-t border-amber-200/60 bg-amber-50/50">
+              <div className="text-sm text-amber-600/70">
                 {lastSaved && `Last saved ${lastSaved.toLocaleTimeString()}`}
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 border border-amber-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 text-amber-800"
                 >
                   <Save className="w-4 h-4" />
                   {isSaving ? 'Saving...' : 'Save Draft'}
@@ -318,7 +318,7 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
           )}
 
           {section.status === 'canonical' && (
-            <div className="p-4 border-t border-gray-200 bg-green-50">
+            <div className="p-4 border-t border-amber-200/60 bg-green-50">
               <div className="flex items-center gap-2 text-green-700">
                 <CheckCircle className="w-4 h-4" />
                 <span className="text-sm font-medium">This section has been promoted to canonical</span>
@@ -329,32 +329,32 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
       </div>
 
       <div className="space-y-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">Section Details</h3>
+        <div className="bg-white/80 rounded-lg border border-amber-200/60 p-4">
+          <h3 className="font-semibold text-amber-900 mb-3">Section Details</h3>
 
           {section.goal && (
             <div className="mb-3">
-              <label className="text-xs font-medium text-gray-500 uppercase">Goal</label>
-              <p className="text-sm text-gray-700 mt-1">{section.goal}</p>
+              <label className="text-xs font-medium text-amber-600/70 uppercase">Goal</label>
+              <p className="text-sm text-amber-800 mt-1">{section.goal}</p>
             </div>
           )}
 
           {section.local_claim && (
             <div className="mb-3">
-              <label className="text-xs font-medium text-gray-500 uppercase">Local Claim</label>
-              <p className="text-sm text-gray-700 mt-1">{section.local_claim}</p>
+              <label className="text-xs font-medium text-amber-600/70 uppercase">Local Claim</label>
+              <p className="text-sm text-amber-800 mt-1">{section.local_claim}</p>
             </div>
           )}
 
           {section.constraints && (
             <div>
-              <label className="text-xs font-medium text-gray-500 uppercase">Constraints</label>
-              <p className="text-sm text-gray-700 mt-1">{section.constraints}</p>
+              <label className="text-xs font-medium text-amber-600/70 uppercase">Constraints</label>
+              <p className="text-sm text-amber-800 mt-1">{section.constraints}</p>
             </div>
           )}
 
           {!section.goal && !section.local_claim && !section.constraints && (
-            <p className="text-sm text-gray-500">No details set for this section.</p>
+            <p className="text-sm text-amber-600/70">No details set for this section.</p>
           )}
         </div>
 
@@ -368,12 +368,12 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
           </p>
         </div>
 
-        <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+        <div className="bg-amber-50/50 rounded-lg border border-amber-200/60 p-4">
           <div className="flex gap-2">
-            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="text-sm font-medium text-blue-900">Block Types</h4>
-              <ul className="text-xs text-blue-800 mt-2 space-y-1">
+              <h4 className="text-sm font-medium text-amber-900">Block Types</h4>
+              <ul className="text-xs text-amber-800 mt-2 space-y-1">
                 <li><Target className="w-3 h-3 inline" /> <strong>Claim:</strong> Key assertions (embedded)</li>
                 <li><Lightbulb className="w-3 h-3 inline" /> <strong>Thread:</strong> Open loops (tracked)</li>
                 <li><StickyNote className="w-3 h-3 inline" /> <strong>Note:</strong> Scratchpad (NOT embedded)</li>
