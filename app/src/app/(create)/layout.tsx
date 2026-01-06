@@ -1,6 +1,6 @@
 import { getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Sparkles, BookOpen, User, LogOut } from 'lucide-react'
+import { Sparkles, BookOpen, User, LogOut, Library, Wand2 } from 'lucide-react'
 import './app-theme.css'
 
 export default async function CreateLayout({
@@ -21,9 +21,14 @@ export default async function CreateLayout({
               <span className="app-logo-text">Chronicle</span>
             </Link>
 
+            <Link href="/create/stories" className="app-nav-link">
+              <Library />
+              <span>Your Stories</span>
+            </Link>
+
             <Link href="/create/books" className="app-nav-link">
-              <BookOpen />
-              <span>Your Books</span>
+              <Wand2 />
+              <span>Remix</span>
             </Link>
           </div>
 

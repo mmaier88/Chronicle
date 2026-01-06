@@ -153,7 +153,21 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Print-ready formatting | Medium | Planned |
 | Custom cover generation | Medium | Planned |
 
-### Phase 15: Social & Sharing
+### Phase 15: Remix (Edit & Republish)
+
+**Goal:** Allow users to edit existing generated stories and republish them.
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Open story in editor | High | Planned |
+| Edit chapters/sections | High | Planned |
+| Regenerate specific sections | High | Planned |
+| Republish with changes | High | Planned |
+| Version history | Medium | Planned |
+| Fork/duplicate story | Medium | Planned |
+| Merge edits with regeneration | Low | Planned |
+
+### Phase 16: Social & Sharing
 
 | Feature | Priority | Status |
 |---------|----------|--------|
@@ -163,7 +177,7 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Author profiles | Medium | Planned |
 | Featured books | Low | Planned |
 
-### Phase 16: Monetization
+### Phase 17: Monetization
 
 | Feature | Priority | Status |
 |---------|----------|--------|
@@ -173,7 +187,7 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Unlimited generation tier | Medium | Planned |
 | API access tier | Low | Planned |
 
-### Phase 17: Extended Formats
+### Phase 18: Extended Formats
 
 | Feature | Priority | Status |
 |---------|----------|--------|
@@ -182,7 +196,7 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Interactive fiction | Low | Future |
 | Choose-your-own-adventure | Low | Future |
 
-### Phase 18: Advanced Features
+### Phase 19: Advanced Features
 
 | Feature | Priority | Status |
 |---------|----------|--------|
@@ -192,7 +206,7 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | World-building templates | Medium | Planned |
 | Genre-specific optimizations | Low | Planned |
 
-### Phase 19: Mobile & Apps
+### Phase 20: Mobile & Apps
 
 | Feature | Priority | Status |
 |---------|----------|--------|
