@@ -1,8 +1,8 @@
 # Chronicle API Dockerfile
-FROM node:20-alpine AS base
+FROM node:20-bookworm-slim AS base
 
 # Install dependencies
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y curl openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -30,14 +30,14 @@ RUN npm run build --workspace=packages/core
 RUN npm run build --workspace=apps/api
 
 # Production image
-FROM node:20-alpine AS runner
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install curl and openssl for health checks and Prisma
+RUN apt-get update && apt-get install -y curl openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy built files
 COPY --from=builder /app/node_modules ./node_modules

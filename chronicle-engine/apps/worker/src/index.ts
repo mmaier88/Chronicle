@@ -1,15 +1,15 @@
 import { Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
-import { Redis } from 'ioredis';
 import { Orchestrator, BookJobInput } from './orchestrator.js';
 
 // Initialize Prisma
 const prisma = new PrismaClient();
 
-// Initialize Redis connection
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null
-});
+// Redis connection config (BullMQ manages its own connection)
+const redisConnection = {
+  host: process.env.REDIS_HOST || 'redis',
+  port: parseInt(process.env.REDIS_PORT || '6379'),
+};
 
 /**
  * Job data structure
@@ -97,24 +97,21 @@ async function processBookJob(job: Job<GenerateBookJobData>): Promise<void> {
 async function main() {
   console.log('Chronicle Worker starting...');
 
-  // Verify connections
+  // Verify PostgreSQL connection
   try {
     await prisma.$connect();
     console.log('Connected to PostgreSQL');
-
-    await redis.ping();
-    console.log('Connected to Redis');
   } catch (error) {
-    console.error('Failed to connect to services:', error);
+    console.error('Failed to connect to PostgreSQL:', error);
     process.exit(1);
   }
 
-  // Create worker
+  // Create worker (BullMQ will connect to Redis automatically)
   const worker = new Worker<GenerateBookJobData>(
     'chronicle-books',
     processBookJob,
     {
-      connection: redis,
+      connection: redisConnection,
       concurrency: 1, // One book at a time to manage resources
       lockDuration: 300000, // 5 minutes - books take a long time
       stalledInterval: 60000 // Check for stalled jobs every minute
@@ -134,13 +131,16 @@ async function main() {
     console.error('Worker error:', error);
   });
 
+  worker.on('ready', () => {
+    console.log('Connected to Redis');
+  });
+
   console.log('Chronicle Worker ready, waiting for jobs...');
 
   // Graceful shutdown
   const shutdown = async () => {
     console.log('Shutting down worker...');
     await worker.close();
-    await redis.quit();
     await prisma.$disconnect();
     process.exit(0);
   };

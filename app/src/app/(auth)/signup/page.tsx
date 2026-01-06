@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignupPage() {
@@ -12,7 +11,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const router = useRouter()
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +45,7 @@ export default function SignupPage() {
     setLoading(false)
   }
 
-  const handleOAuthSignup = async (provider: 'google' | 'github') => {
+  const handleOAuthSignup = async (provider: 'google') => {
     setLoading(true)
     setError(null)
 
@@ -65,26 +63,94 @@ export default function SignupPage() {
     }
   }
 
+  const containerStyle: React.CSSProperties = {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'linear-gradient(180deg, #141e30 0%, #0a0f18 100%)',
+    padding: '1.5rem',
+    fontFamily: "'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif",
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.875rem 1rem',
+    background: 'rgba(250, 246, 237, 0.05)',
+    border: '1px solid rgba(250, 246, 237, 0.12)',
+    borderRadius: 12,
+    color: '#faf6ed',
+    fontSize: '1rem',
+    outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    color: '#e8e0d0',
+    marginBottom: '0.5rem',
+  }
+
+  const primaryButtonStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.875rem 1.5rem',
+    background: 'linear-gradient(135deg, #d4a574 0%, #e8c49a 100%)',
+    border: 'none',
+    borderRadius: 12,
+    color: '#0a0f18',
+    fontSize: '1rem',
+    fontWeight: 600,
+    cursor: loading ? 'not-allowed' : 'pointer',
+    opacity: loading ? 0.6 : 1,
+    transition: 'transform 0.2s, box-shadow 0.2s',
+  }
+
+  const secondaryButtonStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.875rem 1.5rem',
+    background: 'transparent',
+    border: '1px solid rgba(250, 246, 237, 0.15)',
+    borderRadius: 12,
+    color: '#e8e0d0',
+    fontSize: '1rem',
+    fontWeight: 500,
+    cursor: loading ? 'not-allowed' : 'pointer',
+    opacity: loading ? 0.6 : 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.75rem',
+    transition: 'background 0.2s, border-color 0.2s',
+  }
+
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-        <div className="max-w-md w-full text-center space-y-4">
-          <div className="text-green-600 dark:text-green-400">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div style={containerStyle}>
+        <div style={{ maxWidth: 400, width: '100%', textAlign: 'center' }}>
+          <div style={{ color: '#4ade80', marginBottom: '1.5rem' }}>
+            <svg style={{ width: 64, height: 64, margin: '0 auto' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: '2rem',
+            fontWeight: 500,
+            color: '#faf6ed',
+            marginBottom: '1rem',
+          }}>
             Check your email
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            We&apos;ve sent a confirmation link to <strong>{email}</strong>
+          <p style={{ color: '#e8e0d0', opacity: 0.8, marginBottom: '2rem' }}>
+            We&apos;ve sent a confirmation link to <strong style={{ color: '#d4a574' }}>{email}</strong>
           </p>
           <Link
             href="/login"
-            className="inline-block mt-4 text-blue-600 hover:text-blue-500"
+            style={{ color: '#d4a574', textDecoration: 'none', fontWeight: 500 }}
           >
-            Back to login
+            &larr; Back to login
           </Link>
         </div>
       </div>
@@ -92,27 +158,48 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Chronicle
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Start writing your book
+    <div style={containerStyle}>
+      <div style={{ maxWidth: 400, width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <h1 style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: '2.5rem',
+              fontWeight: 500,
+              color: '#faf6ed',
+              letterSpacing: '0.02em',
+            }}>
+              Chronicle
+            </h1>
+          </Link>
+          <p style={{
+            marginTop: '0.5rem',
+            color: '#e8e0d0',
+            opacity: 0.7,
+            fontSize: '1.0625rem',
+          }}>
+            Create your account
           </p>
         </div>
 
-        <form onSubmit={handleSignup} className="mt-8 space-y-6">
+        <form onSubmit={handleSignup} style={{ marginTop: '2rem' }}>
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
+            <div style={{
+              padding: '0.875rem 1rem',
+              background: 'rgba(244, 63, 94, 0.15)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              borderRadius: 12,
+              color: '#fda4af',
+              fontSize: '0.875rem',
+              marginBottom: '1.5rem',
+            }}>
               {error}
             </div>
           )}
 
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="fullName" style={labelStyle}>
                 Full name
               </label>
               <input
@@ -121,13 +208,13 @@ export default function SignupPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
-                placeholder="John Doe"
+                style={inputStyle}
+                placeholder="Your name"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" style={labelStyle}>
                 Email address
               </label>
               <input
@@ -136,13 +223,13 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                style={inputStyle}
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" style={labelStyle}>
                 Password
               </label>
               <input
@@ -152,27 +239,31 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                style={inputStyle}
                 placeholder="••••••••"
               />
-              <p className="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
+              <p style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: '#e8e0d0', opacity: 0.5 }}>
+                Minimum 6 characters
+              </p>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ ...primaryButtonStyle, marginTop: '1.5rem' }}
           >
             {loading ? 'Creating account...' : 'Create account'}
           </button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300 dark:border-gray-700" />
+          <div style={{ position: 'relative', margin: '2rem 0' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '100%', height: 1, background: 'rgba(250, 246, 237, 0.1)' }} />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500">Or continue with</span>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+              <span style={{ padding: '0 1rem', background: '#141e30', color: '#e8e0d0', fontSize: '0.875rem', opacity: 0.6 }}>
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -180,9 +271,9 @@ export default function SignupPage() {
             type="button"
             onClick={() => handleOAuthSignup('google')}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={secondaryButtonStyle}
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -192,9 +283,15 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+        <p style={{
+          textAlign: 'center',
+          marginTop: '2rem',
+          fontSize: '0.9375rem',
+          color: '#e8e0d0',
+          opacity: 0.7,
+        }}>
           Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 hover:text-blue-500">
+          <Link href="/login" style={{ color: '#d4a574', textDecoration: 'none', fontWeight: 500 }}>
             Sign in
           </Link>
         </p>
