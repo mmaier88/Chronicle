@@ -356,3 +356,78 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
 }
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .app-header-inner {
+    padding: 0 1rem;
+    height: auto;
+    min-height: 3.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .app-nav {
+    gap: 1rem;
+  }
+
+  .app-logo-text {
+    font-size: 1rem;
+  }
+
+  .app-nav-link span {
+    display: none;
+  }
+
+  .app-user {
+    gap: 0.75rem;
+  }
+
+  .app-user-info {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+
+  .app-user-info svg {
+    flex-shrink: 0;
+  }
+
+  .app-signout {
+    font-size: 0.75rem;
+  }
+
+  .app-signout span {
+    display: none;
+  }
+
+  .app-main {
+    padding: 2rem 1rem;
+  }
+
+  .app-card {
+    padding: 1.25rem;
+  }
+
+  .app-button-primary {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+  }
+
+  .app-button-secondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  .app-heading-1 {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+  }
+
+  .app-heading-2 {
+    font-size: clamp(1.25rem, 5vw, 1.75rem);
+  }
+}

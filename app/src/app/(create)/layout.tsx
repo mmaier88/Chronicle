@@ -23,7 +23,7 @@ export default async function CreateLayout({
 
             <Link href="/create/books" className="app-nav-link">
               <BookOpen />
-              Your Books
+              <span>Your Books</span>
             </Link>
           </div>
 
@@ -38,7 +38,7 @@ export default async function CreateLayout({
                   <form action="/api/auth/signout" method="POST">
                     <button type="submit" className="app-signout">
                       <LogOut />
-                      Sign out
+                      <span>Sign out</span>
                     </button>
                   </form>
                 )}

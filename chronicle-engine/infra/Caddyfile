@@ -1,36 +1,24 @@
 # Chronicle Engine Caddy Configuration
-
 {
-    # Global options - disable HTTPS for now (no domain configured)
-    auto_https off
+	auto_https off
 }
 
-# Main site configuration
 :80 {
-    # Reverse proxy to API
-    reverse_proxy api:3000 {
-        # Health check
-        health_uri /health/live
-        health_interval 30s
-        health_timeout 5s
-    }
+	reverse_proxy api:3000
 
-    # Logging
-    log {
-        output stdout
-        format json
-    }
+	log {
+		output stdout
+		format json
+	}
 
-    # Security headers
-    header {
-        X-Content-Type-Options nosniff
-        X-Frame-Options DENY
-        Referrer-Policy strict-origin-when-cross-origin
-        -Server
-    }
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
 
-    # Handle errors
-    handle_errors {
-        respond "{err.status_code} {err.status_text}"
-    }
+	handle_errors {
+		respond "{err.status_code} {err.status_text}"
+	}
 }
