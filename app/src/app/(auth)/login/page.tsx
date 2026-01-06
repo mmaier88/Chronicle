@@ -12,7 +12,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/vibe'
+  const redirect = searchParams.get('redirect') || '/create'
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

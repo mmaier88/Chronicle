@@ -48,7 +48,7 @@ export function CreateBookButton() {
     setTitle('')
     setCoreQuestion('')
     setIsOpen(false)
-    router.push(`/vibe/books/${data.id}`)
+    router.push(`/create/books/${data.id}`)
   }
 
   return (

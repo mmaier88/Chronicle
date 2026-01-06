@@ -19,6 +19,8 @@
   color: var(--moon-mid);
   line-height: 1.7;
   overflow-x: hidden;
+  min-height: 100vh;
+  isolation: isolate;
 }
 
 /* ========== HERO - FULL BLEED IMMERSIVE ========== */
@@ -38,11 +40,13 @@
   height: 100%;
   object-fit: cover;
   object-position: center top;
+  z-index: 1;
 }
 
 .landing-page .hero-overlay {
   position: absolute;
   inset: 0;
+  z-index: 2;
   background: linear-gradient(
     to top,
     rgba(10, 15, 24, 0.95) 0%,

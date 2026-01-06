@@ -23,10 +23,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   const supabase = createServiceClient()
 
-  // Get section
+  // Get section with title and index
   const { data: section, error: sectionError } = await supabase
     .from('sections')
-    .select('id, content_text, chapter_id')
+    .select('id, title, content_text, chapter_id, index')
     .eq('id', sectionId)
     .single()
 
@@ -34,10 +34,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Section not found' }, { status: 404 })
   }
 
-  // Get chapter and book for ownership check and voice settings
+  // Get chapter with title, index and book for ownership check and voice settings
   const { data: chapter } = await supabase
     .from('chapters')
-    .select('book_id')
+    .select('book_id, title, index')
     .eq('id', section.chapter_id)
     .single()
 
@@ -64,7 +64,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Section has no content' }, { status: 400 })
   }
 
-  const contentHash = computeContentHash(section.content_text)
+  // Build full text with chapter and section titles for narration
+  // Only read chapter intro on the first section of each chapter
+  const isFirstSection = section.index === 0
+  const chapterNumber = (chapter.index || 0) + 1
+  const chapterIntro = isFirstSection && chapter.title
+    ? `Chapter ${chapterNumber}: ${chapter.title}.\n\n`
+    : ''
+  const sectionIntro = section.title ? `${section.title}.\n\n` : ''
+  const fullText = `${chapterIntro}${sectionIntro}${section.content_text}`
+
+  const contentHash = computeContentHash(fullText) // Hash includes titles
   const voiceId = book.audio_voice_id || DEFAULT_VOICE_ID
   const voiceName = BOOK_VOICES.find(v => v.id === voiceId)?.name || 'Unknown'
 
@@ -131,9 +141,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    // Generate audio
-    const audioBuffer = await generateSpeechChunked(section.content_text, voiceId)
-    const duration = estimateDuration(section.content_text)
+    // Generate audio with chapter/section titles included
+    const audioBuffer = await generateSpeechChunked(fullText, voiceId)
+    const duration = estimateDuration(fullText)
 
     // Upload to Supabase Storage
     const storagePath = `${user.id}/${sectionId}/${contentHash}.mp3`

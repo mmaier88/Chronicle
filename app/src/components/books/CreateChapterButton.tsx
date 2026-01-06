@@ -48,7 +48,7 @@ export function CreateChapterButton({ bookId, nextIndex }: CreateChapterButtonPr
     setPurpose('')
     setCentralClaim('')
     setIsOpen(false)
-    router.push(`/vibe/books/${bookId}/chapters/${data.id}`)
+    router.push(`/create/books/${bookId}/chapters/${data.id}`)
   }
 
   return (

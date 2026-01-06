@@ -49,7 +49,7 @@ export function CreateSectionButton({ chapterId, bookId, nextIndex }: CreateSect
     setGoal('')
     setLocalClaim('')
     setIsOpen(false)
-    router.push(`/vibe/books/${bookId}/chapters/${chapterId}/sections/${data.id}`)
+    router.push(`/create/books/${bookId}/chapters/${chapterId}/sections/${data.id}`)
   }
 
   return (
