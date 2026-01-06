@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
 import {
   NarrativeState,
   SceneFingerprint,
@@ -17,6 +18,11 @@ import {
 } from '@chronicle/core';
 
 /**
+ * Generation mode
+ */
+export type GenerationMode = 'draft' | 'polished';
+
+/**
  * Job input from API
  */
 export interface BookJobInput {
@@ -24,6 +30,7 @@ export interface BookJobInput {
   genre: string;
   target_length_words: number;
   voice?: string;
+  mode?: GenerationMode;
 }
 
 /**
@@ -63,6 +70,7 @@ export class Orchestrator {
   private writer: WriterAgent;
   private editor: EditorAgent;
   private validator: ValidatorAgent;
+  private mode: GenerationMode = 'draft';
 
   constructor(
     private prisma: PrismaClient,
@@ -79,10 +87,14 @@ export class Orchestrator {
    * Run the complete generation pipeline
    */
   async run(input: BookJobInput): Promise<string> {
+    // Set generation mode (default to draft for speed)
+    this.mode = input.mode || 'draft';
+    const modeLabel = this.mode === 'draft' ? '⚡ Draft' : '✨ Polished';
+
     const context = { jobId: this.jobId, agent: 'planner' as const };
 
     // Phase 1: Initialize
-    await this.onProgress(5, 'Initializing narrative state...');
+    await this.onProgress(5, `Initializing narrative state... (${modeLabel} mode)`);
 
     const state = await this.initializeState(input);
     const actOutlines = await this.generateActOutlines(state);
@@ -115,80 +127,94 @@ export class Orchestrator {
         // Writer generates raw scene
         let rawScene = await this.generateScene(currentState, sceneBrief, sceneId);
 
-        // Editor evaluates (with retry loop)
-        let attempts = 0;
-        let decision: EditorDecision = 'REGENERATE';
-        let editedText = '';
-        let fingerprint: SceneFingerprint | null = null;
+        let finalText = '';
+        let shouldAddScene = true;
 
-        while (decision !== 'ACCEPT' && attempts < STATE_CONSTANTS.MAX_SCENE_REGENERATIONS) {
-          attempts++;
+        if (this.mode === 'draft') {
+          // DRAFT MODE: Skip editor, use raw scene directly (2x faster)
+          finalText = rawScene.content;
 
-          const evaluation = await this.editor.evaluateScene(
-            rawScene.content,
-            sceneId,
-            currentState,
-            { jobId: this.jobId, sceneId, agent: 'editor' }
-          );
+        } else {
+          // POLISHED MODE: Full editor evaluation loop
+          let attempts = 0;
+          let decision: EditorDecision = 'REGENERATE';
+          let fingerprint: SceneFingerprint | null = null;
 
-          decision = evaluation.decision;
-          fingerprint = evaluation.fingerprint;
+          while (decision !== 'ACCEPT' && attempts < STATE_CONSTANTS.MAX_SCENE_REGENERATIONS) {
+            attempts++;
 
-          if (decision === 'ACCEPT') {
-            editedText = evaluation.edited_text || rawScene.content;
-
-            // Apply state patch
-            if (evaluation.state_patch) {
-              currentState = this.editor.applyStatePatch(currentState, evaluation.state_patch);
-            }
-
-            // Add fingerprint to registry
-            currentState.repetition_registry.recent_fingerprints = trimFingerprintWindow([
-              ...currentState.repetition_registry.recent_fingerprints,
-              fingerprint
-            ]);
-
-          } else if (decision === 'REGENERATE' || decision === 'REWRITE') {
-            // Regenerate with constraints
-            rawScene = await this.writer.regenerateScene(
+            const evaluation = await this.editor.evaluateScene(
+              rawScene.content,
+              sceneId,
               currentState,
-              sceneBrief,
-              { jobId: this.jobId, sceneId, agent: 'writer', attempt: attempts },
-              evaluation.instructions ? [evaluation.instructions] : [],
-              rawScene.content
+              { jobId: this.jobId, sceneId, agent: 'editor' }
             );
 
-          } else if (decision === 'DROP') {
-            // Skip this scene entirely, move to next
-            break;
+            decision = evaluation.decision;
+            fingerprint = evaluation.fingerprint;
 
-          } else if (decision === 'MERGE') {
-            // Merge with previous scene (simplified: just append)
-            if (currentChapter.scenes.length > 0) {
-              const lastScene = currentChapter.scenes[currentChapter.scenes.length - 1];
-              lastScene.content += '\n\n' + rawScene.content;
-              lastScene.wordCount += rawScene.word_count;
-              currentChapter.totalWords += rawScene.word_count;
+            if (decision === 'ACCEPT') {
+              finalText = evaluation.edited_text || rawScene.content;
+
+              // Apply state patch
+              if (evaluation.state_patch) {
+                currentState = this.editor.applyStatePatch(currentState, evaluation.state_patch);
+              }
+
+              // Add fingerprint to registry
+              currentState.repetition_registry.recent_fingerprints = trimFingerprintWindow([
+                ...currentState.repetition_registry.recent_fingerprints,
+                fingerprint
+              ]);
+
+            } else if (decision === 'REGENERATE' || decision === 'REWRITE') {
+              // Regenerate with constraints
+              rawScene = await this.writer.regenerateScene(
+                currentState,
+                sceneBrief,
+                { jobId: this.jobId, sceneId, agent: 'writer', attempt: attempts },
+                evaluation.instructions ? [evaluation.instructions] : [],
+                rawScene.content
+              );
+
+            } else if (decision === 'DROP') {
+              // Skip this scene entirely, move to next
+              shouldAddScene = false;
+              break;
+
+            } else if (decision === 'MERGE') {
+              // Merge with previous scene (simplified: just append)
+              if (currentChapter.scenes.length > 0) {
+                const lastScene = currentChapter.scenes[currentChapter.scenes.length - 1];
+                lastScene.content += '\n\n' + rawScene.content;
+                lastScene.wordCount += rawScene.word_count;
+                currentChapter.totalWords += rawScene.word_count;
+              }
+              shouldAddScene = false;
+              break;
             }
-            decision = 'ACCEPT'; // Mark as handled
-            break;
+          }
+
+          // If editor loop exhausted without accept, use raw scene as fallback
+          if (!finalText && shouldAddScene) {
+            finalText = rawScene.content;
           }
         }
 
-        // If accepted, add to chapter
-        if (decision === 'ACCEPT' && editedText) {
-          const editedWordCount = editedText.split(/\s+/).length;
+        // Add scene to chapter
+        if (shouldAddScene && finalText) {
+          const wordCount = finalText.split(/\s+/).length;
 
           currentChapter.scenes.push({
             title: rawScene.scene_title,
-            content: editedText,
-            wordCount: editedWordCount
+            content: finalText,
+            wordCount: wordCount
           });
-          currentChapter.totalWords += editedWordCount;
+          currentChapter.totalWords += wordCount;
 
           // Update state
-          currentState.structure.words_written += editedWordCount;
-          currentState.act_state.act_words_written += editedWordCount;
+          currentState.structure.words_written += wordCount;
+          currentState.act_state.act_words_written += wordCount;
           currentState.structure.scene_index++;
 
           // Checkpoint
@@ -291,9 +317,9 @@ Prompt: "${input.prompt}"
 Genre: ${input.genre}
 
 Respond with JSON: { "theme_thesis": "...", "protagonist_name": "..." }`,
-      schema: require('zod').z.object({
-        theme_thesis: require('zod').z.string(),
-        protagonist_name: require('zod').z.string()
+      schema: z.object({
+        theme_thesis: z.string(),
+        protagonist_name: z.string()
       }),
       context: { jobId: this.jobId, agent: 'planner' }
     });
@@ -325,8 +351,8 @@ For each act, provide:
 - Close condition: What must happen to end this act
 
 Respond with JSON: { "acts": ["Act 1 outline...", "Act 2 outline...", ...] }`,
-      schema: require('zod').z.object({
-        acts: require('zod').z.array(require('zod').z.string())
+      schema: z.object({
+        acts: z.array(z.string())
       }),
       context: { jobId: this.jobId, agent: 'planner' }
     });

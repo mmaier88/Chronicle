@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, RefreshCw, Loader2, Wand2 } from 'lucide-react'
+import { Sparkles, RefreshCw, Loader2, Wand2, Crown, Zap } from 'lucide-react'
 import { VibePreview, BookGenre } from '@/types/chronicle'
 
 type BookLength = 30 | 60 | 120 | 300
+type GenerationMode = 'draft' | 'polished'
 
 interface VibeDraft {
   genre: BookGenre
   prompt: string
   preview: VibePreview
   length?: BookLength
+  mode?: GenerationMode
 }
 
 export default function VibePreviewPage() {
@@ -22,6 +24,7 @@ export default function VibePreviewPage() {
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mode, setMode] = useState<GenerationMode>('draft')
 
   useEffect(() => {
     const stored = localStorage.getItem('vibe_draft')
@@ -120,6 +123,7 @@ export default function VibePreviewPage() {
           prompt: draft.prompt,
           preview: editedPreview,
           length: draft.length || 30,
+          mode: mode,
         }),
       })
 
@@ -306,6 +310,67 @@ export default function VibePreviewPage() {
         </div>
       </div>
 
+      {/* Mode Toggle */}
+      <div style={{ marginTop: '2rem' }}>
+        <label className="app-body" style={{ fontWeight: 500, display: 'block', marginBottom: '1rem' }}>
+          Generation quality
+        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+          <button
+            onClick={() => setMode('draft')}
+            disabled={isWorking}
+            style={{
+              padding: '1rem',
+              borderRadius: 12,
+              textAlign: 'left',
+              transition: 'all 0.2s',
+              background: mode === 'draft'
+                ? 'rgba(212, 165, 116, 0.15)'
+                : 'rgba(26, 39, 68, 0.5)',
+              border: mode === 'draft'
+                ? '2px solid var(--amber-warm)'
+                : '2px solid rgba(250, 246, 237, 0.08)',
+              cursor: isWorking ? 'not-allowed' : 'pointer',
+              opacity: isWorking ? 0.5 : 1,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <Zap style={{ width: 16, height: 16, color: mode === 'draft' ? 'var(--amber-warm)' : 'var(--moon-soft)' }} />
+              <span style={{ fontWeight: 500, color: 'var(--moon-light)' }}>Normal</span>
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--moon-soft)', opacity: 0.7 }}>
+              Fast generation · Great for exploring ideas
+            </p>
+          </button>
+          <button
+            onClick={() => setMode('polished')}
+            disabled={isWorking}
+            style={{
+              padding: '1rem',
+              borderRadius: 12,
+              textAlign: 'left',
+              transition: 'all 0.2s',
+              background: mode === 'polished'
+                ? 'rgba(168, 85, 247, 0.15)'
+                : 'rgba(26, 39, 68, 0.5)',
+              border: mode === 'polished'
+                ? '2px solid #a855f7'
+                : '2px solid rgba(250, 246, 237, 0.08)',
+              cursor: isWorking ? 'not-allowed' : 'pointer',
+              opacity: isWorking ? 0.5 : 1,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <Crown style={{ width: 16, height: 16, color: mode === 'polished' ? '#a855f7' : 'var(--moon-soft)' }} />
+              <span style={{ fontWeight: 500, color: 'var(--moon-light)' }}>Masterpiece Mode</span>
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--moon-soft)', opacity: 0.7 }}>
+              Enhanced editing · Richer prose quality
+            </p>
+          </button>
+        </div>
+      </div>
+
       {/* Error */}
       {error && (
         <div style={{
@@ -382,18 +447,22 @@ export default function VibePreviewPage() {
           {isCreating ? (
             <>
               <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} />
-              Setting things in motion...
+              {mode === 'polished' ? 'Crafting your masterpiece...' : 'Setting things in motion...'}
             </>
           ) : (
             <>
-              <Sparkles style={{ width: 20, height: 20 }} />
-              Generate my book
+              {mode === 'polished' ? (
+                <Crown style={{ width: 20, height: 20 }} />
+              ) : (
+                <Sparkles style={{ width: 20, height: 20 }} />
+              )}
+              {mode === 'polished' ? 'Create my masterpiece' : 'Generate my book'}
             </>
           )}
         </button>
 
         <p className="app-body-sm" style={{ textAlign: 'center' }}>
-          This will create a ~{draft.length || 30} page book. {(draft.length || 30) >= 120 ? 'This may take a while.' : 'Takes a few minutes.'}
+          This will create a ~{draft.length || 30} page book. {mode === 'polished' ? 'Masterpiece mode takes longer but delivers richer prose.' : (draft.length || 30) >= 120 ? 'This may take a while.' : 'Takes a few minutes.'}
         </p>
       </div>
 

@@ -18,24 +18,27 @@ const LENGTH_OPTIONS: { value: BookLength; label: string; description: string }[
   { value: 300, label: 'Full Novel', description: '~300 pages · 2.5 hours read' },
 ]
 
-const PROMPT_SEEDS = [
-  "A lighthouse keeper who starts receiving letters from someone who shouldn't exist...",
-  "Two strangers meet at the same café every morning but never speak—until one day, one of them doesn't show up.",
-  "A retired astronaut opens a bookshop in a small town, but the books keep rewriting themselves.",
-  "In a city where it rains every day, one person wakes up to sunshine and realizes they're the only one who notices.",
-  "A chef discovers their grandmother's recipe book contains more than just recipes.",
-]
-
 export default function CreateNewPage() {
   const router = useRouter()
   const [prompt, setPrompt] = useState('')
   const [length, setLength] = useState<BookLength>(30)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isSurprising, setIsSurprising] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSurpriseMe = () => {
-    const randomPrompt = PROMPT_SEEDS[Math.floor(Math.random() * PROMPT_SEEDS.length)]
-    setPrompt(randomPrompt)
+  const handleSurpriseMe = async () => {
+    setIsSurprising(true)
+    try {
+      const response = await fetch('/api/create/surprise', { method: 'POST' })
+      const data = await response.json()
+      if (data.prompt) {
+        setPrompt(data.prompt)
+      }
+    } catch {
+      // Silently fail - user can just try again
+    } finally {
+      setIsSurprising(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -100,12 +103,21 @@ export default function CreateNewPage() {
             </label>
             <button
               onClick={handleSurpriseMe}
-              disabled={isGenerating}
+              disabled={isGenerating || isSurprising}
               className="app-nav-link"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                opacity: isSurprising ? 0.6 : 1,
+              }}
             >
-              <Shuffle style={{ width: 14, height: 14 }} />
-              Surprise me
+              {isSurprising ? (
+                <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <Shuffle style={{ width: 14, height: 14 }} />
+              )}
+              {isSurprising ? 'Thinking...' : 'Surprise me'}
             </button>
           </div>
           <textarea

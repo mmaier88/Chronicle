@@ -16,21 +16,21 @@ export const SceneFingerprintSchema = z.object({
     'resolution'      // question answered definitively
   ]),
   new_information: z.string().describe('One sentence: what does reader learn that they didn\'t know?'),
-  consequence_introduced: z.string().nullable().describe('One sentence: what irreversible change occurred?'),
-  emotional_delta: z.number().min(-1).max(1).describe('-1 to +1: emotional trajectory shift'),
-  escalation_delta: z.number().min(0).max(1).describe('0 to 1: how much stakes increased'),
+  consequence_introduced: z.string().nullable().default(null).describe('One sentence: what irreversible change occurred?'),
+  emotional_delta: z.number().min(-1).max(1).default(0).describe('-1 to +1: emotional trajectory shift'),
+  escalation_delta: z.number().min(0).max(1).default(0).describe('0 to 1: how much stakes increased'),
   character_impacts: z.array(z.object({
     name: z.string(),
-    certainty_delta: z.number().min(-1).max(1),
-    transformation_delta: z.number().min(0).max(1),
+    certainty_delta: z.number().min(-1).max(1).default(0),
+    transformation_delta: z.number().min(0).max(1).default(0),
     cost_added: z.string().optional()
-  })),
+  })).default([]),
   unresolved_question_changes: z.object({
-    added: z.array(z.string()),
-    resolved: z.array(z.string()),
-    reframed: z.array(z.string())
-  }),
-  motifs_used: z.array(z.string()).describe('e.g., ["lighthouse", "memory", "threshold"]')
+    added: z.array(z.string()).default([]),
+    resolved: z.array(z.string()).default([]),
+    reframed: z.array(z.string()).default([])
+  }).default({ added: [], resolved: [], reframed: [] }),
+  motifs_used: z.array(z.string()).default([]).describe('e.g., ["lighthouse", "memory", "threshold"]')
 });
 
 export type SceneFingerprint = z.infer<typeof SceneFingerprintSchema>;

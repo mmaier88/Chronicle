@@ -17,13 +17,21 @@ const bookQueue = new Queue('chronicle-books', {
 });
 
 /**
+ * Generation modes:
+ * - draft: Fast generation, no editor (2x faster, good for prototyping)
+ * - polished: Full pipeline with editor loop (higher quality, redundancy detection)
+ */
+const GenerationMode = z.enum(['draft', 'polished']).default('draft');
+
+/**
  * Request body schema for creating a book
  */
 const CreateBookSchema = z.object({
   prompt: z.string().min(10).max(2000),
   genre: z.string().min(2).max(100).optional().default('literary fiction'),
   target_length_words: z.number().min(10000).max(100000).optional().default(25000),
-  voice: z.string().max(500).optional()
+  voice: z.string().max(500).optional(),
+  mode: GenerationMode.optional().default('draft')
 });
 
 /**
@@ -53,7 +61,8 @@ router.post('/', async (req: Request, res: Response) => {
           prompt: input.prompt,
           genre: input.genre,
           target_length_words: input.target_length_words,
-          voice: input.voice
+          voice: input.voice,
+          mode: input.mode
         }
       },
       {
@@ -67,7 +76,8 @@ router.post('/', async (req: Request, res: Response) => {
     res.status(201).json({
       job_id: job.id,
       status: 'queued',
-      message: 'Book generation job created'
+      mode: input.mode,
+      message: `Book generation job created (${input.mode} mode)`
     });
 
   } catch (error) {

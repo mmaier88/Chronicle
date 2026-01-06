@@ -55,6 +55,7 @@ function parseAIJson<T>(text: string): T {
 
 // Book length configurations
 type BookLength = 30 | 60 | 120 | 300
+type GenerationMode = 'draft' | 'polished'
 
 interface BookConfig {
   wordCount: number
@@ -547,19 +548,25 @@ export async function POST(
         vibeJob.story_synopsis
       )
 
-      // Check consistency
-      const consistency = await checkConsistency(result.prose, constitution, prevTexts)
-
       let finalProse = result.prose
 
-      // Rewrite if issues (up to MAX_RETRIES)
-      if (!consistency.passed && vibeJob.attempt < MAX_RETRIES) {
-        finalProse = await rewriteSection(result.prose, consistency.issues, constitution, section.goal || '')
-        await updateJob(supabase, jobId, { attempt: vibeJob.attempt + 1 })
-      }
+      // Get mode from preview (default to draft for speed)
+      const mode = ((preview as VibePreview & { mode?: GenerationMode }).mode || 'draft') as GenerationMode
 
-      // Apply last 10% polish pass
-      finalProse = await polishProse(finalProse, preview.cast)
+      if (mode === 'polished') {
+        // POLISHED MODE: Full consistency check, rewrite, and polish pipeline
+        const consistency = await checkConsistency(result.prose, constitution, prevTexts)
+
+        // Rewrite if issues (up to MAX_RETRIES)
+        if (!consistency.passed && vibeJob.attempt < MAX_RETRIES) {
+          finalProse = await rewriteSection(result.prose, consistency.issues, constitution, section.goal || '')
+          await updateJob(supabase, jobId, { attempt: vibeJob.attempt + 1 })
+        }
+
+        // Apply last 10% polish pass
+        finalProse = await polishProse(finalProse, preview.cast)
+      }
+      // DRAFT MODE: Skip consistency check, rewrite, and polish for 2x faster generation
 
       // Convert to HTML and save
       const htmlContent = markdownToHtml(finalProse)

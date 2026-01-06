@@ -3,12 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { VibePreview, BookGenre, Constitution } from '@/types/chronicle'
 
 type BookLength = 30 | 60 | 120 | 300
+type GenerationMode = 'draft' | 'polished'
 
 interface CreateJobRequest {
   genre: BookGenre
   prompt: string
   preview: VibePreview
   length?: BookLength
+  mode?: GenerationMode
 }
 
 // Rate limit: max jobs per user per day
@@ -25,10 +27,10 @@ export async function POST(request: NextRequest) {
   const supabase = isDevUser ? createServiceClient() : await createClient()
 
   const body: CreateJobRequest = await request.json()
-  const { genre, prompt, preview, length = 30 } = body
+  const { genre, prompt, preview, length = 30, mode = 'draft' } = body
 
-  // Include length in preview for tick route to access
-  const previewWithLength = { ...preview, targetPages: length }
+  // Include length and mode in preview for tick route to access
+  const previewWithMeta = { ...preview, targetPages: length, mode }
 
   if (!genre || !prompt || !preview) {
     return NextResponse.json({ error: 'Genre, prompt, and preview are required' }, { status: 400 })
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
       book_id: book.id,
       genre: genre,
       user_prompt: prompt,
-      preview: previewWithLength,
+      preview: previewWithMeta,
       status: 'queued',
       step: 'created',
       progress: 0,

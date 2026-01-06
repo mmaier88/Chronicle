@@ -56,10 +56,10 @@ export type StatePatch = z.infer<typeof StatePatchSchema>;
 
 /**
  * Editor output schema
+ * Note: fingerprint is NOT included here - we extract it separately and merge it in
  */
 export const EditorOutputSchema = z.object({
   decision: z.enum(['ACCEPT', 'REWRITE', 'MERGE', 'REGENERATE', 'DROP']),
-  fingerprint: SceneFingerprintSchema,
   edited_text: z.string().optional(),
   state_patch: StatePatchSchema.optional(),
   instructions: z.string().optional(),
@@ -67,6 +67,14 @@ export const EditorOutputSchema = z.object({
 });
 
 export type EditorOutput = z.infer<typeof EditorOutputSchema>;
+
+/**
+ * EditorEvaluation - the return type of evaluateScene
+ * This always includes a fingerprint (extracted separately, not from LLM)
+ */
+export type EditorEvaluation = Omit<EditorOutput, 'fingerprint'> & {
+  fingerprint: SceneFingerprint;
+};
 
 /**
  * Editor Agent - enforces editorial discipline
@@ -124,7 +132,7 @@ Extract the fingerprint as JSON.`;
     sceneId: string,
     state: NarrativeState,
     context: RequestContext
-  ): Promise<EditorOutput> {
+  ): Promise<EditorEvaluation> {
     // First, extract fingerprint
     const fingerprint = await this.extractFingerprint(rawScene, sceneId, state, context);
 
