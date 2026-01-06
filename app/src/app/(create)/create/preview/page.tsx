@@ -339,7 +339,7 @@ export default function VibePreviewPage() {
               <span style={{ fontWeight: 500, color: 'var(--moon-light)' }}>Normal</span>
             </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--moon-soft)', opacity: 0.7 }}>
-              Fast generation · Great for exploring ideas
+              Faster generation · Quality meets speed
             </p>
           </button>
           <button
