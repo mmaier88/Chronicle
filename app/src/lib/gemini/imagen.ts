@@ -47,11 +47,7 @@ export async function generateCoverImage(prompt: string): Promise<Buffer> {
           },
         ],
         generationConfig: {
-          responseModalities: ['IMAGE'],
-          imageConfig: {
-            aspectRatio: '2:3', // Book cover aspect ratio (portrait)
-            imageSize: '1K',
-          },
+          responseModalities: ['TEXT', 'IMAGE'],
         },
       }),
     }

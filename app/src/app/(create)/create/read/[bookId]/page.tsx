@@ -7,6 +7,7 @@ import { BookCover } from '@/components/cover/BookCover'
 import { RegenerateCoverButton } from '@/components/cover/RegenerateCoverButton'
 import { ShareButton } from '@/components/share/ShareButton'
 import { ExportButton } from '@/components/export/ExportButton'
+import { markdownToHtml } from '@/lib/utils'
 
 interface Chapter {
   id: string
@@ -216,19 +217,28 @@ export default async function VibeReadPage({
                   {chapter.sections.length > 1 && (
                     <h3 className="app-heading-3" style={{ marginBottom: '1rem' }}>{section.title}</h3>
                   )}
-                  <div style={{
-                    color: 'var(--moon-mid)',
-                    lineHeight: 1.8,
-                    fontSize: '1.125rem',
-                    whiteSpace: 'pre-wrap',
-                    fontFamily: 'var(--font-serif)'
-                  }}>
-                    {section.content_text || (
+                  {section.content_text ? (
+                    <div
+                      style={{
+                        color: 'var(--moon-mid)',
+                        lineHeight: 1.8,
+                        fontSize: '1.125rem',
+                        fontFamily: 'var(--font-serif)'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: markdownToHtml(section.content_text) }}
+                    />
+                  ) : (
+                    <div style={{
+                      color: 'var(--moon-mid)',
+                      lineHeight: 1.8,
+                      fontSize: '1.125rem',
+                      fontFamily: 'var(--font-serif)'
+                    }}>
                       <span style={{ color: 'var(--moon-soft)', fontStyle: 'italic', opacity: 0.5 }}>
                         This section is still being written...
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { BookOpen, Share2, Clock, Headphones, Sparkles } from 'lucide-react'
 import { SharedBookAudioPlayer } from '@/components/audio/SharedBookAudioPlayer'
+import { markdownToHtml } from '@/lib/utils'
 
 interface SharedChapter {
   id: string
@@ -251,16 +252,25 @@ export default async function SharedBookPage({
                         {section.title}
                       </h3>
                     )}
-                    <div
-                      style={{
-                        color: 'var(--moon-mid)',
-                        lineHeight: 1.8,
-                        fontSize: '1.125rem',
-                        whiteSpace: 'pre-wrap',
-                        fontFamily: 'var(--font-serif)',
-                      }}
-                    >
-                      {section.content_text || (
+                    {section.content_text ? (
+                      <div
+                        style={{
+                          color: 'var(--moon-mid)',
+                          lineHeight: 1.8,
+                          fontSize: '1.125rem',
+                          fontFamily: 'var(--font-serif)',
+                        }}
+                        dangerouslySetInnerHTML={{ __html: markdownToHtml(section.content_text) }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          color: 'var(--moon-mid)',
+                          lineHeight: 1.8,
+                          fontSize: '1.125rem',
+                          fontFamily: 'var(--font-serif)',
+                        }}
+                      >
                         <span
                           style={{
                             color: 'var(--moon-soft)',
@@ -270,8 +280,8 @@ export default async function SharedBookPage({
                         >
                           This section is still being written...
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { RefreshCw, Loader2 } from 'lucide-react'
 
 interface RegenerateCoverButtonProps {
@@ -10,6 +11,7 @@ interface RegenerateCoverButtonProps {
 
 export function RegenerateCoverButton({ bookId, onRegenerated }: RegenerateCoverButtonProps) {
   const [isRegenerating, setIsRegenerating] = useState(false)
+  const router = useRouter()
 
   const handleRegenerate = async () => {
     setIsRegenerating(true)
@@ -22,8 +24,11 @@ export function RegenerateCoverButton({ bookId, onRegenerated }: RegenerateCover
 
       if (response.ok) {
         onRegenerated?.()
+        // Refresh the page to show the new cover
+        router.refresh()
       } else {
-        console.error('Failed to regenerate cover')
+        const data = await response.json()
+        console.error('Failed to regenerate cover:', data.error || data)
       }
     } catch (err) {
       console.error('Failed to regenerate cover:', err)
