@@ -434,9 +434,21 @@ export async function POST(
         .update({
           constitution_json: constitution,
           constitution_locked: true,
-          constitution_locked_at: new Date().toISOString()
+          constitution_locked_at: new Date().toISOString(),
+          cover_status: 'generating'
         })
         .eq('id', book.id)
+
+      // Trigger async cover generation early (non-blocking)
+      // Cover generates in parallel with chapter planning and writing
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      fetch(`${baseUrl}/api/cover/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: book.id })
+      }).catch(err => {
+        console.error('Cover generation trigger failed:', err)
+      })
 
       await updateJob(supabase, jobId, { step: 'plan', progress: 10 })
 
@@ -630,25 +642,13 @@ export async function POST(
 
     // STEP: Finalize
     if (step === 'finalize') {
-      // Mark book as final and start cover generation
+      // Mark book as final (cover generation was already triggered at constitution step)
       await supabase
         .from('books')
         .update({
-          status: 'final',
-          cover_status: 'generating'
+          status: 'final'
         })
         .eq('id', book.id)
-
-      // Trigger async cover generation (non-blocking)
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      fetch(`${baseUrl}/api/cover/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId: book.id })
-      }).catch(err => {
-        console.error('Cover generation trigger failed:', err)
-        // Non-blocking - user can regenerate later
-      })
 
       // Send book completion email (non-blocking)
       if (user?.email && !isDevUser) {
@@ -671,7 +671,7 @@ export async function POST(
         step: 'complete',
         progress: 100,
         book_id: book.id,
-        message: 'Book generation complete! Cover generating...'
+        message: 'Book generation complete!'
       })
     }
 
