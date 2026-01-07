@@ -43,7 +43,7 @@ export default async function LandingPage() {
         <footer className="landing-footer">
           <div className="footer-links">
             <Link href="/imprint">Imprint</Link>
-            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="/legal">Legal</Link>
           </div>
         </footer>
       </section>

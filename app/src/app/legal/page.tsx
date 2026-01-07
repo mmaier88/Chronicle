@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import '../legal/legal.css'
+import './legal.css'
 
-export default function PrivacyPage() {
+export default function LegalPage() {
   return (
     <div className="legal-page">
       <div className="legal-container">
