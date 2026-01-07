@@ -1,6 +1,6 @@
 # Chronicle - Features & Roadmap
 
-**Last Updated:** 2026-01-06
+**Last Updated:** 2026-01-07
 **Version:** 2.0
 
 ---
@@ -142,6 +142,19 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 
 ---
 
+## Product Vision
+
+**Core Promise:** *"You can finally read the exact book you've always wanted."*
+
+Chronicle isn't just a creation tool—it's a content network where every reader becomes an author of their own perfect story.
+
+**Growth Loop:**
+1. User discovers a book → reads/listens
+2. Thinks "I want something like this, but..." → creates their own
+3. Shares it → brings new readers → repeat
+
+---
+
 ## Roadmap
 
 ### Phase 14: Book Export & Sharing (Complete)
@@ -164,7 +177,69 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Book completion notification | High | Done |
 | Email templates (branded) | Medium | Done |
 
-### Phase 15: Remix (Edit & Republish)
+### Phase 15: Discovery & Public Library
+
+**Goal:** Transform Chronicle from a creation tool into a content network. Users should be able to browse and discover stories, not just create them.
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Public library page (`/library`) | High | Planned |
+| Browse by genre, mood, length | High | Planned |
+| Search books (title, blurb, tags) | High | Planned |
+| Featured/staff picks section | High | Planned |
+| Trending books (by views/likes) | Medium | Planned |
+| "For You" personalized feed | Medium | Planned |
+| Book detail pages with cover, blurb, stats | High | Planned |
+| Anonymous reading (no signup required) | High | Planned |
+
+### Phase 16: Social & Engagement
+
+**Goal:** Build social proof loops that drive viral growth. Share → signup → create → share.
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Author/creator profiles | High | Planned |
+| Follow authors | High | Planned |
+| Like/save books to library | High | Planned |
+| Ratings (1-5 stars) | Medium | Planned |
+| Reader reviews/comments | Medium | Planned |
+| Activity feed ("X just created...") | Medium | Planned |
+| Share cards (OG images for social) | High | Planned |
+| "Create something like this" CTA | High | Planned |
+| Invite friends / referral program | Low | Planned |
+
+### Phase 17: Retention & Habits
+
+**Goal:** Prevent one-and-done usage. Bring users back daily.
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Daily story prompt ("Today's inspiration") | High | Planned |
+| Reading streaks | High | Planned |
+| Achievements/badges | Medium | Planned |
+| "Continue reading" / reading history | High | Planned |
+| "Your next story" recommendations | High | Planned |
+| Weekly digest email | Medium | Planned |
+| Push notifications (web) | High | Planned |
+| Reading goals (books per month) | Low | Planned |
+
+### Phase 18: Mobile Experience
+
+**Goal:** B2C reading is mobile-first. Audio is a massive advantage—lean into it.
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| PWA install prompts | High | Planned |
+| Offline reading cache | High | Planned |
+| Push notifications (mobile) | High | Planned |
+| Enhanced audio player (speed, skip, sleep timer) | High | Planned |
+| Background audio playback | High | Planned |
+| Swipe gestures for navigation | Medium | Planned |
+| Dark/light/sepia reading themes | Medium | Planned |
+| iOS native app | Medium | Future |
+| Android native app | Medium | Future |
+
+### Phase 19: Remix (Edit & Republish)
 
 **Goal:** Allow users to edit existing generated stories and republish them.
 
@@ -174,30 +249,24 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Edit chapters/sections | High | Planned |
 | Regenerate specific sections | High | Planned |
 | Republish with changes | High | Planned |
-| Version history | Medium | Planned |
 | Fork/duplicate story | Medium | Planned |
+| Version history | Medium | Planned |
 | Merge edits with regeneration | Low | Planned |
 
-### Phase 16: Social Features
+### Phase 20: Monetization
+
+**Goal:** Monetize after building engaged user base. Focus on retention first.
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| Public book profiles | High | Planned |
-| Reader comments | Medium | Planned |
-| Author profiles | Medium | Planned |
-| Featured books | Low | Planned |
-
-### Phase 17: Monetization
-
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Subscription tiers | High | Planned |
+| Subscription tiers (Free/Pro/Unlimited) | High | Planned |
 | Pay-per-book credits | High | Planned |
 | Masterpiece Mode as premium | High | Planned |
+| Free tier with daily limits | High | Planned |
 | Unlimited generation tier | Medium | Planned |
 | API access tier | Low | Planned |
 
-### Phase 18: Extended Formats
+### Phase 21: Extended Formats
 
 | Feature | Priority | Status |
 |---------|----------|--------|
@@ -206,7 +275,7 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Interactive fiction | Low | Future |
 | Choose-your-own-adventure | Low | Future |
 
-### Phase 19: Advanced Features
+### Phase 22: Advanced Features
 
 | Feature | Priority | Status |
 |---------|----------|--------|
@@ -215,15 +284,6 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Series generation | Medium | Planned |
 | World-building templates | Medium | Planned |
 | Genre-specific optimizations | Low | Planned |
-
-### Phase 20: Mobile & Apps
-
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Progressive Web App | High | Planned |
-| iOS app | Medium | Future |
-| Android app | Medium | Future |
-| Offline reading | Medium | Future |
 
 ---
 
@@ -323,6 +383,17 @@ ANTHROPIC_API_KEY
 ## Changelog
 
 ### 2026-01-07
+- **Roadmap restructure**: Prioritized Discovery, Social & Retention
+  - Added Phase 15: Discovery & Public Library
+  - Added Phase 16: Social & Engagement (expanded)
+  - Added Phase 17: Retention & Habits (new)
+  - Elevated Phase 18: Mobile Experience
+  - Added Product Vision section with core promise
+- Cover generation now triggers early (at constitution step)
+- Covers generate in parallel with book writing
+- Custom auth domain: auth.chronicle.town
+- Markdown rendering fix (*italic* and **bold**)
+- Share URLs now use production domain
 - Phase 14.5 complete: Email Notifications
 - SendGrid integration for transactional emails
 - Welcome email on user signup
