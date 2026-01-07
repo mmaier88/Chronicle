@@ -144,14 +144,25 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 
 ## Roadmap
 
-### Phase 14: Book Export (Next)
+### Phase 14: Book Export & Sharing (Complete)
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| PDF export | High | Planned |
-| EPUB export | High | Planned |
-| Print-ready formatting | Medium | Planned |
-| Custom cover generation | Medium | Planned |
+| PDF export | High | Done |
+| EPUB export | High | Done |
+| AI cover generation (Google Gemini) | High | Done |
+| Cover regeneration | High | Done |
+| Shareable links (public read + listen) | High | Done |
+
+### Phase 14.5: Email Notifications (Complete)
+
+**Goal:** Transactional emails via SendGrid from hello@chronicle.town
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Welcome email on signup | High | Done |
+| Book completion notification | High | Done |
+| Email templates (branded) | Medium | Done |
 
 ### Phase 15: Remix (Edit & Republish)
 
@@ -167,12 +178,11 @@ Chronicle is an AI-native book creation platform with two deployment targets:
 | Fork/duplicate story | Medium | Planned |
 | Merge edits with regeneration | Low | Planned |
 
-### Phase 16: Social & Sharing
+### Phase 16: Social Features
 
 | Feature | Priority | Status |
 |---------|----------|--------|
 | Public book profiles | High | Planned |
-| Share links | High | Planned |
 | Reader comments | Medium | Planned |
 | Author profiles | Medium | Planned |
 | Featured books | Low | Planned |
@@ -311,6 +321,21 @@ ANTHROPIC_API_KEY
 ---
 
 ## Changelog
+
+### 2026-01-07
+- Phase 14.5 complete: Email Notifications
+- SendGrid integration for transactional emails
+- Welcome email on user signup
+- Book completion notification email
+- Branded email templates from hello@chronicle.town
+- Phase 14 complete: Book Export & Sharing
+- AI cover generation using Google Gemini (Nano Banana)
+- Cover regeneration from book page
+- Shareable links with public read + listen access
+- Client-side PDF export (jsPDF)
+- Client-side EPUB export (epub-gen-memory)
+- BookCover, ShareButton, ExportButton components
+- Database migration for covers and share tokens
 
 ### 2026-01-06
 - Added "Surprise Me" LLM-powered random prompts

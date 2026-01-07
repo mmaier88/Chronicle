@@ -1,6 +1,8 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { BookOpen, Clock, Sparkles } from 'lucide-react'
+import { BookCover } from '@/components/cover/BookCover'
+import { CoverStatus } from '@/types/chronicle'
 
 export default async function StoriesPage() {
   const supabase = await createClient()
@@ -9,7 +11,7 @@ export default async function StoriesPage() {
   // Fetch all user's vibe-generated stories
   const { data: stories, error } = await supabase
     .from('books')
-    .select('id, title, status, created_at, core_question')
+    .select('id, title, status, created_at, core_question, cover_url, cover_status')
     .eq('owner_id', user?.id)
     .eq('source', 'vibe')
     .order('created_at', { ascending: false })
@@ -70,17 +72,12 @@ export default async function StoriesPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div style={{
-                        width: 48,
-                        height: 48,
-                        background: 'linear-gradient(135deg, rgba(212, 165, 116, 0.2), rgba(212, 165, 116, 0.1))',
-                        borderRadius: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <BookOpen style={{ width: 20, height: 20, color: 'var(--amber-warm)' }} />
-                      </div>
+                      <BookCover
+                        coverUrl={story.cover_url}
+                        title={story.title}
+                        status={story.cover_status as CoverStatus}
+                        size="sm"
+                      />
                       <div>
                         <h3 className="app-heading-3" style={{ marginBottom: '0.25rem' }}>
                           {story.title}

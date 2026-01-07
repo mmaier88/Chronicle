@@ -3,6 +3,10 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, BookOpen, Sparkles, Clock, Headphones } from 'lucide-react'
 import { BookAudioPlayer } from '@/components/audio/BookAudioPlayer'
+import { BookCover } from '@/components/cover/BookCover'
+import { RegenerateCoverButton } from '@/components/cover/RegenerateCoverButton'
+import { ShareButton } from '@/components/share/ShareButton'
+import { ExportButton } from '@/components/export/ExportButton'
 
 interface Chapter {
   id: string
@@ -43,6 +47,18 @@ export default async function VibeReadPage({
   if (bookError || !book) {
     notFound()
   }
+
+  // Fetch existing share link
+  const { data: existingShare } = await supabase
+    .from('book_shares')
+    .select('share_token')
+    .eq('book_id', bookId)
+    .eq('enabled', true)
+    .single()
+
+  const shareUrl = existingShare?.share_token
+    ? `${process.env.NEXT_PUBLIC_APP_URL || ''}/share/${existingShare.share_token}`
+    : null
 
   // Fetch chapters with sections
   const { data: chapters } = await supabase
@@ -90,6 +106,16 @@ export default async function VibeReadPage({
 
       {/* Book Header */}
       <header style={{ marginBottom: '3rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(250, 246, 237, 0.08)' }}>
+        {/* Cover Image */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+          <BookCover
+            coverUrl={book.cover_url}
+            title={book.title}
+            status={book.cover_status}
+            size="lg"
+          />
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--amber-warm)', fontSize: '0.875rem', marginBottom: '1rem' }}>
           <Sparkles style={{ width: 16, height: 16 }} />
           <span style={{ fontWeight: 500 }}>Written just for you</span>
@@ -121,6 +147,13 @@ export default async function VibeReadPage({
             <Headphones style={{ width: 16, height: 16 }} />
             ~{Math.ceil(totalWords / 150)} min listen
           </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+          <ShareButton bookId={book.id} existingShareUrl={shareUrl} />
+          <ExportButton book={book} chapters={sortedChapters} />
+          <RegenerateCoverButton bookId={book.id} />
         </div>
 
         {/* Audio Player */}

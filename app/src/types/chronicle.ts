@@ -19,6 +19,8 @@ export interface Constitution {
   taboo_simplifications: string | null
 }
 
+export type CoverStatus = 'pending' | 'generating' | 'ready' | 'failed'
+
 export interface Book {
   id: string
   owner_id: string
@@ -32,6 +34,11 @@ export interface Book {
   constitution_locked_at: string | null
   audio_voice_id: string | null
   audio_voice_name: string | null
+  // Cover fields
+  cover_url: string | null
+  cover_storage_path: string | null
+  cover_status: CoverStatus
+  cover_generated_at: string | null
   created_at: string
   updated_at: string
 }
@@ -209,4 +216,43 @@ export interface AudioVoice {
   id: string
   name: string
   description: string
+}
+
+// =============================================================================
+// BOOK SHARING TYPES
+// =============================================================================
+
+export interface BookShare {
+  id: string
+  book_id: string
+  share_token: string
+  enabled: boolean
+  view_count: number
+  created_at: string
+  last_accessed_at: string | null
+}
+
+// Shared book data returned by RLS bypass functions
+export interface SharedBook {
+  id: string
+  title: string
+  core_question: string | null
+  genre: string
+  cover_url: string | null
+  audio_voice_id: string | null
+  audio_voice_name: string | null
+}
+
+export interface SharedChapter {
+  id: string
+  index: number
+  title: string
+}
+
+export interface SharedSection {
+  id: string
+  chapter_id: string
+  index: number
+  title: string
+  content_text: string | null
 }

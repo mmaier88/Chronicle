@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { VibePreview, Constitution, VibeChapterPlan } from '@/types/chronicle'
 import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
 import { QUICK_POLISH_PROMPT } from '@/lib/polish-pipeline'
+import { sendBookCompletedEmail } from '@/lib/email'
 
 const anthropic = new Anthropic()
 
@@ -629,11 +630,34 @@ export async function POST(
 
     // STEP: Finalize
     if (step === 'finalize') {
-      // Mark book as final
+      // Mark book as final and start cover generation
       await supabase
         .from('books')
-        .update({ status: 'final' })
+        .update({
+          status: 'final',
+          cover_status: 'generating'
+        })
         .eq('id', book.id)
+
+      // Trigger async cover generation (non-blocking)
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      fetch(`${baseUrl}/api/cover/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: book.id })
+      }).catch(err => {
+        console.error('Cover generation trigger failed:', err)
+        // Non-blocking - user can regenerate later
+      })
+
+      // Send book completion email (non-blocking)
+      if (user?.email && !isDevUser) {
+        const fullUser = user as { email: string; user_metadata?: { full_name?: string; name?: string } }
+        const userName = fullUser.user_metadata?.full_name || fullUser.user_metadata?.name || ''
+        sendBookCompletedEmail(user.email, userName, book.title, book.id).catch(err => {
+          console.error('Book completion email failed:', err)
+        })
+      }
 
       await updateJob(supabase, jobId, {
         status: 'complete',
@@ -647,7 +671,7 @@ export async function POST(
         step: 'complete',
         progress: 100,
         book_id: book.id,
-        message: 'Book generation complete!'
+        message: 'Book generation complete! Cover generating...'
       })
     }
 
