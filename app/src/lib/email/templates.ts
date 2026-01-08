@@ -40,27 +40,39 @@ function wrapTemplate(content: string): string {
 `
 }
 
-export function welcomeEmail(name: string): { subject: string; html: string } {
-  const firstName = name?.split(' ')[0] || 'there'
-
+export function welcomeEmail(_name: string): { subject: string; html: string } {
   const content = `
-    <h1>Welcome to Chronicle</h1>
-    <p>Hi ${firstName},</p>
-    <p>Thank you for joining Chronicle. We're building something special: an AI-native book creation platform that helps bring your stories to life.</p>
-    <p>With Chronicle, you can:</p>
-    <ul style="color: #4a5568; margin: 16px 0; padding-left: 24px;">
-      <li>Create original stories from a simple prompt</li>
-      <li>Generate AI covers for your books</li>
-      <li>Listen to your stories with text-to-speech</li>
-      <li>Share your creations with anyone</li>
-      <li>Export to PDF and EPUB</li>
-    </ul>
-    <p>Ready to create your first story?</p>
-    <a href="https://chronicle.town/create/new" class="button">Create Your First Story</a>
-    <div class="divider"></div>
-    <p style="font-size: 14px; color: #718096;">
-      Have questions? Just reply to this email. We read every message.
+    <p style="color: #4a5568; margin-bottom: 24px;">Hi,</p>
+
+    <p style="color: #1a2744; font-size: 18px; margin-bottom: 24px;">
+      I'm Markus, the founder of Chronicle. I'm really glad you're here.
     </p>
+
+    <p style="color: #4a5568; margin-bottom: 20px;">
+      Chronicle began with a simple belief: <em>stories matter more when they feel personal.</em>
+    </p>
+
+    <p style="color: #4a5568; margin-bottom: 20px;">
+      Most books and media are made for everyone at once. Chronicle is different. Here, stories adapt to you. Your interests, your mood, your curiosity, your pace.
+    </p>
+
+    <p style="color: #4a5568; margin-bottom: 20px;">
+      Whether you want to explore new worlds, revisit familiar ones, or create something just for yourself, Chronicle is meant to feel calm and intentional. Not noisy. Not overwhelming. Just a place where stories fit a little better.
+    </p>
+
+    <p style="color: #4a5568; margin-bottom: 20px;">
+      We're building Chronicle slowly and thoughtfully. We care about quality, not volume. About meaning, not hype.
+    </p>
+
+    <p style="color: #4a5568; margin-bottom: 32px;">
+      Thank you for being here and for trusting us with your time.
+    </p>
+
+    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+      <p style="color: #1a2744; margin-bottom: 4px; font-weight: 500;">Best,</p>
+      <p style="color: #1a2744; margin-bottom: 2px; font-size: 18px; font-weight: 500;">Markus</p>
+      <p style="color: #718096; font-size: 14px; margin: 0;">Founder, Chronicle</p>
+    </div>
   `
 
   return {
