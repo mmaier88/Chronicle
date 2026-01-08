@@ -25,6 +25,7 @@ export async function sendBookCompletedEmail(
     to: email,
     subject: template.subject,
     html: template.html,
+    text: template.text,
   })
 }
 
