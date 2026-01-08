@@ -54,6 +54,9 @@ export default function SignupPage() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/callback`,
+        queryParams: {
+          prompt: 'select_account', // Always show account picker
+        },
       },
     })
 

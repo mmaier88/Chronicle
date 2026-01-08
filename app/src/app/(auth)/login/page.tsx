@@ -72,6 +72,9 @@ function LoginForm() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/callback?redirect=${redirect}`,
+        queryParams: {
+          prompt: 'select_account', // Always show account picker
+        },
       },
     })
 
