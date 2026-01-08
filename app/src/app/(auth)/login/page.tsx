@@ -73,7 +73,7 @@ function LoginForm() {
       options: {
         redirectTo: `${window.location.origin}/callback?redirect=${redirect}`,
         queryParams: {
-          prompt: 'consent', // Always show consent screen with email permission
+          prompt: 'consent select_account', // Force both consent and account selection
           access_type: 'offline',
         },
         scopes: 'email profile', // Explicitly request email and profile (name)
