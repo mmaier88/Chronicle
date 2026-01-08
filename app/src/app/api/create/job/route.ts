@@ -1,10 +1,19 @@
 import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { VibePreview, BookGenre, Constitution, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
+import { VibePreview, BookGenre, Constitution, StorySliders, DEFAULT_SLIDERS, SliderValue } from '@/types/chronicle'
 import { logger } from '@/lib/logger'
 
 type BookLength = 30 | 60 | 120 | 300
 type GenerationMode = 'draft' | 'polished'
+
+// Convert slider value to warning level for display
+function sliderToWarning(value: SliderValue): 'none' | 'low' | 'medium' | 'high' {
+  if (value === 'auto') return 'low' // Default for auto
+  if (value <= 1) return 'none'
+  if (value <= 2) return 'low'
+  if (value <= 3) return 'medium'
+  return 'high'
+}
 
 interface CreateJobRequest {
   genre: BookGenre
@@ -32,11 +41,21 @@ export async function POST(request: NextRequest) {
   const { genre, prompt, preview, length = 30, mode = 'draft', sliders } = body
 
   // Include length, mode, and sliders in preview for tick route to access
+  const userSliders = sliders || DEFAULT_SLIDERS
+
+  // Override preview warnings based on user's slider choices
+  // This ensures the displayed warnings match what the user actually requested
+  const warningsFromSliders = {
+    violence: sliderToWarning(userSliders.violence),
+    romance: sliderToWarning(userSliders.romance),
+  }
+
   const previewWithMeta = {
     ...preview,
     targetPages: length,
     mode,
-    sliders: sliders || DEFAULT_SLIDERS,
+    sliders: userSliders,
+    warnings: warningsFromSliders, // Override AI-inferred warnings with user's explicit choices
   }
 
   if (!genre || !prompt || !preview) {

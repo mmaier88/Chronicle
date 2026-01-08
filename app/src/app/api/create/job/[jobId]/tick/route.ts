@@ -16,32 +16,65 @@ const MAX_RETRIES = 3
 
 // Build slider constraint block for LLM prompts
 function buildSliderConstraints(sliders: ResolvedSliders): string {
-  const lines: string[] = ['GENERATION CONSTRAINTS (AUTHOR INTENT):', '']
+  const lines: string[] = []
 
-  // Primary sliders with descriptions
-  for (const key of ['violence', 'romance', 'tone'] as const) {
-    const config = SLIDER_CONFIG[key]
-    const value = sliders[key]
-    const desc = config.descriptions[value]
-    lines.push(`${config.name}: ${value}/5 – ${desc}`)
+  lines.push('═══════════════════════════════════════════════════════════════')
+  lines.push('MANDATORY CONTENT DIRECTIVES - THE USER HAS EXPLICITLY REQUESTED:')
+  lines.push('═══════════════════════════════════════════════════════════════')
+  lines.push('')
+
+  // Violence directive
+  const violenceDesc = SLIDER_CONFIG.violence.descriptions[sliders.violence]
+  if (sliders.violence >= 4) {
+    lines.push(`🔴 VIOLENCE LEVEL ${sliders.violence}/5: ${violenceDesc}`)
+    lines.push(`   YOU MUST actively include violent content. This is not optional.`)
+    lines.push(`   The user WANTS graphic violence. Do not sanitize or soften.`)
+    if (sliders.violence === 5) {
+      lines.push(`   Include brutal, visceral descriptions. Blood, pain, consequences.`)
+    }
+  } else {
+    lines.push(`Violence: ${sliders.violence}/5 – ${violenceDesc}`)
   }
+  lines.push('')
 
+  // Romance directive
+  const romanceDesc = SLIDER_CONFIG.romance.descriptions[sliders.romance]
+  if (sliders.romance >= 4) {
+    lines.push(`🔴 ROMANCE LEVEL ${sliders.romance}/5: ${romanceDesc}`)
+    lines.push(`   YOU MUST actively include romantic/sexual content. This is not optional.`)
+    lines.push(`   The user WANTS this content. Do not fade to black or imply.`)
+    if (sliders.romance === 5) {
+      lines.push(`   Include explicit erotic scenes with physical detail and emotional intensity.`)
+    } else {
+      lines.push(`   Include passionate, sensual scenes with clear physical intimacy.`)
+    }
+  } else {
+    lines.push(`Romance: ${sliders.romance}/5 – ${romanceDesc}`)
+  }
+  lines.push('')
+
+  // Tone directive
+  const toneDesc = SLIDER_CONFIG.tone.descriptions[sliders.tone]
+  lines.push(`Tone: ${sliders.tone}/5 – ${toneDesc}`)
   lines.push('')
 
   // Secondary sliders (compact)
+  lines.push('Additional parameters:')
   for (const key of [
     'darkness', 'emotionalIntensity', 'languageComplexity', 'plotComplexity',
     'pacing', 'realism', 'worldDetail', 'characterDepth', 'moralClarity',
     'shockValue', 'explicitSafeguard'
   ] as const) {
     const config = SLIDER_CONFIG[key]
-    lines.push(`${config.name}: ${sliders[key]}/5`)
+    lines.push(`  ${config.name}: ${sliders[key]}/5`)
   }
 
   lines.push('')
-  lines.push('These constraints are HARD REQUIREMENTS. Actively steer narrative,')
-  lines.push('language, and content to match these levels. Do not mention these')
-  lines.push('constraints in the story.')
+  lines.push('═══════════════════════════════════════════════════════════════')
+  lines.push('These are the user\'s EXPLICIT creative choices. Respect them.')
+  lines.push('Do NOT default to safe/sanitized content when the user wants intensity.')
+  lines.push('Write the content they asked for. This is their story.')
+  lines.push('═══════════════════════════════════════════════════════════════')
 
   return lines.join('\n')
 }
