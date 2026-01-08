@@ -40,44 +40,31 @@ function wrapTemplate(content: string): string {
 `
 }
 
-export function welcomeEmail(_name: string): { subject: string; html: string } {
-  const content = `
-    <p style="color: #4a5568; margin-bottom: 24px;">Hi,</p>
+export function welcomeEmail(_name: string): { subject: string; html: string; text: string } {
+  const text = `Hi,
 
-    <p style="color: #1a2744; font-size: 18px; margin-bottom: 24px;">
-      I'm Markus, the founder of Chronicle. I'm really glad you're here.
-    </p>
+I'm Markus, the founder of Chronicle. I'm really glad you're here.
 
-    <p style="color: #4a5568; margin-bottom: 20px;">
-      Chronicle began with a simple belief: <em>stories matter more when they feel personal.</em>
-    </p>
+Chronicle began with a simple belief: stories matter more when they feel personal.
 
-    <p style="color: #4a5568; margin-bottom: 20px;">
-      Most books and media are made for everyone at once. Chronicle is different. Here, stories adapt to you. Your interests, your mood, your curiosity, your pace.
-    </p>
+Most books and media are made for everyone at once. Chronicle is different. Here, stories adapt to you. Your interests, your mood, your curiosity, your pace.
 
-    <p style="color: #4a5568; margin-bottom: 20px;">
-      Whether you want to explore new worlds, revisit familiar ones, or create something just for yourself, Chronicle is meant to feel calm and intentional. Not noisy. Not overwhelming. Just a place where stories fit a little better.
-    </p>
+Whether you want to explore new worlds, revisit familiar ones, or create something just for yourself, Chronicle is meant to feel calm and intentional. Not noisy. Not overwhelming. Just a place where stories fit a little better.
 
-    <p style="color: #4a5568; margin-bottom: 20px;">
-      We're building Chronicle slowly and thoughtfully. We care about quality, not volume. About meaning, not hype.
-    </p>
+We're building Chronicle slowly and thoughtfully. We care about quality, not volume. About meaning, not hype.
 
-    <p style="color: #4a5568; margin-bottom: 32px;">
-      Thank you for being here and for trusting us with your time.
-    </p>
+Thank you for being here and for trusting us with your time.
 
-    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
-      <p style="color: #1a2744; margin-bottom: 4px; font-weight: 500;">Best,</p>
-      <p style="color: #1a2744; margin-bottom: 2px; font-size: 18px; font-weight: 500;">Markus</p>
-      <p style="color: #718096; font-size: 14px; margin: 0;">Founder, Chronicle</p>
-    </div>
-  `
+Best,
+
+Markus
+
+Founder, Chronicle`
 
   return {
     subject: 'Welcome to Chronicle',
-    html: wrapTemplate(content),
+    html: text.replace(/\n/g, '<br>'),
+    text,
   }
 }
 
