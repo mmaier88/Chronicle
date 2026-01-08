@@ -56,7 +56,9 @@ export default function SignupPage() {
         redirectTo: `${window.location.origin}/callback`,
         queryParams: {
           prompt: 'consent', // Always show consent screen with email permission
+          access_type: 'offline',
         },
+        scopes: 'email profile', // Explicitly request email and profile (name)
       },
     })
 

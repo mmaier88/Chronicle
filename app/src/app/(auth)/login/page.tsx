@@ -74,7 +74,9 @@ function LoginForm() {
         redirectTo: `${window.location.origin}/callback?redirect=${redirect}`,
         queryParams: {
           prompt: 'consent', // Always show consent screen with email permission
+          access_type: 'offline',
         },
+        scopes: 'email profile', // Explicitly request email and profile (name)
       },
     })
 
