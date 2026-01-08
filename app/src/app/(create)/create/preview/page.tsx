@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, RefreshCw, Loader2, Wand2, Crown, Zap } from 'lucide-react'
+import { Sparkles, Loader2, Crown, Zap, ArrowLeft } from 'lucide-react'
 import { VibePreview, BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
 
@@ -24,8 +24,6 @@ export default function VibePreviewPage() {
   const [editedPreview, setEditedPreview] = useState<VibePreview | null>(null)
   const [sliders, setSliders] = useState<StorySliders>(DEFAULT_SLIDERS)
   const [showAdvancedSliders, setShowAdvancedSliders] = useState(false)
-  const [isImproving, setIsImproving] = useState(false)
-  const [isRegenerating, setIsRegenerating] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mode, setMode] = useState<GenerationMode>('draft')
@@ -57,75 +55,8 @@ export default function VibePreviewPage() {
     }
   }, [router])
 
-  const handleImprove = async () => {
-    if (!draft || !editedPreview) return
-
-    setIsImproving(true)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/create/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          genre: draft.genre,
-          prompt: draft.prompt,
-          existingPreview: editedPreview,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Something went sideways')
-        return
-      }
-
-      setEditedPreview(data.preview)
-      localStorage.setItem('vibe_draft', JSON.stringify({
-        ...draft,
-        preview: data.preview,
-      }))
-    } catch {
-      setError('Couldn\'t connect. Let\'s try again.')
-    } finally {
-      setIsImproving(false)
-    }
-  }
-
-  const handleRegenerate = async () => {
-    if (!draft) return
-
-    setIsRegenerating(true)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/create/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          genre: draft.genre,
-          prompt: draft.prompt,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Something went sideways')
-        return
-      }
-
-      setEditedPreview(data.preview)
-      localStorage.setItem('vibe_draft', JSON.stringify({
-        ...draft,
-        preview: data.preview,
-      }))
-    } catch {
-      setError('Couldn\'t connect. Let\'s try again.')
-    } finally {
-      setIsRegenerating(false)
-    }
+  const handleBack = () => {
+    router.push('/create/new')
   }
 
   const handleGenerate = async () => {
@@ -177,10 +108,35 @@ export default function VibePreviewPage() {
     )
   }
 
-  const isWorking = isImproving || isRegenerating || isCreating
+  const isWorking = isCreating
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      {/* Back Button */}
+      <button
+        onClick={handleBack}
+        disabled={isWorking}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.5rem 0',
+          marginBottom: '1.5rem',
+          background: 'none',
+          border: 'none',
+          color: 'var(--moon-soft)',
+          cursor: isWorking ? 'not-allowed' : 'pointer',
+          opacity: isWorking ? 0.5 : 0.7,
+          transition: 'opacity 0.2s',
+          fontSize: '0.875rem',
+        }}
+        onMouseEnter={(e) => { if (!isWorking) e.currentTarget.style.opacity = '1' }}
+        onMouseLeave={(e) => { if (!isWorking) e.currentTarget.style.opacity = '0.7' }}
+      >
+        <ArrowLeft style={{ width: 16, height: 16 }} />
+        Start over
+      </button>
+
       {/* Header */}
       <div style={{ marginBottom: '2.5rem' }}>
         <h1 className="app-heading-1" style={{ marginBottom: '0.75rem' }}>
@@ -426,48 +382,6 @@ export default function VibePreviewPage() {
 
       {/* Actions */}
       <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {/* Secondary actions */}
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button
-            onClick={handleImprove}
-            disabled={isWorking}
-            className="app-button-secondary"
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              padding: '0.875rem 1.25rem',
-              opacity: isWorking ? 0.5 : 1,
-              cursor: isWorking ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isImproving ? (
-              <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
-            ) : (
-              <Wand2 style={{ width: 16, height: 16 }} />
-            )}
-            Improve wording
-          </button>
-          <button
-            onClick={handleRegenerate}
-            disabled={isWorking}
-            className="app-button-secondary"
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              padding: '0.875rem 1.25rem',
-              opacity: isWorking ? 0.5 : 1,
-              cursor: isWorking ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isRegenerating ? (
-              <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
-            ) : (
-              <RefreshCw style={{ width: 16, height: 16 }} />
-            )}
-            Try another
-          </button>
-        </div>
-
         {/* Primary CTA */}
         <button
           onClick={handleGenerate}
