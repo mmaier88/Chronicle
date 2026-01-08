@@ -14,6 +14,66 @@ const anthropic = new Anthropic()
 
 const MAX_RETRIES = 3
 
+// Slider-specific directives for high values (4-5)
+const SLIDER_DIRECTIVES: Record<keyof ResolvedSliders, { high: string; extreme: string }> = {
+  violence: {
+    high: 'Include visceral violence with real consequences. Show the impact.',
+    extreme: 'Include brutal, graphic violence. Blood, pain, gore. Do not sanitize.',
+  },
+  romance: {
+    high: 'Include passionate, sensual scenes with clear physical intimacy.',
+    extreme: 'Include explicit erotic scenes with physical detail and emotional intensity.',
+  },
+  tone: {
+    high: 'Maintain a heavy, somber atmosphere throughout. Loss and grief are central.',
+    extreme: 'Make the tone bleak and devastating. No false hope or easy comfort.',
+  },
+  darkness: {
+    high: 'Explore bleak themes and moral despair. The world is harsh.',
+    extreme: 'Embrace grimdark nihilism. Hope is scarce, suffering is real.',
+  },
+  emotionalIntensity: {
+    high: 'Write deeply felt, raw emotional scenes. Make it hurt.',
+    extreme: 'Overwhelming emotional catharsis. Readers should feel devastated.',
+  },
+  languageComplexity: {
+    high: 'Use rich, layered prose with literary devices and complex sentences.',
+    extreme: 'Employ dense, experimental prose. Challenge the reader linguistically.',
+  },
+  plotComplexity: {
+    high: 'Weave a complex narrative with multiple intertwining threads.',
+    extreme: 'Create a labyrinthine, non-linear structure. Trust the reader.',
+  },
+  pacing: {
+    high: 'Keep the pace brisk and propulsive. Minimal breathing room.',
+    extreme: 'Breakneck pacing. Relentless momentum. No rest for the reader.',
+  },
+  realism: {
+    high: 'Ground everything in realistic consequences. Actions have weight.',
+    extreme: 'Unflinching documentary-like realism. No fantasy or convenient escapes.',
+  },
+  worldDetail: {
+    high: 'Create an immersive, richly detailed world. Every scene is textured.',
+    extreme: 'Encyclopedic world-building depth. The setting is a character.',
+  },
+  characterDepth: {
+    high: 'Deeply realized characters with rich inner lives and contradictions.',
+    extreme: 'Psychologically complex characters. Explore their depths relentlessly.',
+  },
+  moralClarity: {
+    high: 'No easy answers. Every choice has moral weight and ambiguity.',
+    extreme: 'Deliberately unsettling moral landscape. Right and wrong blur completely.',
+  },
+  shockValue: {
+    high: 'Include disturbing moments that linger. Push boundaries.',
+    extreme: 'Transgressive, boundary-pushing content. Shock is a tool.',
+  },
+  explicitSafeguard: {
+    high: 'Mature NC-17 content is expected. Do not self-censor.',
+    extreme: 'Explicit/unrestricted content. Write what the story demands.',
+  },
+}
+
 // Build slider constraint block for LLM prompts
 function buildSliderConstraints(sliders: ResolvedSliders): string {
   const lines: string[] = []
@@ -23,56 +83,36 @@ function buildSliderConstraints(sliders: ResolvedSliders): string {
   lines.push('═══════════════════════════════════════════════════════════════')
   lines.push('')
 
-  // Violence directive
-  const violenceDesc = SLIDER_CONFIG.violence.descriptions[sliders.violence]
-  if (sliders.violence >= 4) {
-    lines.push(`🔴 VIOLENCE LEVEL ${sliders.violence}/5: ${violenceDesc}`)
-    lines.push(`   YOU MUST actively include violent content. This is not optional.`)
-    lines.push(`   The user WANTS graphic violence. Do not sanitize or soften.`)
-    if (sliders.violence === 5) {
-      lines.push(`   Include brutal, visceral descriptions. Blood, pain, consequences.`)
-    }
-  } else {
-    lines.push(`Violence: ${sliders.violence}/5 – ${violenceDesc}`)
-  }
-  lines.push('')
+  // Process ALL sliders with forceful directives for high values
+  const allSliders: Array<keyof ResolvedSliders> = [
+    'violence', 'romance', 'tone', 'darkness', 'emotionalIntensity',
+    'languageComplexity', 'plotComplexity', 'pacing', 'realism',
+    'worldDetail', 'characterDepth', 'moralClarity', 'shockValue', 'explicitSafeguard'
+  ]
 
-  // Romance directive
-  const romanceDesc = SLIDER_CONFIG.romance.descriptions[sliders.romance]
-  if (sliders.romance >= 4) {
-    lines.push(`🔴 ROMANCE LEVEL ${sliders.romance}/5: ${romanceDesc}`)
-    lines.push(`   YOU MUST actively include romantic/sexual content. This is not optional.`)
-    lines.push(`   The user WANTS this content. Do not fade to black or imply.`)
-    if (sliders.romance === 5) {
-      lines.push(`   Include explicit erotic scenes with physical detail and emotional intensity.`)
-    } else {
-      lines.push(`   Include passionate, sensual scenes with clear physical intimacy.`)
-    }
-  } else {
-    lines.push(`Romance: ${sliders.romance}/5 – ${romanceDesc}`)
-  }
-  lines.push('')
-
-  // Tone directive
-  const toneDesc = SLIDER_CONFIG.tone.descriptions[sliders.tone]
-  lines.push(`Tone: ${sliders.tone}/5 – ${toneDesc}`)
-  lines.push('')
-
-  // Secondary sliders (compact)
-  lines.push('Additional parameters:')
-  for (const key of [
-    'darkness', 'emotionalIntensity', 'languageComplexity', 'plotComplexity',
-    'pacing', 'realism', 'worldDetail', 'characterDepth', 'moralClarity',
-    'shockValue', 'explicitSafeguard'
-  ] as const) {
+  for (const key of allSliders) {
     const config = SLIDER_CONFIG[key]
-    lines.push(`  ${config.name}: ${sliders[key]}/5`)
+    const value = sliders[key]
+    const desc = config.descriptions[value]
+    const directives = SLIDER_DIRECTIVES[key]
+
+    if (value >= 4) {
+      lines.push(`🔴 ${config.name.toUpperCase()} LEVEL ${value}/5: ${desc}`)
+      lines.push(`   YOU MUST actively incorporate this. This is not optional.`)
+      lines.push(`   ${value === 5 ? directives.extreme : directives.high}`)
+      lines.push('')
+    } else if (value <= 2) {
+      lines.push(`🔵 ${config.name}: ${value}/5 – ${desc} (keep it restrained)`)
+    } else {
+      lines.push(`${config.name}: ${value}/5 – ${desc}`)
+    }
   }
 
   lines.push('')
   lines.push('═══════════════════════════════════════════════════════════════')
   lines.push('These are the user\'s EXPLICIT creative choices. Respect them.')
-  lines.push('Do NOT default to safe/sanitized content when the user wants intensity.')
+  lines.push('High values (4-5) = ACTIVELY include this content.')
+  lines.push('Low values (1-2) = Actively AVOID or minimize this content.')
   lines.push('Write the content they asked for. This is their story.')
   lines.push('═══════════════════════════════════════════════════════════════')
 
