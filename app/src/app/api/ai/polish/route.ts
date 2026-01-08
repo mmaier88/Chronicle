@@ -1,31 +1,30 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { FULL_POLISH_PROMPT, QUICK_POLISH_PROMPT, countPatterns } from '@/lib/polish-pipeline'
+import {
+  apiSuccess,
+  ApiErrors,
+  validateBody,
+  isApiError,
+  polishSchema,
+} from '@/lib/api-utils'
 
 const anthropic = new Anthropic()
-
-interface PolishRequest {
-  text: string
-  mode?: 'full' | 'quick'
-  characters?: { name: string; role: string }[]
-  bookId?: string
-}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return ApiErrors.unauthorized()
   }
 
-  const body: PolishRequest = await request.json()
-  const { text, mode = 'quick', characters = [], bookId } = body
+  // Validate request body
+  const validated = await validateBody(request, polishSchema)
+  if (isApiError(validated)) return validated
 
-  if (!text || text.trim().length < 100) {
-    return NextResponse.json({ error: 'Text too short to polish' }, { status: 400 })
-  }
+  const { text, mode, characters, bookId } = validated
 
   // Count patterns before polishing
   const beforeMetrics = countPatterns(text)
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       polished: polishedText,
       metrics: {
         wordCountBefore,
@@ -90,9 +89,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Polish error:', error)
-    return NextResponse.json(
-      { error: 'Polish failed', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return ApiErrors.internal(error instanceof Error ? error.message : 'Polish failed')
   }
 }

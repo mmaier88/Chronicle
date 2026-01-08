@@ -1,9 +1,25 @@
 import { createClient, getUser } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { VibePreview, BookGenre } from '@/types/chronicle'
+import { VibePreview } from '@/types/chronicle'
+import { z } from 'zod'
+import {
+  apiSuccess,
+  ApiErrors,
+  validateBody,
+  isApiError,
+  bookGenreSchema,
+  vibePreviewSchema,
+} from '@/lib/api-utils'
 
 const anthropic = new Anthropic()
+
+// Request schema with Zod
+const previewRequestSchema = z.object({
+  genre: bookGenreSchema,
+  prompt: z.string().min(10, 'Prompt must be at least 10 characters').max(2000),
+  existingPreview: vibePreviewSchema.partial().optional(),
+})
 
 // Robust JSON parser that handles common AI output issues
 function parseAIJson<T>(text: string): T {
@@ -31,12 +47,6 @@ function parseAIJson<T>(text: string): T {
   } catch (e) {
     throw new Error(`Failed to parse JSON: ${e instanceof Error ? e.message : 'Unknown error'}`)
   }
-}
-
-interface PreviewRequest {
-  genre: BookGenre
-  prompt: string
-  existingPreview?: Partial<VibePreview> // For "Improve" functionality
 }
 
 // IP name guardrails - block obvious copyrighted franchise names
@@ -68,23 +78,22 @@ export async function POST(request: NextRequest) {
   const { user } = await getUser()
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return ApiErrors.unauthorized()
   }
 
-  const body: PreviewRequest = await request.json()
-  const { genre, prompt, existingPreview } = body
+  // Validate request body
+  const validated = await validateBody(request, previewRequestSchema)
+  if (isApiError(validated)) return validated
 
-  if (!genre || !prompt) {
-    return NextResponse.json({ error: 'Genre and prompt are required' }, { status: 400 })
-  }
+  const { genre, prompt, existingPreview } = validated
 
   // Check for blocked content
   const blockedMatch = checkForBlockedContent(prompt)
   if (blockedMatch) {
-    return NextResponse.json({
-      error: `Your prompt references "${blockedMatch}" which appears to be a copyrighted franchise. Please make your story "inspired by" rather than directly using these characters/worlds.`,
-      blocked: true
-    }, { status: 400 })
+    return ApiErrors.badRequest(
+      `Your prompt references "${blockedMatch}" which appears to be a copyrighted franchise. Please make your story "inspired by" rather than directly using these characters/worlds.`,
+      { blocked: true }
+    )
   }
 
   const genreDescription = genre === 'literary_fiction'
@@ -154,10 +163,7 @@ Requirements:
 
     } catch (parseError) {
       console.error('Failed to parse preview JSON:', parseError, responseText)
-      return NextResponse.json({
-        error: 'Failed to generate valid preview. Please try again.',
-        raw: responseText
-      }, { status: 500 })
+      return ApiErrors.internal('Failed to generate valid preview. Please try again.')
     }
 
     // Log AI job
@@ -174,13 +180,10 @@ Requirements:
       completed_at: new Date().toISOString(),
     })
 
-    return NextResponse.json({ preview })
+    return apiSuccess({ preview })
 
   } catch (error) {
     console.error('Preview generation error:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate preview' },
-      { status: 500 }
-    )
+    return ApiErrors.internal('Failed to generate preview')
   }
 }

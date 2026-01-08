@@ -3,36 +3,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
 import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from '@/lib/rate-limit'
+import {
+  apiSuccess,
+  ApiErrors,
+  validateBody,
+  isApiError,
+  aiGenerateSchema,
+} from '@/lib/api-utils'
 
 const anthropic = new Anthropic()
-
-interface GenerateRequest {
-  bookId: string
-  chapterId?: string
-  sectionId?: string
-  type: 'constitution' | 'chapter' | 'section'
-  field?: string // For constitution field regeneration
-}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return ApiErrors.unauthorized()
   }
 
   // Rate limit per user
   const rateLimit = checkRateLimit(`ai:${user.id}`, RATE_LIMITS.aiGenerate)
   if (!rateLimit.success) {
     return NextResponse.json(
-      { error: 'Rate limit exceeded. Please wait before generating more content.' },
+      { success: false, error: 'Rate limit exceeded. Please wait before generating more content.' },
       { status: 429, headers: rateLimitHeaders(rateLimit) }
     )
   }
 
-  const body: GenerateRequest = await request.json()
-  const { bookId, chapterId, sectionId, type, field } = body
+  // Validate request body
+  const validated = await validateBody(request, aiGenerateSchema)
+  if (isApiError(validated)) return validated
+
+  const { bookId, chapterId, sectionId, type, field } = validated
 
   // Fetch book data
   const { data: book, error: bookError } = await supabase
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (bookError || !book) {
-    return NextResponse.json({ error: 'Book not found' }, { status: 404 })
+    return ApiErrors.notFound('Book')
   }
 
   let prompt = ''
@@ -76,7 +78,7 @@ Generate content for the "${field}" field of the book's constitution.`
       .single()
 
     if (!chapter) {
-      return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
+      return ApiErrors.notFound('Chapter')
     }
 
     systemPrompt = `You are helping an author develop chapter content for their book.
@@ -101,7 +103,7 @@ Return as JSON: { sections: [{ title, goal, local_claim }] }`
       .single()
 
     if (!section) {
-      return NextResponse.json({ error: 'Section not found' }, { status: 404 })
+      return ApiErrors.notFound('Section')
     }
 
     // Fetch previous sections for context
@@ -184,9 +186,9 @@ Return as JSON: { prose: "...", claims: ["claim1", "claim2"] }`
     // Try to parse as JSON, otherwise return as text
     try {
       const parsed = JSON.parse(responseText)
-      return NextResponse.json({ result: parsed, raw: responseText })
+      return apiSuccess({ result: parsed, raw: responseText })
     } catch {
-      return NextResponse.json({ result: responseText, raw: responseText })
+      return apiSuccess({ result: responseText, raw: responseText })
     }
   } catch (error) {
     console.error('AI generation error:', error)
@@ -203,9 +205,6 @@ Return as JSON: { prose: "...", claims: ["claim1", "claim2"] }`
       error_message: error instanceof Error ? error.message : 'Unknown error',
     })
 
-    return NextResponse.json(
-      { error: 'AI generation failed' },
-      { status: 500 }
-    )
+    return ApiErrors.internal('AI generation failed')
   }
 }

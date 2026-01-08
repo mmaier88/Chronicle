@@ -1,19 +1,25 @@
-import { NextResponse } from 'next/server'
 import { createServiceClient, getUser } from '@/lib/supabase/server'
 import crypto from 'crypto'
+import {
+  apiSuccess,
+  ApiErrors,
+  validateBody,
+  isApiError,
+  shareCreateSchema,
+} from '@/lib/api-utils'
 
 export async function POST(request: Request) {
   try {
     const { user } = await getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return ApiErrors.unauthorized()
     }
 
-    const { bookId } = await request.json()
+    // Validate request body
+    const validated = await validateBody(request, shareCreateSchema)
+    if (isApiError(validated)) return validated
 
-    if (!bookId) {
-      return NextResponse.json({ error: 'bookId is required' }, { status: 400 })
-    }
+    const { bookId } = validated
 
     const supabase = createServiceClient()
 
@@ -25,11 +31,11 @@ export async function POST(request: Request) {
       .single()
 
     if (bookError || !book) {
-      return NextResponse.json({ error: 'Book not found' }, { status: 404 })
+      return ApiErrors.notFound('Book')
     }
 
     if (book.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return ApiErrors.forbidden()
     }
 
     // Check for existing active share
@@ -43,7 +49,7 @@ export async function POST(request: Request) {
     if (existingShare) {
       // Return existing share link
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      return NextResponse.json({
+      return apiSuccess({
         shareToken: existingShare.share_token,
         shareUrl: `${baseUrl}/share/${existingShare.share_token}`,
         viewCount: existingShare.view_count,
@@ -74,14 +80,11 @@ export async function POST(request: Request) {
 
     if (createError) {
       console.error('Failed to create share:', createError)
-      return NextResponse.json(
-        { error: 'Failed to create share link' },
-        { status: 500 }
-      )
+      return ApiErrors.internal('Failed to create share link')
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    return NextResponse.json({
+    return apiSuccess({
       shareToken: newShare.share_token,
       shareUrl: `${baseUrl}/share/${newShare.share_token}`,
       viewCount: 0,
@@ -91,9 +94,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Share create error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return ApiErrors.internal()
   }
 }

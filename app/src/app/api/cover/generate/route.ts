@@ -4,28 +4,35 @@ import { generateCoverWithRetry, buildCoverPrompt } from '@/lib/gemini/imagen'
 import { VibePreview } from '@/types/chronicle'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from '@/lib/rate-limit'
+import {
+  apiSuccess,
+  ApiErrors,
+  validateBody,
+  isApiError,
+  coverGenerateSchema,
+} from '@/lib/api-utils'
 
 export async function POST(request: Request) {
   try {
     const { user } = await getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return ApiErrors.unauthorized()
     }
 
     // Rate limit per user
     const rateLimit = checkRateLimit(`cover:${user.id}`, RATE_LIMITS.cover)
     if (!rateLimit.success) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded. Please wait before generating more covers.' },
+        { success: false, error: 'Rate limit exceeded. Please wait before generating more covers.' },
         { status: 429, headers: rateLimitHeaders(rateLimit) }
       )
     }
 
-    const { bookId, regenerate } = await request.json()
+    // Validate request body
+    const validated = await validateBody(request, coverGenerateSchema)
+    if (isApiError(validated)) return validated
 
-    if (!bookId) {
-      return NextResponse.json({ error: 'bookId is required' }, { status: 400 })
-    }
+    const { bookId, regenerate } = validated
 
     const supabase = createServiceClient()
 
@@ -37,17 +44,17 @@ export async function POST(request: Request) {
       .single()
 
     if (bookError || !book) {
-      return NextResponse.json({ error: 'Book not found' }, { status: 404 })
+      return ApiErrors.notFound('Book')
     }
 
     // Verify ownership
     if (book.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return ApiErrors.forbidden()
     }
 
     // Skip if cover already exists and not regenerating
     if (book.cover_status === 'ready' && book.cover_url && !regenerate) {
-      return NextResponse.json({
+      return apiSuccess({
         status: 'ready',
         cover_url: book.cover_url,
       })
@@ -55,7 +62,7 @@ export async function POST(request: Request) {
 
     // Skip if already generating
     if (book.cover_status === 'generating' && !regenerate) {
-      return NextResponse.json({
+      return apiSuccess({
         status: 'generating',
         message: 'Cover generation in progress',
       })
@@ -122,7 +129,7 @@ export async function POST(request: Request) {
         })
         .eq('id', bookId)
 
-      return NextResponse.json({
+      return apiSuccess({
         status: 'ready',
         cover_url: coverUrl,
       })
@@ -135,19 +142,10 @@ export async function POST(request: Request) {
         .update({ cover_status: 'failed' })
         .eq('id', bookId)
 
-      return NextResponse.json(
-        {
-          status: 'failed',
-          error: genError instanceof Error ? genError.message : 'Unknown error',
-        },
-        { status: 500 }
-      )
+      return ApiErrors.internal(genError instanceof Error ? genError.message : 'Cover generation failed')
     }
   } catch (error) {
     logger.error('Cover API error', error, { operation: 'cover_api' })
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return ApiErrors.internal()
   }
 }
