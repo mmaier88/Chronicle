@@ -40,8 +40,11 @@ function wrapTemplate(content: string): string {
 `
 }
 
-export function welcomeEmail(_name: string): { subject: string; html: string; text: string } {
-  const text = `Hi,
+export function welcomeEmail(name: string): { subject: string; html: string; text: string } {
+  const firstName = name?.split(' ')[0] || ''
+  const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
+
+  const text = `${greeting}
 
 I'm Markus, the founder of Chronicle. I'm really glad you're here.
 
@@ -56,9 +59,7 @@ We're building Chronicle slowly and thoughtfully. We care about quality, not vol
 Thank you for being here and for trusting us with your time.
 
 Best,
-
 Markus
-
 Founder, Chronicle`
 
   return {
