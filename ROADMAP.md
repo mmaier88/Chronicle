@@ -1,6 +1,6 @@
 # Chronicle - Features & Roadmap
 
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-08
 **Version:** 2.0
 
 ---
@@ -177,6 +177,28 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 | Welcome email on signup | High | Done |
 | Book completion notification | High | Done |
 | Email templates (branded) | Medium | Done |
+
+### Phase 14.6: Staging Environment (Complete)
+
+**Goal:** Proper staging/production separation for safe testing before production deploys.
+
+| Component | Production | Staging |
+|-----------|------------|---------|
+| Vercel | `chronicle.town` (main branch) | `staging.chronicle.town` (staging branch) |
+| Supabase | `ambrhrajlgogvfysztrw` | `lckwlokaarkevrjraxax` |
+| Hetzner Engine | `138.199.231.3:80` | `138.199.231.3:3001` |
+
+| Task | Status |
+|------|--------|
+| Create staging Supabase project | Done |
+| Run migrations on staging | Done |
+| Configure Vercel environment scoping | Done |
+| Set up staging Engine on port 3001 | Done |
+| Create staging branch | Done |
+| Add staging.chronicle.town DNS | Manual (A record → 76.76.21.21) |
+| Configure Google OAuth for staging | Manual (Supabase Dashboard) |
+
+---
 
 ### Phase 15: Discovery & Public Library
 
@@ -408,6 +430,15 @@ ANTHROPIC_API_KEY
 ---
 
 ## Changelog
+
+### 2026-01-08
+- Phase 14.6 complete: Staging Environment
+- Created staging Supabase project (lckwlokaarkevrjraxax)
+- Configured Vercel Preview environment with staging Supabase keys
+- Added staging Engine on Hetzner port 3001
+- Created staging branch for deployment
+- Added Send to Kindle button with mobile share sheet support
+- Added synopsis to story cards on /create and /stories pages
 
 ### 2026-01-07
 - **Roadmap restructure**: Prioritized Discovery, Social & Retention
