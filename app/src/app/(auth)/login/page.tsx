@@ -73,7 +73,7 @@ function LoginForm() {
       options: {
         redirectTo: `${window.location.origin}/callback?redirect=${redirect}`,
         queryParams: {
-          prompt: 'select_account', // Always show account picker
+          prompt: 'consent', // Always show consent screen with email permission
         },
       },
     })

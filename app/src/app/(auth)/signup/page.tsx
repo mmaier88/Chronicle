@@ -55,7 +55,7 @@ export default function SignupPage() {
       options: {
         redirectTo: `${window.location.origin}/callback`,
         queryParams: {
-          prompt: 'select_account', // Always show account picker
+          prompt: 'consent', // Always show consent screen with email permission
         },
       },
     })
