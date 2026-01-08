@@ -14,10 +14,12 @@ export async function GET(request: Request) {
     if (!error) {
       // Check if this is a new user and send welcome email
       const { data: { user } } = await supabase.auth.getUser()
+      let isNewUser = false
+
       if (user) {
         const createdAt = new Date(user.created_at)
         const now = new Date()
-        const isNewUser = (now.getTime() - createdAt.getTime()) < 60000 // Created within last minute
+        isNewUser = (now.getTime() - createdAt.getTime()) < 60000 // Created within last minute
 
         if (isNewUser && user.email) {
           const name = user.user_metadata?.full_name || user.user_metadata?.name || ''
@@ -25,7 +27,9 @@ export async function GET(request: Request) {
         }
       }
 
-      return NextResponse.redirect(`${origin}${redirect}`)
+      // New users go straight to story creation
+      const finalRedirect = isNewUser ? '/create/new' : redirect
+      return NextResponse.redirect(`${origin}${finalRedirect}`)
     }
   }
 

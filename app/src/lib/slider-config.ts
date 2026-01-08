@@ -12,7 +12,7 @@ export interface SliderConfig {
 export const SLIDER_CONFIG: Record<keyof StorySliders, SliderConfig> = {
   violence: {
     name: 'Violence',
-    labels: ['Minimal', 'Balanced', 'Extreme'],
+    labels: ['Minimal', 'Balanced', 'Brutal'],
     descriptions: {
       1: 'safe, implied, off-screen',
       2: 'mentioned but not shown',
@@ -24,7 +24,7 @@ export const SLIDER_CONFIG: Record<keyof StorySliders, SliderConfig> = {
   },
   romance: {
     name: 'Romance',
-    labels: ['Minimal', 'Balanced', 'Extreme'],
+    labels: ['Minimal', 'Balanced', 'Steamy'],
     descriptions: {
       1: 'none or subtext only',
       2: 'light romantic tension',
