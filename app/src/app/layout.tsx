@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Chronicle",
-  description: "AI-native book writing system",
+  description: "Stories you didn't know you needed",
 };
 
 export default function RootLayout({
