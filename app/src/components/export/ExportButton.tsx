@@ -2,8 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Download, FileText, BookOpen, Loader2, ChevronDown } from 'lucide-react'
-import { generatePDF } from '@/lib/export/pdf'
-import { generateEPUB } from '@/lib/export/epub'
+
+// Lazy load export modules - jsPDF (~200KB) and epub-gen-memory (~150KB)
+// Only loaded when user actually clicks export
+const loadPDF = () => import('@/lib/export/pdf').then(m => m.generatePDF)
+const loadEPUB = () => import('@/lib/export/epub').then(m => m.generateEPUB)
 
 interface Chapter {
   title: string
@@ -61,10 +64,12 @@ export function ExportButton({ book, chapters }: ExportButtonProps) {
       let mimeType: string
 
       if (format === 'pdf') {
+        const generatePDF = await loadPDF()
         blob = await generatePDF(options)
         filename = `${sanitizeFilename(book.title)}.pdf`
         mimeType = 'application/pdf'
       } else {
+        const generateEPUB = await loadEPUB()
         blob = await generateEPUB(options)
         filename = `${sanitizeFilename(book.title)}.epub`
         mimeType = 'application/epub+zip'

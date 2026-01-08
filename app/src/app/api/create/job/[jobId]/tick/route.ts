@@ -5,6 +5,8 @@ import { VibePreview, Constitution, VibeChapterPlan } from '@/types/chronicle'
 import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
 import { QUICK_POLISH_PROMPT } from '@/lib/polish-pipeline'
 import { sendBookCompletedEmail } from '@/lib/email'
+import { markdownToHtmlParagraphs } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic()
 
@@ -343,17 +345,6 @@ async function polishProse(
     : prose
 }
 
-// Convert markdown to HTML
-function markdownToHtml(markdown: string): string {
-  return markdown
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .split(/\n\n+/)
-    .map(p => p.trim())
-    .filter(p => p.length > 0)
-    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-    .join('')
-}
 
 export async function POST(
   request: NextRequest,
@@ -371,7 +362,7 @@ export async function POST(
   // Fetch job
   const { data: job, error: jobError } = await supabase
     .from('vibe_jobs')
-    .select('*')
+    .select('id, user_id, book_id, genre, user_prompt, preview, status, step, progress, story_synopsis, error, attempt')
     .eq('id', jobId)
     .eq('user_id', user.id)
     .single()
@@ -415,7 +406,7 @@ export async function POST(
     // Fetch book
     const { data: book } = await supabase
       .from('books')
-      .select('*')
+      .select('id, title, genre, status, constitution_json, owner_id, cover_status')
       .eq('id', vibeJob.book_id)
       .single()
 
@@ -447,7 +438,7 @@ export async function POST(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookId: book.id })
       }).catch(err => {
-        console.error('Cover generation trigger failed:', err)
+        logger.error('Cover generation trigger failed', err, { bookId: book.id, operation: 'cover_trigger' })
       })
 
       await updateJob(supabase, jobId, { step: 'plan', progress: 10 })
@@ -582,7 +573,7 @@ export async function POST(
       // DRAFT MODE: Skip consistency check, rewrite, and polish for 2x faster generation
 
       // Convert to HTML and save
-      const htmlContent = markdownToHtml(finalProse)
+      const htmlContent = markdownToHtmlParagraphs(finalProse)
 
       await supabase
         .from('sections')
@@ -655,7 +646,7 @@ export async function POST(
         const fullUser = user as { email: string; user_metadata?: { full_name?: string; name?: string } }
         const userName = fullUser.user_metadata?.full_name || fullUser.user_metadata?.name || ''
         sendBookCompletedEmail(user.email, userName, book.title, book.id).catch(err => {
-          console.error('Book completion email failed:', err)
+          logger.error('Book completion email failed', err, { bookId: book.id, userId: user.id, operation: 'completion_email' })
         })
       }
 
@@ -679,7 +670,7 @@ export async function POST(
     throw new Error(`Unknown step: ${step}`)
 
   } catch (error) {
-    console.error('Tick error:', error)
+    logger.error('Tick error', error, { jobId, operation: 'tick' })
 
     await updateJob(supabase, jobId, {
       status: 'failed',

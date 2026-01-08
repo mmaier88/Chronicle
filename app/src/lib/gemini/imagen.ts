@@ -34,11 +34,12 @@ export async function generateCoverImage(prompt: string): Promise<Buffer> {
   const apiKey = getApiKey()
 
   const response = await fetch(
-    `${GEMINI_API_URL}/${MODEL}:generateContent?key=${apiKey}`,
+    `${GEMINI_API_URL}/${MODEL}:generateContent`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
         contents: [

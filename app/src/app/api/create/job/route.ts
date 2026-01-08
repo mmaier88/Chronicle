@@ -1,6 +1,7 @@
 import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { VibePreview, BookGenre, Constitution } from '@/types/chronicle'
+import { logger } from '@/lib/logger'
 
 type BookLength = 30 | 60 | 120 | 300
 type GenerationMode = 'draft' | 'polished'
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (bookError || !book) {
-    console.error('Failed to create book:', bookError)
+    logger.error('Failed to create book', bookError, { userId: user.id, operation: 'create_book' })
     return NextResponse.json({ error: 'Failed to create book' }, { status: 500 })
   }
 
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (jobError || !job) {
-    console.error('Failed to create vibe job:', jobError)
+    logger.error('Failed to create vibe job', jobError, { userId: user.id, bookId: book.id, operation: 'create_vibe_job' })
     // Clean up book if job creation fails
     await supabase.from('books').delete().eq('id', book.id)
     return NextResponse.json({ error: 'Failed to create generation job' }, { status: 500 })

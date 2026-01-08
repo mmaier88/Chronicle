@@ -78,11 +78,25 @@ export default async function StoriesPage() {
                         status={story.cover_status as CoverStatus}
                         size="sm"
                       />
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <h3 className="app-heading-3" style={{ marginBottom: '0.25rem' }}>
                           {story.title}
                         </h3>
-                        <p className="app-body-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {story.core_question && (
+                          <p className="app-body-sm" style={{
+                            marginBottom: '0.5rem',
+                            opacity: 0.8,
+                            fontStyle: 'italic',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {story.core_question}
+                          </p>
+                        )}
+                        <p className="app-body-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.6 }}>
                           <Clock style={{ width: 12, height: 12 }} />
                           {new Date(story.created_at).toLocaleDateString('en-US', {
                             month: 'short',

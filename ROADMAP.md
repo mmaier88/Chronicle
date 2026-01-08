@@ -166,6 +166,7 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 | AI cover generation (Google Gemini) | High | Done |
 | Cover regeneration | High | Done |
 | Shareable links (public read + listen) | High | Done |
+| Send to Kindle (EPUB + web upload) | High | Done |
 
 ### Phase 14.5: Email Notifications (Complete)
 
@@ -289,23 +290,34 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 ## Technical Debt & Improvements
 
+### Critical (No Tests)
+- [ ] Add test framework (Vitest/Jest)
+- [ ] Unit tests for utils & helpers
+- [ ] API route integration tests
+- [ ] Database RLS policy tests
+- [ ] Generation pipeline e2e tests
+
 ### High Priority
-- [ ] End-to-end tests for generation pipeline
-- [ ] Structured logging with correlation IDs
+- [x] Structured logging (`lib/logger.ts`) - Partial
+- [x] Environment validation (`lib/env.ts`)
+- [x] Performance indexes (migrations 00005, 00006)
+- [ ] Correlation IDs in logs
 - [ ] Error alerting (PagerDuty/Slack)
-- [ ] Generation cost tracking
+- [ ] Generation cost tracking per user
 - [ ] Analytics dashboard
 
 ### Medium Priority
 - [ ] OpenAI fallback for LLM calls
 - [ ] A/B testing framework
-- [ ] Performance monitoring
-- [ ] Cache layer for embeddings
+- [ ] Performance monitoring (Vercel Analytics)
+- [ ] Standardize API response format
+- [ ] Add ARIA labels for accessibility
 
 ### Low Priority
 - [ ] Multi-region deployment
 - [ ] Real-time collaboration
 - [ ] Version control for manuscripts
+- [ ] HTML sanitization with DOMPurify
 
 ---
 
@@ -325,13 +337,28 @@ These features are explicitly deferred:
 ## Environment Variables
 
 ### Vercel (Chronicle App)
+
+**Required:**
 ```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-ANTHROPIC_API_KEY
-VOYAGE_API_KEY
-NEXT_PUBLIC_GOOGLE_CLIENT_ID
+NEXT_PUBLIC_SUPABASE_URL      # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY # Supabase anon/public key
+SUPABASE_SERVICE_ROLE_KEY     # Supabase service role key
+ANTHROPIC_API_KEY             # Claude API key
+```
+
+**Optional (features disabled if missing):**
+```
+GOOGLE_API_KEY                # Cover generation (Gemini)
+ELEVENLABS_API_KEY            # Text-to-speech
+SENDGRID_API_KEY              # Transactional emails
+VOYAGE_API_KEY                # Embeddings for semantic search
+NEXT_PUBLIC_APP_URL           # Production URL (https://chronicle.town)
+```
+
+**Security:**
+```
+SUPABASE_WEBHOOK_SECRET       # Webhook authentication (required in prod)
+CRON_SECRET                   # Cron job authentication
 ```
 
 ### Hetzner (Chronicle Engine)

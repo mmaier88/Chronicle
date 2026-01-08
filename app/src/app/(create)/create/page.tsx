@@ -1,6 +1,8 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Sparkles, BookOpen } from 'lucide-react'
+import { Sparkles, Clock } from 'lucide-react'
+import { BookCover } from '@/components/cover/BookCover'
+import { CoverStatus } from '@/types/chronicle'
 
 export default async function CreateLandingPage() {
   const supabase = await createClient()
@@ -9,7 +11,7 @@ export default async function CreateLandingPage() {
   // Fetch user's recent completed books (hide skeletons/in-progress)
   const { data: recentBooks } = await supabase
     .from('books')
-    .select('id, title, status, created_at')
+    .select('id, title, status, created_at, cover_url, cover_status, core_question')
     .eq('owner_id', user?.id)
     .eq('source', 'vibe')
     .eq('status', 'final')
@@ -56,25 +58,36 @@ export default async function CreateLandingPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{
-                    width: 48,
-                    height: 48,
-                    background: 'linear-gradient(135deg, rgba(212, 165, 116, 0.2), rgba(212, 165, 116, 0.1))',
-                    borderRadius: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <BookOpen style={{ width: 20, height: 20, color: 'var(--amber-warm)' }} />
-                  </div>
-                  <div>
+                  <BookCover
+                    coverUrl={book.cover_url}
+                    title={book.title}
+                    status={book.cover_status as CoverStatus}
+                    size="sm"
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 className="app-heading-3" style={{ marginBottom: '0.25rem' }}>
                       {book.title}
                     </h3>
-                    <p className="app-body-sm">
+                    {book.core_question && (
+                      <p className="app-body-sm" style={{
+                        marginBottom: '0.5rem',
+                        opacity: 0.8,
+                        fontStyle: 'italic',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}>
+                        {book.core_question}
+                      </p>
+                    )}
+                    <p className="app-body-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.6 }}>
+                      <Clock style={{ width: 12, height: 12 }} />
                       {new Date(book.created_at).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
+                        year: 'numeric'
                       })}
                     </p>
                   </div>

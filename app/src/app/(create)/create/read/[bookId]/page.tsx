@@ -7,6 +7,7 @@ import { BookCover } from '@/components/cover/BookCover'
 import { RegenerateCoverButton } from '@/components/cover/RegenerateCoverButton'
 import { ShareButton } from '@/components/share/ShareButton'
 import { ExportButton } from '@/components/export/ExportButton'
+import { SendToKindleButton } from '@/components/export/SendToKindleButton'
 import { markdownToHtml } from '@/lib/utils'
 
 interface Chapter {
@@ -154,6 +155,7 @@ export default async function VibeReadPage({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
           <ShareButton bookId={book.id} existingShareUrl={shareUrl} />
           <ExportButton book={book} chapters={sortedChapters} />
+          <SendToKindleButton book={book} chapters={sortedChapters} />
           <RegenerateCoverButton bookId={book.id} />
         </div>
 

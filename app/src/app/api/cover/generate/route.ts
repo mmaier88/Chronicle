@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient, getUser } from '@/lib/supabase/server'
 import { generateCoverWithRetry, buildCoverPrompt } from '@/lib/gemini/imagen'
 import { VibePreview } from '@/types/chronicle'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
         cover_url: coverUrl,
       })
     } catch (genError) {
-      console.error('Cover generation failed:', genError)
+      logger.error('Cover generation failed', genError, { bookId, operation: 'cover_generate' })
 
       // Update status to failed
       await supabase
@@ -133,7 +134,7 @@ export async function POST(request: Request) {
       )
     }
   } catch (error) {
-    console.error('Cover API error:', error)
+    logger.error('Cover API error', error, { operation: 'cover_api' })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -7,6 +7,7 @@ import { Section, Book, Chapter } from '@/types/chronicle'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { ClaimBlock, MotifBlock, ThreadBlock, NoteBlock } from '@/components/editor/extensions'
+import { markdownToHtmlParagraphs } from '@/lib/utils'
 import {
   Save, CheckCircle, Info, Bold, Italic, List, ListOrdered, Heading2,
   Sparkles, Target, Lightbulb, StickyNote, AlertTriangle, Loader2
@@ -16,21 +17,6 @@ interface SectionEditorProps {
   section: Section
   book: Book
   chapter: Chapter
-}
-
-// Convert basic markdown to HTML for TipTap
-function markdownToHtml(markdown: string): string {
-  return markdown
-    // Convert **bold** to <strong>
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Convert *italic* to <em>
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Convert paragraphs (double newlines)
-    .split(/\n\n+/)
-    .map(p => p.trim())
-    .filter(p => p.length > 0)
-    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-    .join('')
 }
 
 export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
@@ -111,7 +97,7 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
 
       if (typeof result === 'object' && result.prose) {
         // Convert markdown to HTML for TipTap
-        const html = markdownToHtml(result.prose)
+        const html = markdownToHtmlParagraphs(result.prose)
         editor.commands.setContent(html)
 
         // If claims were suggested, show them
@@ -119,7 +105,7 @@ export function SectionEditor({ section, book, chapter }: SectionEditorProps) {
           console.log('Suggested claims:', result.claims)
         }
       } else if (typeof result === 'string') {
-        const html = markdownToHtml(result)
+        const html = markdownToHtmlParagraphs(result)
         editor.commands.setContent(html)
       }
     } catch (error) {

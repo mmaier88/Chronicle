@@ -5,10 +5,9 @@ import { cookies } from 'next/headers'
 // Dev mode: use this UUID when no user is logged in
 export const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
-// Check at runtime, not build time
+// Check if running in development mode
 function isDevMode() {
-  // Always skip auth for now during testing
-  return true
+  return process.env.NODE_ENV === 'development'
 }
 
 export async function createClient() {

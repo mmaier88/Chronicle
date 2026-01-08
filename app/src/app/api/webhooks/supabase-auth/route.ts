@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { sendWelcomeEmail } from '@/lib/email'
+import { Webhook } from 'standardwebhooks'
 
 // Supabase Auth Webhook - receives events from Supabase
-// Configure in Supabase Dashboard > Authentication > Hooks > Send Webhook
+// Configure in Supabase Dashboard > Authentication > Auth Hooks
+// Uses Standard Webhooks format for signature verification
 
 interface AuthWebhookPayload {
   type: string
@@ -21,16 +23,34 @@ interface AuthWebhookPayload {
 
 export async function POST(request: Request) {
   try {
-    // Verify webhook secret if configured
+    // Get the raw body for signature verification
+    const rawBody = await request.text()
+
+    // Verify webhook signature (required in production)
     const webhookSecret = process.env.SUPABASE_WEBHOOK_SECRET
-    if (webhookSecret) {
-      const authHeader = request.headers.get('authorization')
-      if (authHeader !== `Bearer ${webhookSecret}`) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!webhookSecret) {
+      console.error('SUPABASE_WEBHOOK_SECRET not configured')
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+      }
+    } else {
+      // Standard Webhooks verification
+      const wh = new Webhook(webhookSecret)
+      const headers = {
+        'webhook-id': request.headers.get('webhook-id') || '',
+        'webhook-timestamp': request.headers.get('webhook-timestamp') || '',
+        'webhook-signature': request.headers.get('webhook-signature') || '',
+      }
+
+      try {
+        wh.verify(rawBody, headers)
+      } catch (err) {
+        console.error('Webhook signature verification failed:', err)
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
       }
     }
 
-    const payload: AuthWebhookPayload = await request.json()
+    const payload: AuthWebhookPayload = JSON.parse(rawBody)
 
     // Handle user creation event
     if (payload.type === 'INSERT' && payload.table === 'users') {
