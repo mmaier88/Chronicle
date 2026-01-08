@@ -14,6 +14,35 @@ export async function GET(
 
     const supabase = createServiceClient()
 
+    // First check if share exists and is not expired
+    const { data: share, error: shareError } = await supabase
+      .from('book_shares')
+      .select('id, enabled, expires_at')
+      .eq('share_token', token)
+      .single()
+
+    if (shareError || !share) {
+      return NextResponse.json(
+        { error: 'Share link not found' },
+        { status: 404 }
+      )
+    }
+
+    if (!share.enabled) {
+      return NextResponse.json(
+        { error: 'Share link has been disabled' },
+        { status: 403 }
+      )
+    }
+
+    // Check expiration
+    if (share.expires_at && new Date(share.expires_at) < new Date()) {
+      return NextResponse.json(
+        { error: 'Share link has expired' },
+        { status: 410 }
+      )
+    }
+
     // Get shared book using RLS bypass function
     const { data: books, error: bookError } = await supabase.rpc(
       'get_shared_book',

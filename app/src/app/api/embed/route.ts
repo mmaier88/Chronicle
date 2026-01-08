@@ -148,17 +148,35 @@ export async function POST(request: NextRequest) {
     // Chunk the content
     const chunks = chunkText(contentText)
 
-    // Generate embeddings for each chunk
-    for (let i = 0; i < chunks.length; i++) {
-      const embedding = await getEmbedding(chunks[i])
+    // Generate all embeddings in parallel (batched for rate limits)
+    const BATCH_SIZE = 5
+    const embeddingRecords: Array<{
+      milestone_id: string
+      book_id: string
+      chunk_index: number
+      content: string
+      embedding: number[]
+    }> = []
 
-      await supabase.from('embeddings').insert({
-        milestone_id: milestone.id,
-        book_id: bookId,
-        chunk_index: i,
-        content: chunks[i],
-        embedding: embedding,
+    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+      const batch = chunks.slice(i, i + BATCH_SIZE)
+      const embeddings = await Promise.all(batch.map(chunk => getEmbedding(chunk)))
+
+      embeddings.forEach((embedding, idx) => {
+        embeddingRecords.push({
+          milestone_id: milestone.id,
+          book_id: bookId,
+          chunk_index: i + idx,
+          content: batch[idx],
+          embedding: embedding,
+        })
       })
+    }
+
+    // Batch insert all embeddings at once
+    if (embeddingRecords.length > 0) {
+      const { error: insertError } = await supabase.from('embeddings').insert(embeddingRecords)
+      if (insertError) throw insertError
     }
 
     // Mark milestone as embedded

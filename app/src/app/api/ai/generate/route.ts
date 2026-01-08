@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
+import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from '@/lib/rate-limit'
 
 const anthropic = new Anthropic()
 
@@ -19,6 +20,15 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Rate limit per user
+  const rateLimit = checkRateLimit(`ai:${user.id}`, RATE_LIMITS.aiGenerate)
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Please wait before generating more content.' },
+      { status: 429, headers: rateLimitHeaders(rateLimit) }
+    )
   }
 
   const body: GenerateRequest = await request.json()

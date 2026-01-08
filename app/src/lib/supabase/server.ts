@@ -2,13 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-// Dev mode: use this UUID when no user is logged in
-export const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
-
-// Check if running in development mode
-function isDevMode() {
-  return process.env.NODE_ENV === 'development'
-}
+// Dev mode is disabled in production for security
+// To test locally, use proper auth or set up a test user
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -45,21 +40,10 @@ export function createServiceClient() {
   )
 }
 
-// Helper to get user or dev user
+// Helper to get authenticated user
 export async function getUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) {
-    return { user, isDevUser: false }
-  }
-
-  if (isDevMode()) {
-    return {
-      user: { id: DEV_USER_ID, email: 'dev@chronicle.local' } as { id: string; email: string },
-      isDevUser: true
-    }
-  }
-
-  return { user: null, isDevUser: false }
+  return { user, isDevUser: false }
 }

@@ -7,6 +7,7 @@ import {
   DEFAULT_VOICE_ID,
   BOOK_VOICES,
 } from '@/lib/elevenlabs/client'
+import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from '@/lib/rate-limit'
 
 interface RouteParams {
   params: Promise<{ sectionId: string }>
@@ -19,6 +20,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Rate limit per user
+  const rateLimit = checkRateLimit(`tts:${user.id}`, RATE_LIMITS.tts)
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Please wait before generating more audio.' },
+      { status: 429, headers: rateLimitHeaders(rateLimit) }
+    )
   }
 
   const supabase = createServiceClient()

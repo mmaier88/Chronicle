@@ -31,15 +31,28 @@ export default function VibePreviewPage() {
   const [mode, setMode] = useState<GenerationMode>('draft')
 
   useEffect(() => {
-    const stored = localStorage.getItem('vibe_draft')
-    if (stored) {
-      const parsed = JSON.parse(stored) as VibeDraft
-      setDraft(parsed)
-      setEditedPreview(parsed.preview)
-      if (parsed.sliders) {
-        setSliders(parsed.sliders)
+    // Guard for SSR - localStorage only available on client
+    if (typeof window === 'undefined') return
+
+    try {
+      const stored = localStorage.getItem('vibe_draft')
+      if (stored) {
+        const parsed = JSON.parse(stored) as VibeDraft
+        // Validate required fields exist
+        if (parsed && parsed.genre && parsed.prompt && parsed.preview) {
+          setDraft(parsed)
+          setEditedPreview(parsed.preview)
+          if (parsed.sliders) {
+            setSliders(parsed.sliders)
+          }
+          return
+        }
       }
-    } else {
+      // No valid draft, redirect to create page
+      router.push('/create/new')
+    } catch {
+      // Invalid JSON in localStorage, clear and redirect
+      localStorage.removeItem('vibe_draft')
       router.push('/create/new')
     }
   }, [router])

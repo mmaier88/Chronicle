@@ -223,6 +223,7 @@ export interface BookShare {
   view_count: number
   created_at: string
   last_accessed_at: string | null
+  expires_at: string | null
 }
 
 // Shared book data returned by RLS bypass functions

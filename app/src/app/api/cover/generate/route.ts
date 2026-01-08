@@ -3,12 +3,22 @@ import { createServiceClient, getUser } from '@/lib/supabase/server'
 import { generateCoverWithRetry, buildCoverPrompt } from '@/lib/gemini/imagen'
 import { VibePreview } from '@/types/chronicle'
 import { logger } from '@/lib/logger'
+import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
     const { user } = await getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit per user
+    const rateLimit = checkRateLimit(`cover:${user.id}`, RATE_LIMITS.cover)
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please wait before generating more covers.' },
+        { status: 429, headers: rateLimitHeaders(rateLimit) }
+      )
     }
 
     const { bookId, regenerate } = await request.json()
