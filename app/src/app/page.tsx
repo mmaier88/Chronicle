@@ -1,7 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import './landing.css'
+
+// Low-quality placeholder for progressive loading
+const blurDataURL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAgEDBAMBAAAAAAAAAAAAAQIDAAQRBQYSITFBUXH/xAAVAQEBAAAAAAAAAAAAAAAAAAADBP/EABkRAAIDAQAAAAAAAAAAAAAAAAECAAMREv/aAAwDAQACEQMRAD8AyXb+oXVtp17a2t3NDbXQUTxpIVWUKcruB7GPtKdPRHamaFCR2CgJ+0pQhTiV2UR7JP/Z'
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -16,10 +20,16 @@ export default async function LandingPage() {
     <div className="landing-page">
       {/* HERO - Full screen */}
       <section className="hero">
-        <img
+        <Image
           src="/hero.jpg"
           alt="A magical world of stories"
           className="hero-image"
+          fill
+          priority
+          placeholder="blur"
+          blurDataURL={blurDataURL}
+          sizes="100vw"
+          quality={85}
         />
         <div className="hero-overlay" />
         <div className="hero-content">
