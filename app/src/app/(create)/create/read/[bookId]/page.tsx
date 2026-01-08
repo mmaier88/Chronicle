@@ -109,13 +109,14 @@ export default async function VibeReadPage({
       {/* Book Header */}
       <header style={{ marginBottom: '3rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(250, 246, 237, 0.08)' }}>
         {/* Cover Image */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
           <BookCover
             coverUrl={book.cover_url}
             title={book.title}
             status={book.cover_status}
             size="lg"
           />
+          <RegenerateCoverButton bookId={book.id} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--amber-warm)', fontSize: '0.875rem', marginBottom: '1rem' }}>
@@ -156,7 +157,6 @@ export default async function VibeReadPage({
           <ShareButton bookId={book.id} existingShareUrl={shareUrl} />
           <ExportButton book={book} chapters={sortedChapters} />
           <SendToKindleButton book={book} chapters={sortedChapters} />
-          <RegenerateCoverButton bookId={book.id} />
         </div>
 
         {/* Audio Player */}

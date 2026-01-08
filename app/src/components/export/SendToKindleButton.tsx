@@ -145,16 +145,7 @@ export function SendToKindleButton({ book, chapters }: SendToKindleButtonProps) 
           ) : (
             <Tablet style={{ width: 16, height: 16 }} />
           )}
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontWeight: 500, lineHeight: 1.2 }}>
-              {isSending ? 'Preparing...' : 'Read on Kindle'}
-            </div>
-            {!isSending && (
-              <div style={{ fontSize: '0.65rem', opacity: 0.7, lineHeight: 1.2 }}>
-                {platform ? 'Share to Kindle app' : 'Send to your Kindle'}
-              </div>
-            )}
-          </div>
+          {isSending ? 'Preparing...' : 'Send to Kindle'}
         </button>
 
         <button
