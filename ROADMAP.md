@@ -195,8 +195,57 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 | Configure Vercel environment scoping | Done |
 | Set up staging Engine on port 3001 | Done |
 | Create staging branch | Done |
-| Add staging.chronicle.town DNS | Manual (A record → 76.76.21.21) |
-| Configure Google OAuth for staging | Manual (Supabase Dashboard) |
+| Add staging.chronicle.town DNS | Done |
+| Configure Google OAuth for staging | Done |
+
+---
+
+### Phase 14.7: Story Slider System (In Progress)
+
+**Goal:** Give users control over story tone, content, and style through an intuitive slider system with 3 visible labels mapping to 5-step internal precision.
+
+#### User-Facing Design
+- **3 Default Sliders**: Violence, Romance, Tone (visible on create page)
+- **3 Human Labels**: Minimal → Balanced → Extreme (no numbers)
+- **Advanced Mode**: Expands to show all 14 sliders
+- **Internal Mapping**: User labels → 1/3/5 scale, untouched → "auto"
+
+#### Default Sliders (Always Visible)
+
+| Slider | Labels | Internal Mapping |
+|--------|--------|------------------|
+| Violence | Minimal → Balanced → Extreme | 1 → 3 → 5 |
+| Romance | Minimal → Balanced → Extreme | 1 → 3 → 5 |
+| Tone | Hopeful → Bittersweet → Tragic | 1 → 3 → 5 |
+
+#### Advanced Sliders (Collapsed by Default)
+
+| Slider | Purpose |
+|--------|---------|
+| Darkness | Overall bleakness/heaviness |
+| Emotional Intensity | Depth of emotional beats |
+| Language Complexity | Vocabulary/sentence sophistication |
+| Plot Complexity | Twists, subplots, narrative layers |
+| Pacing | Slow burn vs rapid progression |
+| Realism | Grounded vs fantastical logic |
+| World Detail | Environmental/setting richness |
+| Character Depth | Interior life complexity |
+| Moral Clarity | Clear heroes/villains vs gray |
+| Shock Value | Unexpected/provocative moments |
+| Explicit Content Safeguard | Content ceiling enforcement |
+
+#### Implementation Tasks
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Database schema for slider values | High | Planned |
+| SliderControl UI component | High | Planned |
+| Create page integration (3 default sliders) | High | Planned |
+| Advanced mode toggle | Medium | Planned |
+| Auto-resolution logic (genre/audience inference) | High | Planned |
+| LLM prompt injection (constraint block) | High | Planned |
+| Safety/conflict resolution | High | Planned |
+| Engine integration (pass sliders to generation) | High | Planned |
 
 ---
 

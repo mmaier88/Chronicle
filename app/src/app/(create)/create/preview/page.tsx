@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sparkles, RefreshCw, Loader2, Wand2, Crown, Zap } from 'lucide-react'
-import { VibePreview, BookGenre } from '@/types/chronicle'
+import { VibePreview, BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
+import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
 
 type BookLength = 30 | 60 | 120 | 300
 type GenerationMode = 'draft' | 'polished'
@@ -14,12 +15,15 @@ interface VibeDraft {
   preview: VibePreview
   length?: BookLength
   mode?: GenerationMode
+  sliders?: StorySliders
 }
 
 export default function VibePreviewPage() {
   const router = useRouter()
   const [draft, setDraft] = useState<VibeDraft | null>(null)
   const [editedPreview, setEditedPreview] = useState<VibePreview | null>(null)
+  const [sliders, setSliders] = useState<StorySliders>(DEFAULT_SLIDERS)
+  const [showAdvancedSliders, setShowAdvancedSliders] = useState(false)
   const [isImproving, setIsImproving] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
@@ -32,6 +36,9 @@ export default function VibePreviewPage() {
       const parsed = JSON.parse(stored) as VibeDraft
       setDraft(parsed)
       setEditedPreview(parsed.preview)
+      if (parsed.sliders) {
+        setSliders(parsed.sliders)
+      }
     } else {
       router.push('/create/new')
     }
@@ -124,6 +131,7 @@ export default function VibePreviewPage() {
           preview: editedPreview,
           length: draft.length || 30,
           mode: mode,
+          sliders: sliders,
         }),
       })
 
@@ -308,6 +316,23 @@ export default function VibePreviewPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Story Preferences */}
+      <div style={{ marginTop: '2rem' }}>
+        <label className="app-body" style={{ fontWeight: 500, display: 'block', marginBottom: '1rem' }}>
+          Story preferences
+        </label>
+        <StorySlidersComponent
+          sliders={sliders}
+          onChange={setSliders}
+          showAdvanced={showAdvancedSliders}
+          onToggleAdvanced={() => setShowAdvancedSliders(!showAdvancedSliders)}
+          disabled={isWorking}
+        />
+        <p className="app-body-sm" style={{ marginTop: '0.75rem' }}>
+          Leave untouched to let the story decide.
+        </p>
       </div>
 
       {/* Mode Toggle */}

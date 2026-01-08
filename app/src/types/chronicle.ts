@@ -88,6 +88,59 @@ export interface VibeWarnings {
   romance: 'none' | 'low' | 'medium' | 'high'
 }
 
+// =============================================================================
+// STORY SLIDERS
+// =============================================================================
+
+// Slider value: 1-5 scale or "auto" for inference
+export type SliderValue = 'auto' | 1 | 2 | 3 | 4 | 5
+
+// All 14 sliders for story generation control
+export interface StorySliders {
+  // Default visible (3)
+  violence: SliderValue
+  romance: SliderValue
+  tone: SliderValue
+
+  // Advanced (11)
+  darkness: SliderValue
+  emotionalIntensity: SliderValue
+  languageComplexity: SliderValue
+  plotComplexity: SliderValue
+  pacing: SliderValue
+  realism: SliderValue
+  worldDetail: SliderValue
+  characterDepth: SliderValue
+  moralClarity: SliderValue
+  shockValue: SliderValue
+  explicitSafeguard: SliderValue
+}
+
+// Default all sliders to "auto"
+export const DEFAULT_SLIDERS: StorySliders = {
+  violence: 'auto',
+  romance: 'auto',
+  tone: 'auto',
+  darkness: 'auto',
+  emotionalIntensity: 'auto',
+  languageComplexity: 'auto',
+  plotComplexity: 'auto',
+  pacing: 'auto',
+  realism: 'auto',
+  worldDetail: 'auto',
+  characterDepth: 'auto',
+  moralClarity: 'auto',
+  shockValue: 'auto',
+  explicitSafeguard: 'auto',
+}
+
+// Resolved sliders (all numbers, no "auto")
+export type ResolvedSliders = { [K in keyof StorySliders]: 1 | 2 | 3 | 4 | 5 }
+
+// =============================================================================
+// VIBE PREVIEW
+// =============================================================================
+
 export interface VibePreview {
   title: string
   logline: string
@@ -96,6 +149,7 @@ export interface VibePreview {
   setting: string
   promise: string[]
   warnings: VibeWarnings
+  sliders?: StorySliders
 }
 
 export interface VibeJob {

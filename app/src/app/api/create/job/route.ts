@@ -1,6 +1,6 @@
 import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { VibePreview, BookGenre, Constitution } from '@/types/chronicle'
+import { VibePreview, BookGenre, Constitution, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { logger } from '@/lib/logger'
 
 type BookLength = 30 | 60 | 120 | 300
@@ -12,6 +12,7 @@ interface CreateJobRequest {
   preview: VibePreview
   length?: BookLength
   mode?: GenerationMode
+  sliders?: StorySliders
 }
 
 // Rate limit: max jobs per user per day
@@ -28,10 +29,15 @@ export async function POST(request: NextRequest) {
   const supabase = isDevUser ? createServiceClient() : await createClient()
 
   const body: CreateJobRequest = await request.json()
-  const { genre, prompt, preview, length = 30, mode = 'draft' } = body
+  const { genre, prompt, preview, length = 30, mode = 'draft', sliders } = body
 
-  // Include length and mode in preview for tick route to access
-  const previewWithMeta = { ...preview, targetPages: length, mode }
+  // Include length, mode, and sliders in preview for tick route to access
+  const previewWithMeta = {
+    ...preview,
+    targetPages: length,
+    mode,
+    sliders: sliders || DEFAULT_SLIDERS,
+  }
 
   if (!genre || !prompt || !preview) {
     return NextResponse.json({ error: 'Genre, prompt, and preview are required' }, { status: 400 })

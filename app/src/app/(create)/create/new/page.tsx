@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sparkles, Loader2, Shuffle } from 'lucide-react'
-import { BookGenre } from '@/types/chronicle'
+import { BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
+import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
 
 // Only literary fiction for now
 const DEFAULT_GENRE: BookGenre = 'literary_fiction'
@@ -22,6 +23,8 @@ export default function CreateNewPage() {
   const router = useRouter()
   const [prompt, setPrompt] = useState('')
   const [length, setLength] = useState<BookLength>(30)
+  const [sliders, setSliders] = useState<StorySliders>(DEFAULT_SLIDERS)
+  const [showAdvancedSliders, setShowAdvancedSliders] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSurprising, setIsSurprising] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,6 +74,7 @@ export default function CreateNewPage() {
         prompt: prompt.trim(),
         preview: data.preview,
         length: length,
+        sliders: sliders,
       }))
 
       router.push('/create/preview')
@@ -176,6 +180,23 @@ export default function CreateNewPage() {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* Story Preferences */}
+        <section>
+          <label className="app-body" style={{ fontWeight: 500, display: 'block', marginBottom: '1rem' }}>
+            Story preferences
+          </label>
+          <StorySlidersComponent
+            sliders={sliders}
+            onChange={setSliders}
+            showAdvanced={showAdvancedSliders}
+            onToggleAdvanced={() => setShowAdvancedSliders(!showAdvancedSliders)}
+            disabled={isGenerating}
+          />
+          <p className="app-body-sm" style={{ marginTop: '0.75rem' }}>
+            Leave untouched to let the story decide.
+          </p>
         </section>
 
         {/* Error */}

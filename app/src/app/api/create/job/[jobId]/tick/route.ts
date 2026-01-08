@@ -1,16 +1,50 @@
 import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { VibePreview, Constitution, VibeChapterPlan } from '@/types/chronicle'
+import { VibePreview, Constitution, VibeChapterPlan, StorySliders, ResolvedSliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { PROSE_SYSTEM_PROMPT, PROSE_QUALITY_CHECKLIST } from '@/lib/prose-guidelines'
 import { QUICK_POLISH_PROMPT } from '@/lib/polish-pipeline'
 import { sendBookCompletedEmail } from '@/lib/email'
 import { markdownToHtmlParagraphs } from '@/lib/utils'
 import { logger } from '@/lib/logger'
+import { resolveSliders } from '@/lib/slider-resolution'
+import { SLIDER_CONFIG } from '@/lib/slider-config'
 
 const anthropic = new Anthropic()
 
 const MAX_RETRIES = 3
+
+// Build slider constraint block for LLM prompts
+function buildSliderConstraints(sliders: ResolvedSliders): string {
+  const lines: string[] = ['GENERATION CONSTRAINTS (AUTHOR INTENT):', '']
+
+  // Primary sliders with descriptions
+  for (const key of ['violence', 'romance', 'tone'] as const) {
+    const config = SLIDER_CONFIG[key]
+    const value = sliders[key]
+    const desc = config.descriptions[value]
+    lines.push(`${config.name}: ${value}/5 – ${desc}`)
+  }
+
+  lines.push('')
+
+  // Secondary sliders (compact)
+  for (const key of [
+    'darkness', 'emotionalIntensity', 'languageComplexity', 'plotComplexity',
+    'pacing', 'realism', 'worldDetail', 'characterDepth', 'moralClarity',
+    'shockValue', 'explicitSafeguard'
+  ] as const) {
+    const config = SLIDER_CONFIG[key]
+    lines.push(`${config.name}: ${sliders[key]}/5`)
+  }
+
+  lines.push('')
+  lines.push('These constraints are HARD REQUIREMENTS. Actively steer narrative,')
+  lines.push('language, and content to match these levels. Do not mention these')
+  lines.push('constraints in the story.')
+
+  return lines.join('\n')
+}
 
 // Robust JSON parser that handles common AI output issues
 function parseAIJson<T>(text: string): T {
@@ -188,16 +222,21 @@ async function writeSection(
   sectionGoal: string,
   targetWords: number,
   previousSections: string[],
-  storySynopsis: string | null
+  storySynopsis: string | null,
+  resolvedSliders: ResolvedSliders
 ): Promise<{ prose: string; synopsis: string }> {
   const context = previousSections.length > 0
     ? `Previous sections:\n${previousSections.slice(-2).join('\n\n---\n\n')}`
     : 'This is the opening of the book.'
 
+  const sliderBlock = buildSliderConstraints(resolvedSliders)
+
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
     system: `You are a literary fiction writer crafting a section of a book. Your prose must feel human-authored, not AI-generated.
+
+${sliderBlock}
 
 ${PROSE_SYSTEM_PROMPT}
 
@@ -538,6 +577,10 @@ export async function POST(
 
       const prevTexts = (previousSections || []).map(s => s.content_text).filter(Boolean) as string[]
 
+      // Extract and resolve sliders
+      const rawSliders = ((preview as VibePreview & { sliders?: StorySliders }).sliders || DEFAULT_SLIDERS) as StorySliders
+      const resolvedSliders = resolveSliders(rawSliders, vibeJob.genre as 'literary_fiction' | 'non_fiction')
+
       // Write section
       const constitution = book.constitution_json as Constitution
       const result = await writeSection(
@@ -549,7 +592,8 @@ export async function POST(
         section.goal || '',
         600, // target words per section
         prevTexts,
-        vibeJob.story_synopsis
+        vibeJob.story_synopsis,
+        resolvedSliders
       )
 
       let finalProse = result.prose
