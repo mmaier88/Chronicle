@@ -21,6 +21,12 @@ export function BookCoverClient({
   const [coverUrl, setCoverUrl] = useState(initialCoverUrl)
   const [status, setStatus] = useState(initialStatus)
 
+  // Update state when props change (e.g., after router.refresh())
+  useEffect(() => {
+    setCoverUrl(initialCoverUrl)
+    setStatus(initialStatus)
+  }, [initialCoverUrl, initialStatus])
+
   const pollCoverStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/cover/${bookId}`)

@@ -136,12 +136,12 @@ export async function POST(request: Request) {
         throw new Error(`Storage upload failed: ${uploadError.message}`)
       }
 
-      // Get public URL
+      // Get public URL with cache-busting timestamp
       const { data: urlData } = supabase.storage
         .from('covers')
         .getPublicUrl(storagePath)
 
-      const coverUrl = urlData.publicUrl
+      const coverUrl = `${urlData.publicUrl}?t=${Date.now()}`
 
       // Update book with cover URL and concept (for future regeneration)
       await supabase
