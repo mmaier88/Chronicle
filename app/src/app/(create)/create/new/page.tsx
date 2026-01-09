@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Sparkles, Loader2, Shuffle } from 'lucide-react'
 import { BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
+import { api } from '@/lib/api-client'
 
 // Only literary fiction for now
 const DEFAULT_GENRE: BookGenre = 'literary_fiction'
@@ -32,9 +33,8 @@ export default function CreateNewPage() {
   const handleSurpriseMe = async () => {
     setIsSurprising(true)
     try {
-      const response = await fetch('/api/create/surprise', { method: 'POST' })
-      const data = await response.json()
-      if (data.prompt) {
+      const { data } = await api.create.surprise()
+      if (data?.prompt) {
         setPrompt(data.prompt)
       }
     } catch {
@@ -50,38 +50,28 @@ export default function CreateNewPage() {
     setIsGenerating(true)
     setError(null)
 
-    try {
-      const response = await fetch('/api/create/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          genre: DEFAULT_GENRE,
-          prompt: prompt.trim(),
-        }),
-      })
+    const { data, error: apiError } = await api.create.preview({
+      genre: DEFAULT_GENRE,
+      prompt: prompt.trim(),
+    })
 
-      const result = await response.json()
-
-      if (!response.ok || !result.success) {
-        setError(result.error || 'Something went wrong')
-        setIsGenerating(false)
-        return
-      }
-
-      // Store in localStorage for the preview page
-      localStorage.setItem('vibe_draft', JSON.stringify({
-        genre: DEFAULT_GENRE,
-        prompt: prompt.trim(),
-        preview: result.data.preview,
-        length: length,
-        sliders: sliders,
-      }))
-
-      router.push('/create/preview')
-    } catch {
-      setError('Couldn\'t connect. Let\'s try that again.')
+    if (apiError || !data) {
+      setError(apiError || 'Something went wrong')
       setIsGenerating(false)
+      return
     }
+
+    // Store in localStorage for the preview page
+    // TypeScript ensures data.preview exists and has correct shape
+    localStorage.setItem('vibe_draft', JSON.stringify({
+      genre: DEFAULT_GENRE,
+      prompt: prompt.trim(),
+      preview: data.preview,
+      length: length,
+      sliders: sliders,
+    }))
+
+    router.push('/create/preview')
   }
 
   const isValid = prompt.trim().length >= 20

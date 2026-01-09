@@ -1,6 +1,6 @@
 # Chronicle - Features & Roadmap
 
-**Last Updated:** 2026-01-08
+**Last Updated:** 2026-01-09
 **Version:** 2.0
 
 ---
@@ -200,6 +200,36 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 ---
 
+### Phase 14.8: Testing Infrastructure (Complete)
+
+**Goal:** Prevent frontend/backend contract mismatches and catch regressions before they reach production.
+
+#### Components
+
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| **Typed API Client** | Shared types between frontend/backend, TypeScript catches mismatches at compile time | Done |
+| **GitHub Actions CI** | Run tests automatically on every push, block deploys on failure | Done |
+| **API Integration Tests** | Verify API routes return expected shapes and handle errors | Done |
+| **E2E Tests (Playwright)** | Test real user flows: create → preview → generate | Done |
+
+#### Implementation Tasks
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Create `/lib/api-client.ts` with typed fetch wrappers | High | Done |
+| Add `.github/workflows/test.yml` for CI | High | Done |
+| Integration tests for `/api/create/preview` | High | Done |
+| Integration tests for `/api/create/job` | High | Done |
+| Integration tests for `/api/share/create` | Medium | Done |
+| Install Playwright + configure | High | Done |
+| E2E: Smoke tests (landing, login, navigation) | High | Done |
+| E2E: Create flow (auth redirect) | High | Done |
+| E2E: Login flow (Google OAuth mock) | Medium | Planned |
+| E2E: Authenticated create flow | Medium | Planned |
+
+---
+
 ### Phase 14.7: Story Slider System (In Progress)
 
 **Goal:** Give users control over story tone, content, and style through an intuitive slider system with 3 visible labels mapping to 5-step internal precision.
@@ -361,12 +391,14 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 ## Technical Debt & Improvements
 
-### Critical (No Tests)
-- [ ] Add test framework (Vitest/Jest)
-- [ ] Unit tests for utils & helpers
-- [ ] API route integration tests
+### Critical (Testing - Phase 14.8)
+- [x] Test framework setup (Vitest)
+- [x] Typed API client (compile-time contract safety)
+- [x] GitHub Actions CI pipeline
+- [x] API route integration tests (61 tests)
+- [x] E2E tests (Playwright smoke tests)
 - [ ] Database RLS policy tests
-- [ ] Generation pipeline e2e tests
+- [ ] Authenticated E2E flows
 
 ### High Priority
 - [x] Structured logging (`lib/logger.ts`) - Partial
@@ -381,7 +413,7 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 - [ ] OpenAI fallback for LLM calls
 - [ ] A/B testing framework
 - [ ] Performance monitoring (Vercel Analytics)
-- [ ] Standardize API response format
+- [x] Standardize API response format (`lib/api-utils.ts`)
 - [ ] Add ARIA labels for accessibility
 
 ### Low Priority
@@ -479,6 +511,15 @@ ANTHROPIC_API_KEY
 ---
 
 ## Changelog
+
+### 2026-01-09
+- **Phase 14.8 complete: Testing Infrastructure**
+  - Typed API client (`lib/api-client.ts`) - compile-time contract safety
+  - GitHub Actions CI pipeline (runs on push to main/staging)
+  - 61 unit/integration tests for API utilities and client
+  - Playwright E2E smoke tests (landing, login, navigation)
+- Fixed Google OAuth showing 2 screens (removed consent prompt)
+- Fixed create page not progressing (API response format mismatch)
 
 ### 2026-01-08
 - Phase 14.6 complete: Staging Environment
