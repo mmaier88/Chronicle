@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { ArrowLeft, Headphones, BookOpen, ChevronDown } from 'lucide-react'
 import { Paragraph, ChapterHeader, ChapterDivider } from './Paragraph'
 import { TypographyControls, TypographyButton } from './TypographyControls'
@@ -55,8 +55,33 @@ export function ReaderShell({
   )
   const [showControls, setShowControls] = useState(false)
   const [showTypography, setShowTypography] = useState(false)
-  const [currentChapterId, setCurrentChapterId] = useState<string | null>(null)
-  const [currentParagraphId, setCurrentParagraphId] = useState<string | null>(null)
+
+  // Calculate initial position once (for initial state)
+  const initialPosition = useMemo(() => {
+    if (initialProgress && book.chapters.length > 0) {
+      // Try to find saved chapter/paragraph
+      for (const chapter of book.chapters) {
+        if (chapter.chapter_id === initialProgress.chapter_id) {
+          const paragraph = chapter.paragraphs.find(p => p.id === initialProgress.paragraph_id)
+          if (paragraph) {
+            return { chapterId: chapter.chapter_id, paragraphId: paragraph.id }
+          }
+          // Chapter found but paragraph not - use first paragraph of chapter
+          if (chapter.paragraphs.length > 0) {
+            return { chapterId: chapter.chapter_id, paragraphId: chapter.paragraphs[0].id }
+          }
+        }
+      }
+    }
+    // Default to first paragraph
+    if (book.chapters.length > 0 && book.chapters[0].paragraphs.length > 0) {
+      return { chapterId: book.chapters[0].chapter_id, paragraphId: book.chapters[0].paragraphs[0].id }
+    }
+    return { chapterId: null, paragraphId: null }
+  }, []) // Empty deps - only calculate once on mount
+
+  const [currentChapterId, setCurrentChapterId] = useState<string | null>(initialPosition.chapterId)
+  const [currentParagraphId, setCurrentParagraphId] = useState<string | null>(initialPosition.paragraphId)
   const [highlightedParagraphId, setHighlightedParagraphId] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -64,10 +89,10 @@ export function ReaderShell({
   const containerRef = useRef<HTMLDivElement>(null)
   const paragraphRefs = useRef<Map<string, HTMLParagraphElement>>(new Map())
 
-  // Theme colors
+  // Theme colors - matches Chronicle design system
   const themeColors: Record<ReaderTheme, { bg: string; text: string; textSecondary: string }> = {
     light: { bg: '#FAF6ED', text: '#1A1A1A', textSecondary: '#666666' },
-    dark: { bg: '#0F172A', text: '#FAF6ED', textSecondary: '#94A3B8' },
+    dark: { bg: '#0F172A', text: '#B8C4D9', textSecondary: '#94A3B8' }, // text matches var(--moon-mid)
     'warm-night': { bg: '#1C1410', text: '#E8D5C4', textSecondary: '#A89080' },
   }
 
@@ -182,6 +207,20 @@ export function ReaderShell({
   const timeRemaining = currentChapterId && currentParagraphId
     ? calculateTimeRemaining(book, currentChapterId, currentParagraphId, 'reading')
     : book.estimated_read_minutes
+
+  // Debug logging (remove in production)
+  useEffect(() => {
+    console.log('[Reader] Book loaded:', {
+      bookId: book.book_id,
+      chapters: book.chapters.length,
+      totalParagraphs: book.total_paragraphs,
+      firstChapterParagraphs: book.chapters[0]?.paragraphs.length,
+      firstParagraphId: book.chapters[0]?.paragraphs[0]?.id,
+      currentChapterId,
+      currentParagraphId,
+      progressPct,
+    })
+  }, [book, currentChapterId, currentParagraphId, progressPct])
 
   // Listen from current position
   const handleListenFromHere = () => {

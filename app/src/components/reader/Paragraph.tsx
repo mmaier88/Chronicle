@@ -45,19 +45,19 @@ export const Paragraph = forwardRef<HTMLParagraphElement, ParagraphProps>(
       return () => observer.disconnect()
     }, [paragraph.id, onVisible, combinedRef])
 
-    // Apply typography styles
+    // Apply typography styles - matches old reader styling
     const style: React.CSSProperties = {
       fontSize: `${typography.font_size}px`,
       lineHeight: typography.line_height,
       fontFamily: typography.font_family === 'serif'
         ? 'var(--font-serif), Georgia, Times New Roman, serif'
         : '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
-      marginBottom: `${typography.line_height * 0.75}em`,
+      marginBottom: '1.5em', // Consistent paragraph spacing
       transition: 'background-color 0.3s ease',
       backgroundColor: isHighlighted ? 'rgba(212, 165, 116, 0.15)' : 'transparent',
       borderRadius: isHighlighted ? '4px' : '0',
       padding: isHighlighted ? '0.25em 0.5em' : '0',
-      margin: isHighlighted ? '0 -0.5em 1em -0.5em' : undefined,
+      margin: isHighlighted ? '0 -0.5em 1.5em -0.5em' : undefined,
     }
 
     return (

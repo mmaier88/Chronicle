@@ -122,10 +122,11 @@ export interface TypographySettings {
 
 /**
  * Default typography settings
+ * Matches old reader: fontSize 1.125rem (18px), lineHeight 1.8
  */
 export const DEFAULT_TYPOGRAPHY: Omit<TypographySettings, 'user_id' | 'updated_at'> = {
-  font_size: 17,
-  line_height: 1.5,
+  font_size: 18,
+  line_height: 1.8,
   font_family: 'serif',
   theme: 'dark',
 }
