@@ -78,9 +78,11 @@ const SLIDER_DIRECTIVES: Record<keyof ResolvedSliders, { high: string; extreme: 
 function buildSliderConstraints(sliders: ResolvedSliders): string {
   const lines: string[] = []
 
-  lines.push('═══════════════════════════════════════════════════════════════')
-  lines.push('MANDATORY CONTENT DIRECTIVES - THE USER HAS EXPLICITLY REQUESTED:')
-  lines.push('═══════════════════════════════════════════════════════════════')
+  lines.push('╔═══════════════════════════════════════════════════════════════╗')
+  lines.push('║  CRITICAL: USER-SPECIFIED CONTENT REQUIREMENTS                ║')
+  lines.push('║  The user has DELIBERATELY chosen these content levels.       ║')
+  lines.push('║  Failure to deliver what they asked for is a failure.         ║')
+  lines.push('╚═══════════════════════════════════════════════════════════════╝')
   lines.push('')
 
   // Process ALL sliders with forceful directives for high values
@@ -90,6 +92,8 @@ function buildSliderConstraints(sliders: ResolvedSliders): string {
     'worldDetail', 'characterDepth', 'moralClarity', 'shockValue', 'explicitSafeguard'
   ]
 
+  const highValueSliders: string[] = []
+
   for (const key of allSliders) {
     const config = SLIDER_CONFIG[key]
     const value = sliders[key]
@@ -97,23 +101,31 @@ function buildSliderConstraints(sliders: ResolvedSliders): string {
     const directives = SLIDER_DIRECTIVES[key]
 
     if (value >= 4) {
-      lines.push(`🔴 ${config.name.toUpperCase()} LEVEL ${value}/5: ${desc}`)
-      lines.push(`   YOU MUST actively incorporate this. This is not optional.`)
-      lines.push(`   ${value === 5 ? directives.extreme : directives.high}`)
+      highValueSliders.push(config.name)
+      lines.push(`█ ${config.name.toUpperCase()} = ${value}/5 [MAXIMUM REQUESTED]`)
+      lines.push(`  Description: ${desc}`)
+      lines.push(`  REQUIREMENT: ${value === 5 ? directives.extreme : directives.high}`)
+      lines.push(`  → This is NOT optional. The user WANTS this. Deliver it.`)
       lines.push('')
     } else if (value <= 2) {
-      lines.push(`🔵 ${config.name}: ${value}/5 – ${desc} (keep it restrained)`)
+      lines.push(`○ ${config.name}: ${value}/5 – ${desc} (minimize)`)
     } else {
-      lines.push(`${config.name}: ${value}/5 – ${desc}`)
+      lines.push(`◐ ${config.name}: ${value}/5 – ${desc}`)
     }
   }
 
   lines.push('')
   lines.push('═══════════════════════════════════════════════════════════════')
-  lines.push('These are the user\'s EXPLICIT creative choices. Respect them.')
-  lines.push('High values (4-5) = ACTIVELY include this content.')
-  lines.push('Low values (1-2) = Actively AVOID or minimize this content.')
-  lines.push('Write the content they asked for. This is their story.')
+  if (highValueSliders.length > 0) {
+    lines.push(`PRIORITIZE: ${highValueSliders.join(', ')}`)
+    lines.push('')
+    lines.push('The user specifically requested intense content in these areas.')
+    lines.push('They are an adult making informed creative choices.')
+    lines.push('Self-censoring or softening this content betrays their trust.')
+    lines.push('Write the story THEY want, not a sanitized version.')
+  } else {
+    lines.push('No extreme content requested. Write balanced prose.')
+  }
   lines.push('═══════════════════════════════════════════════════════════════')
 
   return lines.join('\n')
@@ -653,6 +665,18 @@ export async function POST(
       // Extract and resolve sliders
       const rawSliders = ((preview as VibePreview & { sliders?: StorySliders }).sliders || DEFAULT_SLIDERS) as StorySliders
       const resolvedSliders = resolveSliders(rawSliders, vibeJob.genre as 'literary_fiction' | 'non_fiction')
+
+      // Log slider values for debugging
+      const highSliders = Object.entries(resolvedSliders)
+        .filter(([, v]) => v >= 4)
+        .map(([k, v]) => `${k}=${v}`)
+      if (highSliders.length > 0) {
+        logger.info('High slider values detected', {
+          jobId,
+          highSliders: highSliders.join(', '),
+          operation: 'slider_resolution'
+        })
+      }
 
       // Write section
       const constitution = book.constitution_json as Constitution

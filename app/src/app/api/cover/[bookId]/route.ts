@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
 import { createServiceClient, getUser } from '@/lib/supabase/server'
+import { apiSuccess, ApiErrors } from '@/lib/api-utils'
 
 export async function GET(
   request: Request,
@@ -10,7 +10,7 @@ export async function GET(
     const { user } = await getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return ApiErrors.unauthorized()
     }
 
     const supabase = createServiceClient()
@@ -22,24 +22,20 @@ export async function GET(
       .single()
 
     if (error || !book) {
-      return NextResponse.json({ error: 'Book not found' }, { status: 404 })
+      return ApiErrors.notFound('Book')
     }
 
     // Verify ownership
     if (book.owner_id !== user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return ApiErrors.forbidden()
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       status: book.cover_status || 'pending',
       cover_url: book.cover_url,
       generated_at: book.cover_generated_at,
     })
-  } catch (error) {
-    console.error('Cover status error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+  } catch {
+    return ApiErrors.internal()
   }
 }

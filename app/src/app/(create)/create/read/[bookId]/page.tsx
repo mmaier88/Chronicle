@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, BookOpen, Sparkles, Clock, Headphones } from 'lucide-react'
 import { BookAudioPlayer } from '@/components/audio/BookAudioPlayer'
-import { BookCover } from '@/components/cover/BookCover'
+import { BookCoverClient } from '@/components/cover/BookCoverClient'
 import { RegenerateCoverButton } from '@/components/cover/RegenerateCoverButton'
+import { UploadCoverButton } from '@/components/cover/UploadCoverButton'
 import { ShareButton } from '@/components/share/ShareButton'
 import { ExportButton } from '@/components/export/ExportButton'
 import { SendToKindleButton } from '@/components/export/SendToKindleButton'
@@ -110,13 +111,17 @@ export default async function VibeReadPage({
       <header style={{ marginBottom: '3rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(250, 246, 237, 0.08)' }}>
         {/* Cover Image */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <BookCover
-            coverUrl={book.cover_url}
+          <BookCoverClient
+            bookId={book.id}
+            initialCoverUrl={book.cover_url}
+            initialStatus={book.cover_status}
             title={book.title}
-            status={book.cover_status}
             size="lg"
           />
-          <RegenerateCoverButton bookId={book.id} />
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <RegenerateCoverButton bookId={book.id} />
+            <UploadCoverButton bookId={book.id} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--amber-warm)', fontSize: '0.875rem', marginBottom: '1rem' }}>
