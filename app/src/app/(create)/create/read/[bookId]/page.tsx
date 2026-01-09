@@ -164,15 +164,11 @@ export default async function VibeReadPage({
           <SendToKindleButton book={book} chapters={sortedChapters} />
         </div>
 
-        {/* Audio Player */}
-        {allSections.length > 0 && (
-          <div style={{ marginTop: '1.5rem' }}>
+        {/* Audio Player & Reader Mode */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+          {allSections.length > 0 && (
             <BookAudioPlayer bookTitle={book.title} sections={allSections} />
-          </div>
-        )}
-
-        {/* Reader Mode */}
-        <div style={{ marginTop: '1rem' }}>
+          )}
           <Link
             href={`/create/reader/${book.id}`}
             style={{
@@ -180,13 +176,14 @@ export default async function VibeReadPage({
               alignItems: 'center',
               gap: '0.5rem',
               padding: '0.75rem 1.25rem',
-              borderRadius: 12,
-              background: 'rgba(212, 165, 116, 0.1)',
-              border: '1px solid rgba(212, 165, 116, 0.2)',
+              background: 'rgba(212, 165, 116, 0.15)',
+              border: '1px solid rgba(212, 165, 116, 0.3)',
+              borderRadius: 50,
               color: 'var(--amber-warm)',
-              fontSize: '0.9375rem',
+              fontSize: '0.875rem',
               fontWeight: 500,
               textDecoration: 'none',
+              transition: 'all 0.2s',
             }}
           >
             <BookOpen style={{ width: 18, height: 18 }} />
