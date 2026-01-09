@@ -51,10 +51,8 @@ function LoginForm() {
       options: {
         redirectTo: `${window.location.origin}/callback?redirect=${redirect}`,
         queryParams: {
-          prompt: 'consent select_account',
-          access_type: 'offline',
+          prompt: 'select_account',
         },
-        scopes: 'email profile',
       },
     })
 
