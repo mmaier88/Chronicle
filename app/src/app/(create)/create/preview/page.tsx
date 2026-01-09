@@ -1,32 +1,39 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Sparkles, Loader2, Crown, Zap, ArrowLeft, X, Plus } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Sparkles, Loader2, Crown, Zap, ArrowLeft, X, Plus, CreditCard } from 'lucide-react'
 import { VibePreview, BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
-
-type BookLength = 30 | 60 | 120 | 300
-type GenerationMode = 'draft' | 'polished'
+import { Edition, BookLength, getPrice, formatPrice, EDITION_INFO } from '@/lib/stripe/pricing'
 
 interface VibeDraft {
   genre: BookGenre
   prompt: string
   preview: VibePreview
   length?: BookLength
-  mode?: GenerationMode
   sliders?: StorySliders
 }
 
 export default function VibePreviewPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [draft, setDraft] = useState<VibeDraft | null>(null)
   const [editedPreview, setEditedPreview] = useState<VibePreview | null>(null)
   const [sliders, setSliders] = useState<StorySliders>(DEFAULT_SLIDERS)
   const [showAdvancedSliders, setShowAdvancedSliders] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [mode, setMode] = useState<GenerationMode>('draft')
+  const [edition, setEdition] = useState<Edition>('standard')
+
+  // Check for cancelled checkout
+  useEffect(() => {
+    if (searchParams.get('cancelled') === 'true') {
+      setError('Checkout was cancelled. Your book is still here when you\'re ready.')
+      // Clean up URL
+      window.history.replaceState({}, '', '/create/preview')
+    }
+  }, [searchParams])
 
   useEffect(() => {
     // Guard for SSR - localStorage only available on client
@@ -59,14 +66,14 @@ export default function VibePreviewPage() {
     router.push('/create/new')
   }
 
-  const handleGenerate = async () => {
+  const handleCheckout = async () => {
     if (!draft || !editedPreview) return
 
-    setIsCreating(true)
+    setIsRedirecting(true)
     setError(null)
 
     try {
-      const response = await fetch('/api/create/job', {
+      const response = await fetch('/api/payments/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -74,7 +81,7 @@ export default function VibePreviewPage() {
           prompt: draft.prompt,
           preview: editedPreview,
           length: draft.length || 30,
-          mode: mode,
+          edition: edition,
           sliders: sliders,
         }),
       })
@@ -82,16 +89,25 @@ export default function VibePreviewPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Something went sideways')
-        setIsCreating(false)
+        setError(data.error?.message || 'Could not set up payment. Please try again.')
+        setIsRedirecting(false)
         return
       }
 
-      localStorage.removeItem('vibe_draft')
-      router.push(`/create/generating/${data.job_id}`)
+      // Store draft for recovery if user cancels checkout
+      localStorage.setItem('vibe_draft', JSON.stringify({
+        genre: draft.genre,
+        prompt: draft.prompt,
+        preview: editedPreview,
+        length: draft.length || 30,
+        sliders: sliders,
+      }))
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.data.checkout_url
     } catch {
-      setError('Couldn\'t connect. Let\'s try again.')
-      setIsCreating(false)
+      setError('Could not connect to payment service. Please try again.')
+      setIsRedirecting(false)
     }
   }
 
@@ -108,7 +124,9 @@ export default function VibePreviewPage() {
     )
   }
 
-  const isWorking = isCreating
+  const isWorking = isRedirecting
+  const currentLength = (draft.length || 30) as BookLength
+  const currentPrice = getPrice(edition, currentLength)
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
@@ -359,64 +377,93 @@ export default function VibePreviewPage() {
         </p>
       </div>
 
-      {/* Mode Toggle */}
+      {/* Edition Selector */}
       <div style={{ marginTop: '2rem' }}>
         <label className="app-body" style={{ fontWeight: 500, display: 'block', marginBottom: '1rem' }}>
-          Generation quality
+          Choose your edition
         </label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+          {/* Standard Edition */}
           <button
-            onClick={() => setMode('draft')}
+            onClick={() => setEdition('standard')}
             disabled={isWorking}
             style={{
-              padding: '1rem',
+              padding: '1.25rem',
               borderRadius: 12,
               textAlign: 'left',
               transition: 'all 0.2s',
-              background: mode === 'draft'
+              background: edition === 'standard'
                 ? 'rgba(212, 165, 116, 0.15)'
                 : 'rgba(26, 39, 68, 0.5)',
-              border: mode === 'draft'
+              border: edition === 'standard'
                 ? '2px solid var(--amber-warm)'
                 : '2px solid rgba(250, 246, 237, 0.08)',
               cursor: isWorking ? 'not-allowed' : 'pointer',
               opacity: isWorking ? 0.5 : 1,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <Zap style={{ width: 16, height: 16, color: mode === 'draft' ? 'var(--amber-warm)' : 'var(--moon-soft)' }} />
-              <span style={{ fontWeight: 500, color: 'var(--moon-light)' }}>Normal</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Zap style={{ width: 18, height: 18, color: edition === 'standard' ? 'var(--amber-warm)' : 'var(--moon-soft)' }} />
+                <span style={{ fontWeight: 600, color: 'var(--moon-light)', fontSize: '1.125rem' }}>
+                  {EDITION_INFO.standard.name}
+                </span>
+              </div>
+              <span style={{ fontWeight: 600, color: 'var(--amber-warm)', fontSize: '1.25rem' }}>
+                {formatPrice(getPrice('standard', currentLength).price)}
+              </span>
             </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--moon-soft)', opacity: 0.7 }}>
-              Faster generation · Quality meets speed
+            <p style={{ fontSize: '0.8125rem', color: 'var(--moon-soft)', opacity: 0.8 }}>
+              {EDITION_INFO.standard.tagline}
             </p>
           </button>
+
+          {/* Masterwork Edition */}
           <button
-            onClick={() => setMode('polished')}
+            onClick={() => setEdition('masterwork')}
             disabled={isWorking}
             style={{
-              padding: '1rem',
+              padding: '1.25rem',
               borderRadius: 12,
               textAlign: 'left',
               transition: 'all 0.2s',
-              background: mode === 'polished'
+              background: edition === 'masterwork'
                 ? 'rgba(168, 85, 247, 0.15)'
                 : 'rgba(26, 39, 68, 0.5)',
-              border: mode === 'polished'
+              border: edition === 'masterwork'
                 ? '2px solid #a855f7'
                 : '2px solid rgba(250, 246, 237, 0.08)',
               cursor: isWorking ? 'not-allowed' : 'pointer',
               opacity: isWorking ? 0.5 : 1,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <Crown style={{ width: 16, height: 16, color: mode === 'polished' ? '#a855f7' : 'var(--moon-soft)' }} />
-              <span style={{ fontWeight: 500, color: 'var(--moon-light)' }}>Masterpiece Mode</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Crown style={{ width: 18, height: 18, color: edition === 'masterwork' ? '#a855f7' : 'var(--moon-soft)' }} />
+                <span style={{ fontWeight: 600, color: 'var(--moon-light)', fontSize: '1.125rem' }}>
+                  {EDITION_INFO.masterwork.name}
+                </span>
+              </div>
+              <span style={{ fontWeight: 600, color: '#a855f7', fontSize: '1.25rem' }}>
+                {formatPrice(getPrice('masterwork', currentLength).price)}
+              </span>
             </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--moon-soft)', opacity: 0.7 }}>
-              Enhanced editing · Richer prose quality
+            <p style={{ fontSize: '0.8125rem', color: 'var(--moon-soft)', opacity: 0.8 }}>
+              {EDITION_INFO.masterwork.tagline}
             </p>
           </button>
+        </div>
+
+        {/* Edition features */}
+        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(26, 39, 68, 0.3)', borderRadius: 8 }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--moon-soft)', marginBottom: '0.5rem', fontWeight: 500 }}>
+            {edition === 'masterwork' ? 'Masterwork includes:' : 'Standard includes:'}
+          </p>
+          <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.75rem', color: 'var(--moon-soft)', opacity: 0.8 }}>
+            {EDITION_INFO[edition].features.map((feature, i) => (
+              <li key={i} style={{ marginBottom: '0.25rem' }}>{feature}</li>
+            ))}
+          </ul>
         </div>
       </div>
 
@@ -439,7 +486,7 @@ export default function VibePreviewPage() {
       <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {/* Primary CTA */}
         <button
-          onClick={handleGenerate}
+          onClick={handleCheckout}
           disabled={isWorking}
           className="app-button-primary"
           style={{
@@ -451,25 +498,21 @@ export default function VibePreviewPage() {
             cursor: isWorking ? 'not-allowed' : 'pointer',
           }}
         >
-          {isCreating ? (
+          {isRedirecting ? (
             <>
               <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} />
-              {mode === 'polished' ? 'Crafting your masterpiece...' : 'Setting things in motion...'}
+              Preparing checkout...
             </>
           ) : (
             <>
-              {mode === 'polished' ? (
-                <Crown style={{ width: 20, height: 20 }} />
-              ) : (
-                <Sparkles style={{ width: 20, height: 20 }} />
-              )}
-              {mode === 'polished' ? 'Create my masterpiece' : 'Generate my book'}
+              <CreditCard style={{ width: 20, height: 20 }} />
+              Purchase for {formatPrice(currentPrice.price)}
             </>
           )}
         </button>
 
         <p className="app-body-sm" style={{ textAlign: 'center' }}>
-          This will create a ~{draft.length || 30} page book. {mode === 'polished' ? 'Masterpiece mode takes longer but delivers richer prose.' : (draft.length || 30) >= 120 ? 'This may take a while.' : 'Takes a few minutes.'}
+          ~{currentLength} page {edition === 'masterwork' ? 'masterwork' : 'book'}. {edition === 'masterwork' ? 'Includes audiobook.' : 'Yours forever.'}
         </p>
       </div>
 

@@ -162,7 +162,11 @@ Requirements:
       preview.warnings = preview.warnings || { violence: 'low', romance: 'low' }
 
     } catch (parseError) {
-      console.error('Failed to parse preview JSON:', parseError, responseText)
+      console.error('Failed to parse preview JSON:', {
+        error: parseError instanceof Error ? parseError.message : parseError,
+        responseText: responseText.substring(0, 500),
+        userId: user.id,
+      })
       return ApiErrors.internal('Failed to generate valid preview. Please try again.')
     }
 

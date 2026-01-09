@@ -16,8 +16,8 @@ type BookLength = 30 | 60 | 120 | 300
 const LENGTH_OPTIONS: { value: BookLength; label: string; description: string }[] = [
   { value: 30, label: 'Short Story', description: '~30 pages · 15 min read' },
   { value: 60, label: 'Novella', description: '~60 pages · 30 min read' },
-  { value: 120, label: 'Short Novel', description: '~120 pages · 1 hour read' },
-  { value: 300, label: 'Full Novel', description: '~300 pages · 2.5 hours read' },
+  { value: 120, label: 'Novel', description: '~120 pages · 1 hour read' },
+  { value: 300, label: 'Epic Novel', description: '~300 pages · 2.5 hours read' },
 ]
 
 export default function CreateNewPage() {

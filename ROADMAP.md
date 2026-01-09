@@ -280,6 +280,56 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 ---
 
+### Phase 14.9: Payment System (Next)
+
+**Goal:** Implement pay-per-book pricing with Stripe. Two editions, four lengths.
+
+#### Pricing Model
+
+**Standard Edition** - A great custom-written book. Text only, yours forever, giftable.
+| Length | Pages | Price |
+|--------|-------|-------|
+| Short Book | ~30 | $1.99 |
+| Book | ~60 | $3.99 |
+| Long Book | ~120 | $6.99 |
+| Epic Book | ~300 | $9.99 |
+
+**Masterwork Edition** - The definitive edition. Refined prose & cohesion, audio included (up to 15 hrs), yours forever, giftable.
+| Length | Pages | Price |
+|--------|-------|-------|
+| Short Book | ~30 | $4.99 |
+| Book | ~60 | $7.99 |
+| Long Book | ~120 | $11.99 |
+| Epic Book | ~300 | $14.99 |
+
+#### Implementation Tasks
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Create Stripe account & products | High | Planned |
+| Create 8 Stripe Price objects (4 lengths × 2 editions) | High | Planned |
+| Add `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` env vars | High | Planned |
+| Install `stripe` and `@stripe/stripe-js` packages | High | Planned |
+| Create `/api/payments/create-checkout` endpoint | High | Planned |
+| Create `/api/payments/webhook` for Stripe events | High | Planned |
+| Add `payments` table (user_id, stripe_session_id, amount, status, book_id) | High | Planned |
+| Update create flow: edition selector UI (Standard/Masterwork) | High | Planned |
+| Update create flow: show price based on length + edition | High | Planned |
+| Redirect to Stripe Checkout before generation starts | High | Planned |
+| Handle successful payment → start generation job | High | Planned |
+| Handle failed/canceled payment | High | Planned |
+| Add payment status to book record | Medium | Planned |
+| Receipt emails via Stripe | Medium | Planned |
+| Refund handling | Low | Planned |
+
+#### Technical Notes
+- Stripe API credentials in 1Password
+- Use Stripe Checkout (hosted) for PCI compliance
+- Webhook signature verification required
+- Map: Standard Edition = draft mode, Masterwork Edition = polished mode + TTS
+
+---
+
 ### Phase 15: Discovery & Public Library
 
 **Goal:** Transform Chronicle from a creation tool into a content network. Users should be able to browse and discover stories, not just create them.
