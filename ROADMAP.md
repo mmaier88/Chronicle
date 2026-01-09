@@ -280,16 +280,16 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 ---
 
-### Phase 14.9: Payment System (Next)
+### Phase 14.9: Payment System (Complete)
 
-**Goal:** Implement pay-per-book pricing with Stripe. Two editions, four lengths.
+**Goal:** Implement pay-per-book pricing with Stripe. Two editions, four lengths. Free tier for short stories.
 
 #### Pricing Model
 
 **Standard Edition** - A great custom-written book. Text only, yours forever, giftable.
 | Length | Pages | Price |
 |--------|-------|-------|
-| Short Book | ~30 | $1.99 |
+| Short Book | ~30 | **FREE** |
 | Book | ~60 | $3.99 |
 | Long Book | ~120 | $6.99 |
 | Epic Book | ~300 | $9.99 |
@@ -306,19 +306,20 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Create Stripe account & products | High | Planned |
-| Create 8 Stripe Price objects (4 lengths × 2 editions) | High | Planned |
-| Add `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` env vars | High | Planned |
-| Install `stripe` and `@stripe/stripe-js` packages | High | Planned |
-| Create `/api/payments/create-checkout` endpoint | High | Planned |
-| Create `/api/payments/webhook` for Stripe events | High | Planned |
-| Add `payments` table (user_id, stripe_session_id, amount, status, book_id) | High | Planned |
-| Update create flow: edition selector UI (Standard/Masterwork) | High | Planned |
-| Update create flow: show price based on length + edition | High | Planned |
-| Redirect to Stripe Checkout before generation starts | High | Planned |
-| Handle successful payment → start generation job | High | Planned |
-| Handle failed/canceled payment | High | Planned |
-| Add payment status to book record | Medium | Planned |
+| Create Stripe account & products | High | Done |
+| Create 8 Stripe Price objects (4 lengths × 2 editions) | High | Done |
+| Add `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` env vars | High | Done |
+| Install `stripe` and `@stripe/stripe-js` packages | High | Done |
+| Create `/api/payments/create-checkout` endpoint | High | Done |
+| Create `/api/payments/webhook` for Stripe events | High | Done |
+| Add `payments` table (user_id, stripe_session_id, amount, status, book_id) | High | Done |
+| Update create flow: edition selector UI (Standard/Masterwork) | High | Done |
+| Update create flow: show price based on length + edition | High | Done |
+| Redirect to Stripe Checkout before generation starts | High | Done |
+| Handle successful payment → start generation job | High | Done |
+| Handle failed/canceled payment | High | Done |
+| Free tier for Standard short stories | High | Done |
+| Add payment status to book record | Medium | Done |
 | Receipt emails via Stripe | Medium | Planned |
 | Refund handling | Low | Planned |
 
@@ -327,6 +328,56 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 - Use Stripe Checkout (hosted) for PCI compliance
 - Webhook signature verification required
 - Map: Standard Edition = draft mode, Masterwork Edition = polished mode + TTS
+- Free tier: Standard 30-page books skip Stripe, create job directly
+
+---
+
+### Phase 14.10: Chronicle Reader V1 (Complete)
+
+**Goal:** Immersive full-screen reading experience with progress tracking and typography controls.
+
+#### Features
+
+| Feature | Status |
+|---------|--------|
+| Full-screen immersive reader (no nav bar) | Done |
+| Progress tracking (scroll percentage) | Done |
+| Perfect resume (remembers scroll position) | Done |
+| Typography controls (tap to show) | Done |
+| Font size adjustment | Done |
+| Line height adjustment | Done |
+| Font family (serif/sans) | Done |
+| Theme selection (light/dark/warm-night) | Done |
+| "Listen from here" button | Done |
+| Progress bar always visible | Done |
+| Time remaining estimate | Done |
+
+#### Technical Implementation
+
+- Separate route group `/(reader)` with minimal layout
+- Reader page at `/reader/[bookId]`
+- Progress saved to `reader_progress` table
+- Typography saved to `typography_settings` table
+- Raw section content preserved for rendering (matches old reader)
+- Scroll position restored on load via `scroll_offset_ratio`
+
+#### Database Tables
+
+```sql
+-- Reader progress (per user × book)
+reader_progress (user_id, book_id, chapter_id, paragraph_id, scroll_offset, scroll_offset_ratio)
+
+-- Typography settings (per user)
+typography_settings (user_id, font_size, line_height, font_family, theme)
+```
+
+#### API Routes
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/reader/book/[bookId]` | GET | Get book content in reader format |
+| `/api/reader/progress` | POST | Save reading progress |
+| `/api/reader/typography` | GET/POST | Get/save typography settings |
 
 ---
 
@@ -677,6 +728,23 @@ ANTHROPIC_API_KEY
 ## Changelog
 
 ### 2026-01-09
+- **Phase 14.10 complete: Chronicle Reader V1**
+  - Full-screen immersive reader at `/reader/[bookId]`
+  - Progress tracking (scroll percentage, time remaining)
+  - Perfect resume (remembers and restores scroll position)
+  - Typography controls (font size, line height, font family, theme)
+  - Separate route group to avoid layout interference
+  - Database tables: `reader_progress`, `typography_settings`
+- **Phase 14.9 complete: Payment System**
+  - Stripe integration with Checkout (hosted)
+  - Two editions: Standard (draft) and Masterwork (polished + audio)
+  - Four lengths: Short (30pg), Book (60pg), Long (120pg), Epic (300pg)
+  - **Free tier**: Standard short stories are free
+  - Webhook handling for payment completion
+  - Preview page shows edition selector with prices
+- **Cover regeneration fix**
+  - Added cache-busting timestamp to cover URLs
+  - Fixed BookCoverClient not updating after regeneration
 - **Phase 14.8 complete: Testing Infrastructure**
   - Typed API client (`lib/api-client.ts`) - compile-time contract safety
   - GitHub Actions CI pipeline (runs on push to main/staging)
