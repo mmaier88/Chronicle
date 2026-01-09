@@ -75,6 +75,25 @@ export function ReaderShell({
     return html
   }
 
+  // Restore scroll position on load
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || !initialProgress) return
+
+    // Wait for content to render
+    const timeoutId = setTimeout(() => {
+      const scrollHeight = container.scrollHeight - container.clientHeight
+      const savedRatio = initialProgress.scroll_offset_ratio || (initialProgress.scroll_offset / 100)
+      if (scrollHeight > 0 && savedRatio > 0) {
+        const targetScroll = scrollHeight * savedRatio
+        container.scrollTo({ top: targetScroll, behavior: 'instant' })
+        setScrollProgress(Math.round(savedRatio * 100))
+      }
+    }, 100)
+
+    return () => clearTimeout(timeoutId)
+  }, [initialProgress])
+
   // Track scroll position for progress
   useEffect(() => {
     const container = containerRef.current
