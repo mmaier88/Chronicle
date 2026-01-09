@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { ArrowLeft, Headphones, BookOpen, ChevronDown } from 'lucide-react'
-import { Paragraph, ChapterHeader, ChapterDivider } from './Paragraph'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { ArrowLeft, Headphones } from 'lucide-react'
 import { TypographyControls, TypographyButton } from './TypographyControls'
 import type {
   ReaderBook,
@@ -10,17 +9,9 @@ import type {
   AudioProgress,
   TypographySettings,
   ReaderChapter,
-  Paragraph as ParagraphType,
   ReaderTheme,
 } from '@/lib/reader'
-import {
-  DEFAULT_TYPOGRAPHY,
-  calculateProgressPercentage,
-  calculateTimeRemaining,
-  findResumePosition,
-  debounce,
-  PROGRESS_SAVE_DEBOUNCE_MS,
-} from '@/lib/reader'
+import { DEFAULT_TYPOGRAPHY } from '@/lib/reader'
 
 interface ReaderShellProps {
   book: ReaderBook
@@ -36,8 +27,8 @@ interface ReaderShellProps {
 /**
  * Chronicle Reader Shell
  *
- * The main web reader component.
- * Implements vertical scroll, perfect resume, typography controls.
+ * Simplified V1 - renders content like the old reader for visual parity.
+ * Tracks progress at chapter level.
  */
 export function ReaderShell({
   book,
@@ -55,140 +46,85 @@ export function ReaderShell({
   )
   const [showControls, setShowControls] = useState(false)
   const [showTypography, setShowTypography] = useState(false)
-
-  // Calculate initial position once (for initial state)
-  const initialPosition = useMemo(() => {
-    if (initialProgress && book.chapters.length > 0) {
-      // Try to find saved chapter/paragraph
-      for (const chapter of book.chapters) {
-        if (chapter.chapter_id === initialProgress.chapter_id) {
-          const paragraph = chapter.paragraphs.find(p => p.id === initialProgress.paragraph_id)
-          if (paragraph) {
-            return { chapterId: chapter.chapter_id, paragraphId: paragraph.id }
-          }
-          // Chapter found but paragraph not - use first paragraph of chapter
-          if (chapter.paragraphs.length > 0) {
-            return { chapterId: chapter.chapter_id, paragraphId: chapter.paragraphs[0].id }
-          }
-        }
-      }
-    }
-    // Default to first paragraph
-    if (book.chapters.length > 0 && book.chapters[0].paragraphs.length > 0) {
-      return { chapterId: book.chapters[0].chapter_id, paragraphId: book.chapters[0].paragraphs[0].id }
-    }
-    return { chapterId: null, paragraphId: null }
-  }, []) // Empty deps - only calculate once on mount
-
-  const [currentChapterId, setCurrentChapterId] = useState<string | null>(initialPosition.chapterId)
-  const [currentParagraphId, setCurrentParagraphId] = useState<string | null>(initialPosition.paragraphId)
-  const [highlightedParagraphId, setHighlightedParagraphId] = useState<string | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(0)
+  const [scrollProgress, setScrollProgress] = useState(0)
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null)
-  const paragraphRefs = useRef<Map<string, HTMLParagraphElement>>(new Map())
+  const chapterRefs = useRef<Map<number, HTMLElement>>(new Map())
 
   // Theme colors - matches Chronicle design system
-  const themeColors: Record<ReaderTheme, { bg: string; text: string; textSecondary: string }> = {
-    light: { bg: '#FAF6ED', text: '#1A1A1A', textSecondary: '#666666' },
-    dark: { bg: '#0F172A', text: '#B8C4D9', textSecondary: '#94A3B8' }, // text matches var(--moon-mid)
-    'warm-night': { bg: '#1C1410', text: '#E8D5C4', textSecondary: '#A89080' },
+  const themeColors: Record<ReaderTheme, { bg: string; text: string; accent: string }> = {
+    light: { bg: '#FAF6ED', text: '#1A1A1A', accent: '#8B7355' },
+    dark: { bg: '#0F172A', text: '#B8C4D9', accent: '#D4A574' },
+    'warm-night': { bg: '#1C1410', text: '#E8D5C4', accent: '#D4A574' },
   }
 
   const colors = themeColors[typography.theme]
 
-  // Debounced save progress
-  const debouncedSaveProgress = useCallback(
-    debounce(async (chapterId: string, paragraphId: string, scrollOffset: number, scrollOffsetRatio: number) => {
-      await onSaveProgress({
-        book_id: book.book_id,
-        chapter_id: chapterId,
-        paragraph_id: paragraphId,
-        scroll_offset: scrollOffset,
-        scroll_offset_ratio: scrollOffsetRatio,
+  // Convert markdown to HTML (like old reader)
+  const markdownToHtml = (text: string): string => {
+    if (!text) return ''
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    html = html.replace(/\n/g, '<br />')
+    return html
+  }
+
+  // Track scroll position for progress
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const scrollTop = container.scrollTop
+      const scrollHeight = container.scrollHeight - container.clientHeight
+      const progress = scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0
+      setScrollProgress(progress)
+
+      // Find current chapter based on scroll position
+      let currentIdx = 0
+      chapterRefs.current.forEach((el, idx) => {
+        const rect = el.getBoundingClientRect()
+        if (rect.top < window.innerHeight / 2) {
+          currentIdx = idx
+        }
       })
-    }, PROGRESS_SAVE_DEBOUNCE_MS),
-    [book.book_id, onSaveProgress]
-  )
+      setCurrentChapterIndex(currentIdx)
+    }
 
-  // Initialize - scroll to resume position
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Save progress periodically
   useEffect(() => {
-    if (isInitialized || !book.chapters.length) return
+    if (scrollProgress === 0 || book.chapters.length === 0) return
 
-    const resumeResult = findResumePosition(book, initialProgress)
-    if (!resumeResult) {
-      setIsInitialized(true)
-      return
-    }
+    const chapter = book.chapters[currentChapterIndex]
+    if (!chapter) return
 
-    setCurrentChapterId(resumeResult.chapter.chapter_id)
-    setCurrentParagraphId(resumeResult.paragraph.id)
+    const timeoutId = setTimeout(() => {
+      onSaveProgress({
+        book_id: book.book_id,
+        chapter_id: chapter.chapter_id,
+        paragraph_id: chapter.paragraphs[0]?.id || '',
+        scroll_offset: scrollProgress,
+        scroll_offset_ratio: scrollProgress / 100,
+      })
+    }, 3000)
 
-    // Scroll to paragraph after a brief delay for DOM to render
-    setTimeout(() => {
-      const paragraphEl = paragraphRefs.current.get(resumeResult.paragraph.id)
-      if (paragraphEl) {
-        paragraphEl.scrollIntoView({ behavior: 'instant', block: 'start' })
-
-        // Apply scroll offset
-        if (containerRef.current && resumeResult.scrollOffset > 0) {
-          containerRef.current.scrollTop += resumeResult.scrollOffset
-        }
-
-        // Brief highlight if resuming (not first time)
-        if (resumeResult.wasExactMatch) {
-          setHighlightedParagraphId(resumeResult.paragraph.id)
-          setTimeout(() => setHighlightedParagraphId(null), 1500)
-        }
-      }
-      setIsInitialized(true)
-    }, 100)
-  }, [book, initialProgress, isInitialized])
-
-  // Handle visibility tracking from paragraphs
-  const handleParagraphVisible = useCallback((paragraphId: string, ratio: number) => {
-    if (!isInitialized || ratio < 0.5) return
-
-    // Find chapter for this paragraph
-    for (const chapter of book.chapters) {
-      const paragraph = chapter.paragraphs.find(p => p.id === paragraphId)
-      if (paragraph) {
-        setCurrentChapterId(chapter.chapter_id)
-        setCurrentParagraphId(paragraphId)
-
-        // Save progress (debounced)
-        const paragraphEl = paragraphRefs.current.get(paragraphId)
-        const scrollOffset = paragraphEl?.getBoundingClientRect().top || 0
-        debouncedSaveProgress(chapter.chapter_id, paragraphId, Math.round(scrollOffset), ratio)
-        break
-      }
-    }
-  }, [book.chapters, isInitialized, debouncedSaveProgress])
-
-  // Save progress on background/tab hide
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && currentChapterId && currentParagraphId) {
-        // Save immediately on background
-        onSaveProgress({
-          book_id: book.book_id,
-          chapter_id: currentChapterId,
-          paragraph_id: currentParagraphId,
-          scroll_offset: 0,
-          scroll_offset_ratio: 0,
-        })
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [book.book_id, currentChapterId, currentParagraphId, onSaveProgress])
+    return () => clearTimeout(timeoutId)
+  }, [scrollProgress, currentChapterIndex, book, onSaveProgress])
 
   // Toggle controls on tap
   const handleContainerClick = (e: React.MouseEvent) => {
-    // Don't toggle if clicking a control
     if ((e.target as HTMLElement).closest('button')) return
+    if ((e.target as HTMLElement).closest('a')) return
     setShowControls(!showControls)
   }
 
@@ -199,41 +135,13 @@ export function ReaderShell({
     await onSaveTypography(changes)
   }
 
-  // Calculate progress
-  const progressPct = currentChapterId && currentParagraphId
-    ? calculateProgressPercentage(book, currentChapterId, currentParagraphId)
-    : 0
+  // Calculate time remaining
+  const timeRemaining = Math.ceil(book.estimated_read_minutes * (1 - scrollProgress / 100))
 
-  const timeRemaining = currentChapterId && currentParagraphId
-    ? calculateTimeRemaining(book, currentChapterId, currentParagraphId, 'reading')
-    : book.estimated_read_minutes
-
-  // Debug logging (remove in production)
-  useEffect(() => {
-    console.log('[Reader] Book loaded:', {
-      bookId: book.book_id,
-      chapters: book.chapters.length,
-      totalParagraphs: book.total_paragraphs,
-      firstChapterParagraphs: book.chapters[0]?.paragraphs.length,
-      firstParagraphId: book.chapters[0]?.paragraphs[0]?.id,
-      currentChapterId,
-      currentParagraphId,
-      progressPct,
-    })
-  }, [book, currentChapterId, currentParagraphId, progressPct])
-
-  // Listen from current position
-  const handleListenFromHere = () => {
-    if (!currentParagraphId) return
-
-    // Find the section ID for current paragraph
-    for (const chapter of book.chapters) {
-      const paragraph = chapter.paragraphs.find(p => p.id === currentParagraphId)
-      if (paragraph) {
-        onListenFromHere?.(currentParagraphId, paragraph.section_id)
-        break
-      }
-    }
+  // Get section content for a chapter (combine all sections)
+  const getChapterContent = (chapter: ReaderChapter): string => {
+    // The paragraphs contain the text, combine them
+    return chapter.paragraphs.map(p => p.text).join('\n\n')
   }
 
   return (
@@ -243,6 +151,7 @@ export function ReaderShell({
       style={{
         position: 'fixed',
         inset: 0,
+        zIndex: 9999,
         backgroundColor: colors.bg,
         color: colors.text,
         overflowY: 'auto',
@@ -301,69 +210,119 @@ export function ReaderShell({
         <TypographyButton onClick={() => setShowTypography(true)} />
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - matches old reader styling */}
       <main
         style={{
-          maxWidth: 700,
+          maxWidth: 640,
           margin: '0 auto',
-          padding: '4rem 1.5rem 8rem',
+          padding: '3rem 1.5rem 8rem',
         }}
       >
         {/* Book Title */}
-        <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <h1 style={{
-            fontSize: `${typography.font_size * 1.75}px`,
-            fontFamily: typography.font_family === 'serif'
-              ? 'var(--font-serif), Georgia, serif'
-              : 'system-ui, sans-serif',
+            fontSize: 'clamp(2rem, 5vw, 3rem)',
+            fontFamily: 'var(--font-serif), Georgia, serif',
             fontWeight: 600,
             marginBottom: '0.5rem',
+            color: colors.text,
           }}>
             {book.title}
           </h1>
           {book.author && (
             <p style={{
-              fontSize: `${typography.font_size * 0.875}px`,
+              fontSize: '1rem',
               opacity: 0.6,
+              marginTop: '0.5rem',
             }}>
               by {book.author}
             </p>
           )}
         </div>
 
-        {/* Chapters and Paragraphs */}
-        {book.chapters.map((chapter, chapterIndex) => (
-          <div key={chapter.chapter_id} data-chapter-id={chapter.chapter_id}>
-            {chapterIndex > 0 && <ChapterDivider />}
-            <ChapterHeader
-              title={chapter.title}
-              index={chapterIndex}
-              typography={typography}
-            />
-            {chapter.paragraphs.map((paragraph) => (
-              <Paragraph
-                key={paragraph.id}
-                ref={(el) => {
-                  if (el) paragraphRefs.current.set(paragraph.id, el)
-                }}
-                paragraph={paragraph}
-                typography={typography}
-                isHighlighted={paragraph.id === highlightedParagraphId}
-                onVisible={handleParagraphVisible}
-              />
-            ))}
-          </div>
-        ))}
+        {/* Chapters - styled like old reader */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem' }}>
+          {book.chapters.map((chapter, chIdx) => (
+            <article
+              key={chapter.chapter_id}
+              ref={(el) => { if (el) chapterRefs.current.set(chIdx, el) }}
+              style={{ scrollMarginTop: 32 }}
+            >
+              {/* Chapter Header */}
+              <div style={{ textAlign: 'center', marginBottom: '2.5rem', padding: '1.5rem 0' }}>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: colors.accent,
+                }}>
+                  Chapter {chIdx + 1}
+                </span>
+                <h2 style={{
+                  marginTop: '0.5rem',
+                  fontSize: '1.5rem',
+                  fontFamily: 'var(--font-serif), Georgia, serif',
+                  fontWeight: 600,
+                }}>
+                  {chapter.title}
+                </h2>
+              </div>
 
-        {/* End of book */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: '4rem',
-          opacity: 0.5,
-          fontSize: '0.875rem',
-        }}>
-          ~ The End ~
+              {/* Chapter Content - render like old reader */}
+              <div
+                style={{
+                  color: colors.text,
+                  lineHeight: typography.line_height,
+                  fontSize: `${typography.font_size}px`,
+                  fontFamily: typography.font_family === 'serif'
+                    ? 'var(--font-serif), Georgia, serif'
+                    : '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+                }}
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(getChapterContent(chapter)) }}
+              />
+
+              {/* Chapter divider */}
+              {chIdx < book.chapters.length - 1 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginTop: '3rem',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    color: colors.accent,
+                    opacity: 0.3,
+                  }}>
+                    <span style={{ width: 32, height: 1, background: colors.accent }} />
+                    <span style={{ fontSize: '1.125rem' }}>✦</span>
+                    <span style={{ width: 32, height: 1, background: colors.accent }} />
+                  </div>
+                </div>
+              )}
+            </article>
+          ))}
         </div>
+
+        {/* End */}
+        <footer style={{
+          textAlign: 'center',
+          padding: '5rem 0',
+          marginTop: '4rem',
+          borderTop: `1px solid ${colors.accent}22`,
+        }}>
+          <p style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: '1.5rem',
+            color: colors.accent,
+            fontStyle: 'italic',
+            opacity: 0.6,
+          }}>
+            — The End —
+          </p>
+        </footer>
       </main>
 
       {/* Bottom Controls (fades in/out) */}
@@ -382,7 +341,7 @@ export function ReaderShell({
         }}
       >
         <div style={{
-          maxWidth: 700,
+          maxWidth: 640,
           margin: '0 auto',
           display: 'flex',
           alignItems: 'center',
@@ -391,13 +350,17 @@ export function ReaderShell({
         }}>
           {/* Progress info */}
           <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-            {progressPct}% • {timeRemaining} min left
+            {scrollProgress}% • {timeRemaining} min left
           </div>
 
           {/* Listen button */}
-          {onListenFromHere && (
+          {onListenFromHere && book.chapters[currentChapterIndex]?.paragraphs[0] && (
             <button
-              onClick={handleListenFromHere}
+              onClick={() => {
+                const chapter = book.chapters[currentChapterIndex]
+                const paragraph = chapter.paragraphs[0]
+                onListenFromHere(paragraph.id, paragraph.section_id)
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -405,8 +368,8 @@ export function ReaderShell({
                 padding: '0.75rem 1.25rem',
                 borderRadius: 24,
                 border: 'none',
-                background: 'var(--amber-warm)',
-                color: '#0F172A',
+                background: colors.accent,
+                color: colors.bg,
                 cursor: 'pointer',
                 fontSize: '0.875rem',
                 fontWeight: 500,
@@ -427,15 +390,15 @@ export function ReaderShell({
           left: 0,
           right: 0,
           height: 3,
-          backgroundColor: 'rgba(128, 128, 128, 0.2)',
+          backgroundColor: `${colors.accent}33`,
           zIndex: 60,
         }}
       >
         <div
           style={{
             height: '100%',
-            width: `${progressPct}%`,
-            backgroundColor: 'var(--amber-warm)',
+            width: `${scrollProgress}%`,
+            backgroundColor: colors.accent,
             transition: 'width 0.3s',
           }}
         />
