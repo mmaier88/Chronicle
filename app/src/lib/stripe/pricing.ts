@@ -22,7 +22,7 @@ export interface PriceInfo {
  */
 export const PRICING: Record<Edition, Record<BookLength, PriceInfo>> = {
   standard: {
-    30: { price: 199, priceId: process.env.STRIPE_PRICE_STANDARD_30 || '' },
+    30: { price: 0, priceId: '' }, // Free tier!
     60: { price: 399, priceId: process.env.STRIPE_PRICE_STANDARD_60 || '' },
     120: { price: 699, priceId: process.env.STRIPE_PRICE_STANDARD_120 || '' },
     300: { price: 999, priceId: process.env.STRIPE_PRICE_STANDARD_300 || '' },
@@ -49,7 +49,15 @@ export const LENGTH_LABELS: Record<BookLength, { name: string; pages: string }> 
  * Format price in cents to display string (e.g., 199 → "$1.99")
  */
 export function formatPrice(cents: number): string {
+  if (cents === 0) return 'Free'
   return `$${(cents / 100).toFixed(2)}`
+}
+
+/**
+ * Check if a price is free
+ */
+export function isFree(edition: Edition, length: BookLength): boolean {
+  return PRICING[edition][length].price === 0
 }
 
 /**

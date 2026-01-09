@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Sparkles, Loader2, Crown, Zap, ArrowLeft, X, Plus, CreditCard } from 'lucide-react'
 import { VibePreview, BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
-import { Edition, BookLength, getPrice, formatPrice, EDITION_INFO } from '@/lib/stripe/pricing'
+import { Edition, BookLength, getPrice, formatPrice, isFree, EDITION_INFO } from '@/lib/stripe/pricing'
 
 interface VibeDraft {
   genre: BookGenre
@@ -91,6 +91,13 @@ export default function VibePreviewPage() {
       if (!response.ok) {
         setError(data.error?.message || 'Could not set up payment. Please try again.')
         setIsRedirecting(false)
+        return
+      }
+
+      // Handle free tier - redirect directly to generating
+      if (data.data.free && data.data.job_id) {
+        localStorage.removeItem('vibe_draft')
+        router.push(`/create/generating/${data.data.job_id}`)
         return
       }
 
@@ -501,7 +508,12 @@ export default function VibePreviewPage() {
           {isRedirecting ? (
             <>
               <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} />
-              Preparing checkout...
+              {isFree(edition, currentLength) ? 'Creating your book...' : 'Preparing checkout...'}
+            </>
+          ) : isFree(edition, currentLength) ? (
+            <>
+              <Sparkles style={{ width: 20, height: 20 }} />
+              Create for Free
             </>
           ) : (
             <>
