@@ -1,8 +1,22 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import { generateCorrelationId } from '@/lib/logger'
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  // Generate correlation ID for request tracing
+  const correlationId = request.headers.get('x-correlation-id') || generateCorrelationId()
+
+  // Clone request headers and add correlation ID
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-correlation-id', correlationId)
+
+  // Update the session (auth)
+  const response = await updateSession(request)
+
+  // Add correlation ID to response headers for client-side debugging
+  response.headers.set('x-correlation-id', correlationId)
+
+  return response
 }
 
 export const config = {

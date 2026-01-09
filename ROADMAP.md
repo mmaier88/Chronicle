@@ -402,10 +402,10 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 - [ ] Authenticated E2E flows
 
 ### High Priority
-- [x] Structured logging (`lib/logger.ts`) - Partial
+- [x] Structured logging (`lib/logger.ts`)
 - [x] Environment validation (`lib/env.ts`)
 - [x] Performance indexes (migrations 00005, 00006)
-- [ ] Correlation IDs in logs
+- [x] Correlation IDs in logs (middleware + logger)
 - [ ] Error alerting (PagerDuty/Slack)
 - [ ] Generation cost tracking per user
 - [ ] Analytics dashboard
@@ -521,6 +521,9 @@ ANTHROPIC_API_KEY
   - Playwright E2E smoke tests (landing, login, navigation)
 - **Phase 14.7 confirmed complete: Story Slider System**
   - All 14 sliders implemented with UI, config, resolution, and LLM injection
+- **Technical debt: Correlation IDs**
+  - Added `generateCorrelationId()` and `getCorrelationId()` to logger
+  - Middleware now adds `x-correlation-id` to all requests/responses
 - Fixed Google OAuth showing 2 screens (removed consent prompt)
 - Fixed create page not progressing (API response format mismatch)
 - Fixed Surprise Me feature (standardized API response format)
