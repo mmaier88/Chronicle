@@ -407,13 +407,13 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 - [x] Performance indexes (migrations 00005, 00006)
 - [x] Correlation IDs in logs (middleware + logger)
 - [ ] Error alerting (PagerDuty/Slack)
-- [ ] Generation cost tracking per user
+- [x] Generation cost tracking per user (`/api/admin/costs`)
 - [ ] Analytics dashboard
 
 ### Medium Priority
 - [ ] OpenAI fallback for LLM calls
 - [ ] A/B testing framework
-- [ ] Performance monitoring (Vercel Analytics)
+- [x] Performance monitoring (Vercel Analytics)
 - [x] Standardize API response format (`lib/api-utils.ts`)
 - [ ] Add ARIA labels for accessibility
 
@@ -524,6 +524,11 @@ ANTHROPIC_API_KEY
 - **Technical debt: Correlation IDs**
   - Added `generateCorrelationId()` and `getCorrelationId()` to logger
   - Middleware now adds `x-correlation-id` to all requests/responses
+- **Technical debt: Cost tracking**
+  - Added `lib/ai-pricing.ts` with model pricing and cost calculations
+  - Added `/api/admin/costs` endpoint to query user AI costs
+- **Technical debt: Performance monitoring**
+  - Integrated Vercel Analytics (`@vercel/analytics`)
 - Fixed Google OAuth showing 2 screens (removed consent prompt)
 - Fixed create page not progressing (API response format mismatch)
 - Fixed Surprise Me feature (standardized API response format)
