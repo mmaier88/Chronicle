@@ -60,10 +60,10 @@ export default function CreateNewPage() {
         }),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
-      if (!response.ok) {
-        setError(data.error || 'Something went wrong')
+      if (!response.ok || !result.success) {
+        setError(result.error || 'Something went wrong')
         setIsGenerating(false)
         return
       }
@@ -72,7 +72,7 @@ export default function CreateNewPage() {
       localStorage.setItem('vibe_draft', JSON.stringify({
         genre: DEFAULT_GENRE,
         prompt: prompt.trim(),
-        preview: data.preview,
+        preview: result.data.preview,
         length: length,
         sliders: sliders,
       }))
