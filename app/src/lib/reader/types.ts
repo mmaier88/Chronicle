@@ -174,7 +174,7 @@ export function generateParagraphId(
 
 /**
  * Parse markdown/text content into paragraphs.
- * Splits on double newlines, filters empty.
+ * Splits on newlines (single or double), filters empty.
  */
 export function parseIntoParagraphs(
   content: string,
@@ -182,9 +182,10 @@ export function parseIntoParagraphs(
 ): Paragraph[] {
   if (!content || !content.trim()) return []
 
-  // Split on double newlines (paragraph breaks)
+  // Split on any newline sequence (single or double)
+  // This handles both \n\n and \n paragraph breaks
   const rawParagraphs = content
-    .split(/\n\n+/)
+    .split(/\n+/)
     .map(p => p.trim())
     .filter(p => p.length > 0)
 
