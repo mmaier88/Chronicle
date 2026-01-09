@@ -51,6 +51,7 @@ export function transformToReaderBook(
     .sort((a, b) => a.index - b.index)
     .map(chapter => {
       const paragraphs: Paragraph[] = []
+      const rawContentParts: string[] = []
 
       // Sort sections by index
       const sortedSections = [...chapter.sections].sort((a, b) => a.index - b.index)
@@ -60,6 +61,10 @@ export function transformToReaderBook(
         const sectionParagraphs = parseIntoParagraphs(content, section.id)
         paragraphs.push(...sectionParagraphs)
         totalWords += countWords(content)
+        // Store raw content for rendering
+        if (content.trim()) {
+          rawContentParts.push(content)
+        }
       }
 
       totalParagraphs += paragraphs.length
@@ -69,6 +74,7 @@ export function transformToReaderBook(
         chapter_index: chapter.index,
         title: chapter.title,
         paragraphs,
+        raw_content: rawContentParts.join('\n\n'),
       }
     })
 

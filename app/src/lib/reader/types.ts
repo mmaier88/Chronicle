@@ -40,6 +40,8 @@ export interface ReaderChapter {
   chapter_index: number
   title: string
   paragraphs: Paragraph[]
+  /** Raw section content for rendering (preserves original formatting) */
+  raw_content: string
 }
 
 /**

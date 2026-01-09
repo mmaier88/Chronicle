@@ -138,12 +138,6 @@ export function ReaderShell({
   // Calculate time remaining
   const timeRemaining = Math.ceil(book.estimated_read_minutes * (1 - scrollProgress / 100))
 
-  // Get section content for a chapter (combine all sections)
-  const getChapterContent = (chapter: ReaderChapter): string => {
-    // The paragraphs contain the text, combine them
-    return chapter.paragraphs.map(p => p.text).join('\n\n')
-  }
-
   return (
     <div
       ref={containerRef}
@@ -279,7 +273,7 @@ export function ReaderShell({
                     ? 'var(--font-serif), Georgia, serif'
                     : '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                 }}
-                dangerouslySetInnerHTML={{ __html: markdownToHtml(getChapterContent(chapter)) }}
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(chapter.raw_content) }}
               />
 
               {/* Chapter divider */}
@@ -381,6 +375,21 @@ export function ReaderShell({
           )}
         </div>
       </footer>
+
+      {/* Progress info (always visible) */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 12,
+          left: 16,
+          fontSize: '0.75rem',
+          color: colors.text,
+          opacity: 0.5,
+          zIndex: 60,
+        }}
+      >
+        {scrollProgress}% • {timeRemaining} min left
+      </div>
 
       {/* Progress bar (always visible) */}
       <div

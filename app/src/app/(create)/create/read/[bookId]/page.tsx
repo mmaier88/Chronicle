@@ -170,7 +170,7 @@ export default async function VibeReadPage({
             <BookAudioPlayer bookTitle={book.title} sections={allSections} />
           )}
           <Link
-            href={`/create/reader/${book.id}`}
+            href={`/reader/${book.id}`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',

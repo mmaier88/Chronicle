@@ -116,7 +116,7 @@ export default async function StoriesPage() {
                     </Link>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '1rem' }}>
                       <Link
-                        href={`/create/reader/${story.id}`}
+                        href={`/reader/${story.id}`}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
