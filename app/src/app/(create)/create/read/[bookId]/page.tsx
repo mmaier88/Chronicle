@@ -170,6 +170,29 @@ export default async function VibeReadPage({
             <BookAudioPlayer bookTitle={book.title} sections={allSections} />
           </div>
         )}
+
+        {/* Reader Mode */}
+        <div style={{ marginTop: '1rem' }}>
+          <Link
+            href={`/create/reader/${book.id}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.25rem',
+              borderRadius: 12,
+              background: 'rgba(212, 165, 116, 0.1)',
+              border: '1px solid rgba(212, 165, 116, 0.2)',
+              color: 'var(--amber-warm)',
+              fontSize: '0.9375rem',
+              fontWeight: 500,
+              textDecoration: 'none',
+            }}
+          >
+            <BookOpen style={{ width: 18, height: 18 }} />
+            Reader Mode
+          </Link>
+        </div>
       </header>
 
       {/* Table of Contents */}
