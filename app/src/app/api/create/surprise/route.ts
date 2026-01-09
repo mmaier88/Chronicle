@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { apiSuccess, ApiErrors } from '@/lib/api-utils'
 
 const anthropic = new Anthropic()
 
@@ -34,12 +34,9 @@ Be specific and intriguing. No clichés. Just the premise, nothing else.`
     const content = message.content[0]
     const prompt = content.type === 'text' ? content.text.trim() : ''
 
-    return NextResponse.json({ prompt })
+    return apiSuccess({ prompt })
   } catch (error) {
     console.error('Surprise prompt generation error:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate prompt' },
-      { status: 500 }
-    )
+    return ApiErrors.internal('Failed to generate prompt')
   }
 }

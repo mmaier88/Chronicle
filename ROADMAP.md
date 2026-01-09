@@ -230,7 +230,7 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 ---
 
-### Phase 14.7: Story Slider System (In Progress)
+### Phase 14.7: Story Slider System (Complete)
 
 **Goal:** Give users control over story tone, content, and style through an intuitive slider system with 3 visible labels mapping to 5-step internal precision.
 
@@ -268,14 +268,15 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Database schema for slider values | High | Planned |
-| SliderControl UI component | High | Planned |
-| Create page integration (3 default sliders) | High | Planned |
-| Advanced mode toggle | Medium | Planned |
-| Auto-resolution logic (genre/audience inference) | High | Planned |
-| LLM prompt injection (constraint block) | High | Planned |
-| Safety/conflict resolution | High | Planned |
-| Engine integration (pass sliders to generation) | High | Planned |
+| Types in `chronicle.ts` | High | Done |
+| SliderControl UI component (`StorySliders.tsx`) | High | Done |
+| Config (`slider-config.ts`) | High | Done |
+| Create page integration (3 default sliders) | High | Done |
+| Preview page integration | High | Done |
+| Advanced mode toggle | Medium | Done |
+| Auto-resolution logic (`slider-resolution.ts`) | High | Done |
+| LLM prompt injection (constraint block in tick) | High | Done |
+| Safety/conflict resolution | High | Done |
 
 ---
 
@@ -518,8 +519,11 @@ ANTHROPIC_API_KEY
   - GitHub Actions CI pipeline (runs on push to main/staging)
   - 61 unit/integration tests for API utilities and client
   - Playwright E2E smoke tests (landing, login, navigation)
+- **Phase 14.7 confirmed complete: Story Slider System**
+  - All 14 sliders implemented with UI, config, resolution, and LLM injection
 - Fixed Google OAuth showing 2 screens (removed consent prompt)
 - Fixed create page not progressing (API response format mismatch)
+- Fixed Surprise Me feature (standardized API response format)
 
 ### 2026-01-08
 - Phase 14.6 complete: Staging Environment
