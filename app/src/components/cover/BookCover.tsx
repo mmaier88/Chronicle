@@ -1,6 +1,6 @@
 'use client'
 
-import { BookOpen, Loader2 } from 'lucide-react'
+import { BookOpen, Loader2, AlertCircle } from 'lucide-react'
 
 interface BookCoverProps {
   coverUrl?: string | null
@@ -77,7 +77,49 @@ export function BookCover({ coverUrl, title, status, size = 'md' }: BookCoverPro
     )
   }
 
-  // Placeholder (pending, failed, or no cover)
+  // Failed state
+  if (status === 'failed') {
+    return (
+      <div
+        style={{
+          width,
+          height,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 8,
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: 8,
+          color: '#fda4af',
+        }}
+      >
+        <AlertCircle
+          style={{
+            width: size === 'sm' ? 20 : size === 'md' ? 32 : 40,
+            height: size === 'sm' ? 20 : size === 'md' ? 32 : 40,
+            opacity: 0.8,
+          }}
+        />
+        {size !== 'sm' && (
+          <p
+            style={{
+              fontSize: size === 'md' ? '0.75rem' : '0.875rem',
+              opacity: 0.8,
+              textAlign: 'center',
+              padding: '0 1rem',
+              lineHeight: 1.4,
+            }}
+          >
+            Cover failed
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // Placeholder (pending or no cover)
   return (
     <div
       style={{

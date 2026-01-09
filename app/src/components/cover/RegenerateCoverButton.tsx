@@ -11,10 +11,12 @@ interface RegenerateCoverButtonProps {
 
 export function RegenerateCoverButton({ bookId, onRegenerated }: RegenerateCoverButtonProps) {
   const [isRegenerating, setIsRegenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   const handleRegenerate = async () => {
     setIsRegenerating(true)
+    setError(null)
     try {
       const response = await fetch('/api/cover/generate', {
         method: 'POST',
@@ -28,9 +30,12 @@ export function RegenerateCoverButton({ bookId, onRegenerated }: RegenerateCover
         router.refresh()
       } else {
         const data = await response.json()
-        console.error('Failed to regenerate cover:', data.error || data)
+        const errorMsg = data.error || 'Generation failed'
+        setError(errorMsg)
+        console.error('Failed to regenerate cover:', errorMsg)
       }
     } catch (err) {
+      setError('Network error')
       console.error('Failed to regenerate cover:', err)
     } finally {
       setIsRegenerating(false)
@@ -38,6 +43,7 @@ export function RegenerateCoverButton({ bookId, onRegenerated }: RegenerateCover
   }
 
   return (
+    <>
     <button
       onClick={handleRegenerate}
       disabled={isRegenerating}
@@ -69,5 +75,11 @@ export function RegenerateCoverButton({ bookId, onRegenerated }: RegenerateCover
         }
       `}</style>
     </button>
+    {error && (
+      <p style={{ color: '#fda4af', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+        {error}
+      </p>
+    )}
+    </>
   )
 }
