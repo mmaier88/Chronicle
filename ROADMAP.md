@@ -406,18 +406,131 @@ Chronicle isn't just a creation tool—it's a content network where every reader
 | Version history | Medium | Planned |
 | Merge edits with regeneration | Low | Planned |
 
-### Phase 20: Monetization
+### Phase 20: Subscription & Credits System (CANONICAL SPEC)
 
-**Goal:** Monetize after building engaged user base. Focus on retention first.
+**Goal:** Subscription model that feels like Audible/Kindle, not SaaS. Credits are explicit and visible, never technical.
 
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Subscription tiers (Free/Pro/Unlimited) | High | Planned |
-| Pay-per-book credits | High | Planned |
-| Masterpiece Mode as premium | High | Planned |
-| Free tier with daily limits | High | Planned |
-| Unlimited generation tier | Medium | Planned |
-| API access tier | Low | Planned |
+#### Core Product Truth
+- Chronicle sells **custom books**, not AI tools
+- No tokens, no model names, no compute language
+- Users must understand the system in < 10 seconds
+
+---
+
+#### Plan: Chronicle Unlimited+ — $9.99/month
+
+**Includes:**
+- Unlimited reading of books created by others
+- Unlimited listening to books created by others
+- **15 hours of listening per month** (global pool)
+- **10 creation credits per month**
+- **Masterwork always included** (no credit penalty)
+
+Cancel anytime.
+
+---
+
+#### Credit System
+
+| What you create | Credits used |
+|-----------------|--------------|
+| Short Story | 1 credit |
+| Book | 2 credits |
+| Long Book | 4 credits |
+| Epic Book | 10 credits |
+
+**Rules:**
+- Credits are integers only (no decimals)
+- Masterwork costs same credits as Standard
+- Pages shown only as descriptive text, not pricing mechanic
+
+**Rollover:**
+- Credits roll over while subscription active
+- Maximum cap: **30 credits**
+- On billing cycle: +10 credits, clamp to 30
+
+**Cancellation:**
+- ALL unused credits forfeited (matches Audible)
+- UX copy: "Unused credits are available while your subscription is active."
+
+---
+
+#### Purchased Credits
+
+- Price: **$0.999 per credit** (same as subscription rate)
+- Packs: +10 ($9.99), +20 ($19.98), +50 ($49.95)
+- Subject to same 30-credit cap
+- Forfeited on cancellation
+
+---
+
+#### Audio / Listening System
+
+- **15 hours per month** (resets monthly, no rollover)
+- Applies to: own books + others' books
+- At cap: pause playback, offer upsell "+5 hours for $1.99"
+- Stream on demand, generate audio lazily
+
+---
+
+#### Ownership & Access
+
+| Content | While Subscribed | After Cancel |
+|---------|------------------|--------------|
+| Books you created | Full access | Full access (owned forever) |
+| Others' books | Full access | Lost |
+
+---
+
+#### Implementation Tasks
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Stripe subscription product setup | High | Planned |
+| `user_subscriptions` table (status, cycle dates) | High | Planned |
+| `credits_balance` field (int, max 30) | High | Planned |
+| `listening_seconds_remaining` field | High | Planned |
+| Monthly cron: grant credits, reset listening | High | Planned |
+| Subscription page UI ($9.99/mo, benefits) | High | Planned |
+| Credit purchase flow (Stripe one-time) | High | Planned |
+| Creation flow: show "Uses X credits" | High | Planned |
+| Audio player: track listened seconds | High | Planned |
+| Audio overage upsell modal | Medium | Planned |
+| Cancellation: forfeit credits | High | Planned |
+| Webhook: handle subscription lifecycle | High | Planned |
+
+#### UI Requirements
+
+**Must show:**
+- "$9.99 / month"
+- "10 creation credits per month"
+- "Credits roll over up to 30 while subscribed"
+- "15 hours of listening per month"
+- "Masterwork included"
+
+**Never show:**
+- Tokens, model names, multipliers
+- Credit expiration timers
+- Decimals
+
+#### Canonical UX Copy
+- "You get 10 creation credits every month."
+- "Credits roll over while you're subscribed — up to 30."
+- "Use credits however you like: one epic book or several smaller ones."
+- "Masterwork is included."
+- "Listening time resets every month."
+
+---
+
+#### Acceptance Tests
+
+1. User subscribes → sees 10 credits, 15h audio
+2. User inactive 2 months → sees 30 credits (cap)
+3. User buys +20 credits → balance clamps to 30
+4. User creates epic book → spends 10 credits
+5. User cancels → credits reset to 0
+6. User keeps owned books after cancel
+7. Audio stops at 15h, upsell triggers
 
 ### Phase 21: Extended Formats
 
