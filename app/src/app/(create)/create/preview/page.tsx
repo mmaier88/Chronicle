@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Loader2, Crown, Zap, ArrowLeft } from 'lucide-react'
+import { Sparkles, Loader2, Crown, Zap, ArrowLeft, X, Plus } from 'lucide-react'
 import { VibePreview, BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
 
@@ -238,8 +238,63 @@ export default function VibePreviewPage() {
                   style={{ flex: 1, resize: 'none', minHeight: 'auto' }}
                   placeholder="Who they are..."
                 />
+                {/* Delete button - only show if more than 1 character */}
+                {editedPreview.cast.length > 1 && (
+                  <button
+                    onClick={() => {
+                      const newCast = editedPreview.cast.filter((_, i) => i !== idx)
+                      updateField('cast', newCast)
+                    }}
+                    disabled={isWorking}
+                    style={{
+                      padding: '0.5rem',
+                      background: 'rgba(244, 63, 94, 0.1)',
+                      border: '1px solid rgba(244, 63, 94, 0.2)',
+                      borderRadius: 8,
+                      cursor: isWorking ? 'not-allowed' : 'pointer',
+                      opacity: isWorking ? 0.5 : 0.7,
+                      transition: 'all 0.2s',
+                      flexShrink: 0,
+                      marginTop: '0.25rem',
+                    }}
+                    onMouseEnter={(e) => { if (!isWorking) e.currentTarget.style.opacity = '1' }}
+                    onMouseLeave={(e) => { if (!isWorking) e.currentTarget.style.opacity = '0.7' }}
+                    title="Remove character"
+                  >
+                    <X style={{ width: 14, height: 14, color: '#fda4af' }} />
+                  </button>
+                )}
               </div>
             ))}
+            {/* Add character button */}
+            <button
+              onClick={() => {
+                const newCast = [...editedPreview.cast, { name: '', tagline: '' }]
+                updateField('cast', newCast)
+              }}
+              disabled={isWorking || editedPreview.cast.length >= 8}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem',
+                background: 'rgba(212, 165, 116, 0.08)',
+                border: '1px dashed rgba(212, 165, 116, 0.3)',
+                borderRadius: 8,
+                cursor: isWorking || editedPreview.cast.length >= 8 ? 'not-allowed' : 'pointer',
+                opacity: isWorking || editedPreview.cast.length >= 8 ? 0.4 : 0.7,
+                transition: 'all 0.2s',
+                color: 'var(--amber-warm)',
+                fontSize: '0.875rem',
+                marginTop: '0.5rem',
+              }}
+              onMouseEnter={(e) => { if (!isWorking && editedPreview.cast.length < 8) e.currentTarget.style.opacity = '1' }}
+              onMouseLeave={(e) => { if (!isWorking && editedPreview.cast.length < 8) e.currentTarget.style.opacity = '0.7' }}
+            >
+              <Plus style={{ width: 16, height: 16 }} />
+              Add character
+            </button>
           </div>
         </div>
 
