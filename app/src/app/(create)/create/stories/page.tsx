@@ -62,7 +62,7 @@ export default async function StoriesPage() {
                 {completedStories.map((story) => (
                   <Link
                     key={story.id}
-                    href={`/create/read/${story.id}`}
+                    href={`/create/reader/${story.id}`}
                     className="app-card"
                     style={{
                       display: 'flex',
