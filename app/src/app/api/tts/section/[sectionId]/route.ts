@@ -17,13 +17,14 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { sectionId } = await params
   const { user } = await getUser()
+  const wantsMetadata = request.nextUrl.searchParams.get('metadata') === 'true'
+
+  console.log(`[TTS] GET /api/tts/section/${sectionId}`, { wantsMetadata, userId: user?.id?.substring(0, 8) })
 
   if (!user) {
+    console.log('[TTS] Unauthorized - no user')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  // Check if client wants streaming (default) or JSON metadata
-  const wantsMetadata = request.nextUrl.searchParams.get('metadata') === 'true'
 
   // Rate limit per user
   const rateLimit = checkRateLimit(`tts:${user.id}`, RATE_LIMITS.tts)
@@ -101,6 +102,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     .single()
 
   if (existingAudio) {
+    console.log('[TTS] Found cached audio:', existingAudio.id)
     // Update last_accessed_at for cleanup tracking
     await supabase.rpc('touch_section_audio', { audio_id: existingAudio.id })
 
@@ -110,6 +112,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .createSignedUrl(existingAudio.storage_path, 3600)
 
     if (signedUrl) {
+      console.log('[TTS] Returning cached audio URL')
       // Return JSON metadata if requested (for player to know it's cached)
       if (wantsMetadata) {
         return NextResponse.json({
@@ -128,6 +131,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   // For metadata-only requests, indicate we need to stream
   if (wantsMetadata) {
+    console.log('[TTS] No cached audio, returning streaming metadata')
     return NextResponse.json({
       status: 'streaming',
       stream_url: `/api/tts/section/${sectionId}`,
@@ -136,6 +140,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       cached: false,
     })
   }
+
+  console.log('[TTS] Starting streaming generation...')
 
   // Check if generation is already in progress
   const { data: pendingAudio } = await supabase
@@ -146,6 +152,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     .single()
 
   if (pendingAudio) {
+    console.log('[TTS] Audio generation already in progress:', pendingAudio.id)
     // Wait a bit and retry - another request is generating
     return NextResponse.json({
       status: 'generating',
@@ -223,6 +230,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Edge runtime doesn't have waitUntil, but the promise will complete
     // as long as the process stays alive (which it does in Node.js runtime)
     cachePromise.catch(console.error)
+
+    console.log('[TTS] Returning streaming response for section', sectionId)
 
     // Return streaming response
     return new Response(stream, {
