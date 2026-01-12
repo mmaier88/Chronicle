@@ -15,17 +15,18 @@ interface RouteParams {
 
 // GET: Get or stream audio for a section
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { sectionId } = await params
-  const { user } = await getUser()
-  const wantsMetadata = request.nextUrl.searchParams.get('metadata') === 'true'
-  const forceRegenerate = request.nextUrl.searchParams.get('regenerate') === 'true'
+  try {
+    const { sectionId } = await params
+    const { user } = await getUser()
+    const wantsMetadata = request.nextUrl.searchParams.get('metadata') === 'true'
+    const forceRegenerate = request.nextUrl.searchParams.get('regenerate') === 'true'
 
-  console.log(`[TTS] GET /api/tts/section/${sectionId}`, { wantsMetadata, forceRegenerate, userId: user?.id?.substring(0, 8) })
+    console.log(`[TTS] GET /api/tts/section/${sectionId}`, { wantsMetadata, forceRegenerate, userId: user?.id?.substring(0, 8) })
 
-  if (!user) {
-    console.log('[TTS] Unauthorized - no user')
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    if (!user) {
+      console.log('[TTS] Unauthorized - no user')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
   // Rate limit per user
   const rateLimit = checkRateLimit(`tts:${user.id}`, RATE_LIMITS.tts)
@@ -96,13 +97,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   // If force regenerate, delete existing cached audio
   if (forceRegenerate) {
     console.log('[TTS] Force regenerate requested, deleting cached audio')
-    await supabase
-      .from('section_audio')
-      .delete()
-      .eq('section_id', sectionId)
-    await supabase.storage
-      .from('audio')
-      .remove([storagePath])
+    try {
+      const { error: deleteError } = await supabase
+        .from('section_audio')
+        .delete()
+        .eq('section_id', sectionId)
+      if (deleteError) {
+        console.error('[TTS] Failed to delete audio record:', deleteError)
+      }
+      const { error: storageError } = await supabase.storage
+        .from('audio')
+        .remove([storagePath])
+      if (storageError) {
+        console.error('[TTS] Failed to delete storage file:', storageError)
+      }
+    } catch (err) {
+      console.error('[TTS] Error during cache cleanup:', err)
+      // Continue anyway - we'll regenerate
+    }
   }
 
   // Check if we already have cached audio
@@ -278,6 +290,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({
       error: 'Audio generation failed',
       details: error instanceof Error ? error.message : 'Unknown error',
+    }, { status: 500 })
+  }
+  } catch (outerError) {
+    console.error('[TTS] Unhandled error in TTS route:', outerError)
+    return NextResponse.json({
+      error: 'Server error',
+      details: outerError instanceof Error ? outerError.message : 'Unknown error',
     }, { status: 500 })
   }
 }
