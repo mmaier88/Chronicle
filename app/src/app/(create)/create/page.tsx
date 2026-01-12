@@ -1,7 +1,7 @@
 import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Sparkles, Clock } from 'lucide-react'
-import { BookCover } from '@/components/cover/BookCover'
+import { Sparkles } from 'lucide-react'
+import { AudioStoryCard } from '@/components/audio/AudioStoryCard'
 import { CoverStatus } from '@/types/chronicle'
 import Image from 'next/image'
 
@@ -20,8 +20,19 @@ export default async function CreateLandingPage() {
     .order('created_at', { ascending: false })
     .limit(3)
 
-  // Fetch staff picks (public books marked by staff)
-  const { data: staffPicks } = await serviceClient.rpc('get_staff_picks', { pick_limit: 6 })
+  // Fetch staff picks using direct query (more reliable than RPC)
+  const { data: staffPicks } = await serviceClient
+    .from('books')
+    .select(`
+      id, title, core_question, cover_url, genre, created_at,
+      book_shares!inner(share_token, enabled)
+    `)
+    .eq('is_staff_pick', true)
+    .eq('status', 'final')
+    .not('cover_url', 'is', null)
+    .eq('book_shares.enabled', true)
+    .order('staff_pick_order', { ascending: true })
+    .limit(6)
 
   return (
     <div style={{ maxWidth: 800 }}>
@@ -45,62 +56,24 @@ export default async function CreateLandingPage() {
         </Link>
       </section>
 
-      {/* Recent books */}
+      {/* Recent books - with Listen button like Stories page */}
       {recentBooks && recentBooks.length > 0 && (
         <section>
-          <h2 className="app-heading-3" style={{ marginBottom: '1.5rem' }}>Your stories</h2>
+          <h2 className="app-label" style={{ marginBottom: '1rem' }}>Your stories</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {recentBooks.map((book) => (
-              <Link
+              <AudioStoryCard
                 key={book.id}
-                href={`/create/read/${book.id}`}
-                className="app-card"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  textDecoration: 'none'
+                story={{
+                  id: book.id,
+                  title: book.title,
+                  status: book.status,
+                  created_at: book.created_at,
+                  core_question: book.core_question,
+                  cover_url: book.cover_url,
+                  cover_status: book.cover_status as CoverStatus,
                 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <BookCover
-                    coverUrl={book.cover_url}
-                    title={book.title}
-                    status={book.cover_status as CoverStatus}
-                    size="sm"
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 className="app-heading-3" style={{ marginBottom: '0.25rem' }}>
-                      {book.title}
-                    </h3>
-                    {book.core_question && (
-                      <p className="app-body-sm" style={{
-                        marginBottom: '0.5rem',
-                        opacity: 0.8,
-                        fontStyle: 'italic',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical'
-                      }}>
-                        {book.core_question}
-                      </p>
-                    )}
-                    <p className="app-body-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.6 }}>
-                      <Clock style={{ width: 12, height: 12 }} />
-                      {new Date(book.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <span style={{ color: 'var(--amber-warm)', fontSize: '0.875rem' }}>
-                  Read →
-                </span>
-              </Link>
+              />
             ))}
           </div>
         </section>
@@ -109,7 +82,7 @@ export default async function CreateLandingPage() {
       {/* Staff Picks */}
       {staffPicks && staffPicks.length > 0 && (
         <section style={{ marginTop: '3rem' }}>
-          <h2 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>Staff Picks</h2>
+          <h2 className="app-label" style={{ marginBottom: '0.5rem' }}>Staff Picks</h2>
           <p className="app-body-sm" style={{ marginBottom: '1.5rem', opacity: 0.6 }}>
             Stories we love
           </p>
@@ -118,60 +91,63 @@ export default async function CreateLandingPage() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
             gap: '1rem'
           }}>
-            {staffPicks.map((pick: { id: string; title: string; cover_url: string | null; core_question: string | null; share_token: string }) => (
-              <Link
-                key={pick.id}
-                href={`/share/${pick.share_token}`}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  transition: 'transform 0.2s ease'
-                }}
-                className="staff-pick-card-hover"
-              >
-                <div style={{
-                  position: 'relative',
-                  width: '100%',
-                  aspectRatio: '2 / 3',
-                  borderRadius: '6px',
-                  overflow: 'hidden',
-                  backgroundColor: 'var(--night-deep)',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                  marginBottom: '0.5rem'
-                }}>
-                  {pick.cover_url ? (
-                    <Image
-                      src={pick.cover_url}
-                      alt={pick.title}
-                      fill
-                      sizes="120px"
-                      style={{ objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: '100%',
-                      height: '100%',
-                      background: 'linear-gradient(135deg, var(--night-deep) 0%, var(--night-light) 100%)'
-                    }} />
-                  )}
-                </div>
-                <h3 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  color: 'var(--moon-light)',
-                  marginBottom: '0.125rem',
-                  lineHeight: 1.3,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                }}>
-                  {pick.title}
-                </h3>
-              </Link>
-            ))}
+            {staffPicks.map((pick: { id: string; title: string; cover_url: string | null; book_shares: { share_token: string }[] }) => {
+              const shareToken = pick.book_shares[0]?.share_token
+              return (
+                <Link
+                  key={pick.id}
+                  href={`/share/${shareToken}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    transition: 'transform 0.2s ease'
+                  }}
+                  className="staff-pick-card-hover"
+                >
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    aspectRatio: '2 / 3',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    backgroundColor: 'var(--night-deep)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {pick.cover_url ? (
+                      <Image
+                        src={pick.cover_url}
+                        alt={pick.title}
+                        fill
+                        sizes="120px"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(135deg, var(--night-deep) 0%, var(--night-light) 100%)'
+                      }} />
+                    )}
+                  </div>
+                  <h3 style={{
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    color: 'var(--moon-light)',
+                    marginBottom: '0.125rem',
+                    lineHeight: 1.3,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    {pick.title}
+                  </h3>
+                </Link>
+              )
+            })}
           </div>
         </section>
       )}
