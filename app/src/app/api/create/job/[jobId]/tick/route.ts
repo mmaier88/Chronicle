@@ -882,6 +882,20 @@ export async function POST(
         })
         .eq('id', book.id)
 
+      // Pre-build TTS for first sections (non-blocking)
+      // This ensures audio is ready when user opens the book
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      fetch(`${baseUrl}/api/tts/prebuild`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cron-secret': process.env.CRON_SECRET || ''
+        },
+        body: JSON.stringify({ bookId: book.id, userId: effectiveUserId })
+      }).catch(err => {
+        logger.error('TTS prebuild trigger failed', err, { bookId: book.id })
+      })
+
       // Send book completion email (non-blocking)
       if (user?.email && !isDevUser) {
         const fullUser = user as { email: string; user_metadata?: { full_name?: string; name?: string } }
