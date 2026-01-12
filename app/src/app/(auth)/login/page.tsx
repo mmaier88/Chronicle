@@ -233,7 +233,7 @@ export default function LoginPage() {
             opacity: 0.7,
             fontSize: '1.0625rem',
           }}>
-            Sign in to continue
+            Sign in or create an account
           </p>
         </div>
 
@@ -246,14 +246,11 @@ export default function LoginPage() {
         <p style={{
           textAlign: 'center',
           marginTop: '2rem',
-          fontSize: '0.9375rem',
+          fontSize: '0.8125rem',
           color: '#e8e0d0',
-          opacity: 0.7,
+          opacity: 0.5,
         }}>
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" style={{ color: '#d4a574', textDecoration: 'none', fontWeight: 500 }}>
-            Sign up
-          </Link>
+          New accounts are created automatically on first sign-in
         </p>
       </div>
     </div>
