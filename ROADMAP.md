@@ -431,17 +431,66 @@ typography_settings (user_id, font_size, line_height, font_family, theme)
 
 **Goal:** B2C reading is mobile-first. Audio is a massive advantage—lean into it.
 
+#### Strategy: Capacitor (Recommended)
+
+Capacitor wraps the existing Next.js app in a native shell, giving us App Store presence + native capabilities with minimal code changes. Updates deploy via OTA (no app store review for web content changes).
+
+| Approach | Effort | Result |
+|----------|--------|--------|
+| PWA | 1-2 days | Add to home screen, limited iOS audio |
+| **Capacitor** | 1-2 weeks | App Store apps, native APIs, OTA updates |
+| React Native | 1-3 months | Full rewrite required |
+
+#### Implementation Tasks
+
+| Task | Priority | Status |
+|------|----------|--------|
+| **Phase 18.1: PWA Foundation** | | |
+| Add `manifest.json` with app icons | High | Planned |
+| Add service worker for offline caching | High | Planned |
+| PWA install prompts | High | Planned |
+| Test background audio on iOS/Android | High | Planned |
+| **Phase 18.2: Capacitor Setup** | | |
+| Install Capacitor (`@capacitor/core`, `@capacitor/cli`) | High | Planned |
+| Initialize iOS and Android projects | High | Planned |
+| Configure `capacitor.config.ts` | High | Planned |
+| Set up app icons and splash screens | High | Planned |
+| Configure deep linking | Medium | Planned |
+| **Phase 18.3: Native Features** | | |
+| Background audio playback (Capacitor plugin) | High | Planned |
+| Push notifications (`@capacitor/push-notifications`) | High | Planned |
+| Offline reading cache (service worker + Capacitor) | High | Planned |
+| Download audio for offline listening | High | Planned |
+| Share sheet integration | Medium | Planned |
+| Haptic feedback | Low | Planned |
+| **Phase 18.4: App Store Deployment** | | |
+| Apple Developer Account setup | High | Planned |
+| Google Play Developer Account setup | High | Planned |
+| App Store listing (screenshots, description) | High | Planned |
+| TestFlight beta distribution | High | Planned |
+| Play Store internal testing | High | Planned |
+| Production release (iOS) | High | Planned |
+| Production release (Android) | High | Planned |
+| **Phase 18.5: OTA Updates** | | |
+| Set up Capgo or self-hosted OTA | Medium | Planned |
+| Configure update checking on app launch | Medium | Planned |
+| Silent background updates | Medium | Planned |
+
+#### Reader Enhancements (All Platforms)
+
 | Feature | Priority | Status |
 |---------|----------|--------|
-| PWA install prompts | High | Planned |
-| Offline reading cache | High | Planned |
-| Push notifications (mobile) | High | Planned |
 | Enhanced audio player (speed, skip, sleep timer) | High | Planned |
-| Background audio playback | High | Planned |
 | Swipe gestures for navigation | Medium | Planned |
-| Dark/light/sepia reading themes | Medium | Planned |
-| iOS native app | Medium | Future |
-| Android native app | Medium | Future |
+| Dark/light/sepia reading themes | Medium | Done |
+| Reading progress sync across devices | High | Done |
+
+#### Technical Notes
+
+- **Build command:** `npm run build && npx cap sync`
+- **OTA updates:** 90% of updates ship without app store review
+- **Native rebuilds required for:** New Capacitor plugins, permission changes, app icon changes
+- **Audio:** Use `@nicholasbraun/capacitor-background-audio` or similar for true background playback
 
 ### Phase 19: Remix (Edit & Republish)
 
@@ -623,6 +672,7 @@ Cancel anytime.
 - [ ] Error alerting (PagerDuty/Slack)
 - [x] Generation cost tracking per user (`/api/admin/costs`)
 - [ ] Analytics dashboard
+- [ ] **Streaming audio with caching** - Stream TTS directly to client while simultaneously caching to storage. Reduces initial latency from ~3-5s to ~500ms. Uses ElevenLabs streaming API + `tee()` to split stream.
 
 ### Medium Priority
 - [ ] OpenAI fallback for LLM calls
