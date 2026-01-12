@@ -505,3 +505,48 @@ button,
     color: #fcd34d;
   }
 }
+
+/* ========================================
+   Native App Styles (Capacitor/PWA)
+   ======================================== */
+
+/* Safe area padding for notched devices */
+.native-app {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* iOS-specific styles */
+.platform-ios {
+  /* Disable text selection highlight on iOS */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent overscroll bounce */
+  overscroll-behavior: none;
+}
+
+/* Android-specific styles */
+.platform-android {
+  /* Smoother scrolling on Android */
+  scroll-behavior: smooth;
+}
+
+/* Keyboard-open state (set by NativeInit) */
+.keyboard-open {
+  /* Adjust layout when keyboard is visible */
+}
+
+/* Fixed audio player adjustments for native */
+.native-app .audio-player-fixed {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+}
+
+/* Standalone PWA detection */
+@media (display-mode: standalone) {
+  body {
+    /* Match native app behavior for installed PWA */
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
