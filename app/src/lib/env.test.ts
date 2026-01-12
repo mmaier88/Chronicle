@@ -28,7 +28,7 @@ describe('env', () => {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
       process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key'
       process.env.ANTHROPIC_API_KEY = 'test-anthropic-key'
-      process.env.NODE_ENV = 'test' // Suppress warnings
+      ;(process.env as { NODE_ENV?: string }).NODE_ENV = 'test' // Suppress warnings
 
       const config = validateEnv()
 

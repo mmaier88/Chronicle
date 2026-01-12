@@ -52,9 +52,9 @@ describe('Audio Store', () => {
 
   describe('loadBook', () => {
     const mockSections: AudioSection[] = [
-      { id: 'section-1', title: 'Section 1', chapterIndex: 0, chapterTitle: 'Chapter 1' },
-      { id: 'section-2', title: 'Section 2', chapterIndex: 0, chapterTitle: 'Chapter 1' },
-      { id: 'section-3', title: 'Section 3', chapterIndex: 1, chapterTitle: 'Chapter 2' },
+      { id: 'section-1', title: 'Section 1', chapterIndex: 0, chapterTitle: 'Chapter 1', sectionIndex: 0 },
+      { id: 'section-2', title: 'Section 2', chapterIndex: 0, chapterTitle: 'Chapter 1', sectionIndex: 1 },
+      { id: 'section-3', title: 'Section 3', chapterIndex: 1, chapterTitle: 'Chapter 2', sectionIndex: 0 },
     ]
     const mockGetEndpoint = (id: string) => `/api/tts/section/${id}`
 
@@ -92,7 +92,6 @@ describe('Audio Store', () => {
         sectionId: 'section-2',
         offsetMs: 30000,
         playbackSpeed: 1.5,
-        updatedAt: Date.now(),
       })
 
       const state = useAudioStore.getState()
@@ -120,7 +119,8 @@ describe('Audio Store', () => {
       id: 'section-1',
       title: 'Test Section',
       chapterIndex: 0,
-      chapterTitle: 'Chapter 1'
+      chapterTitle: 'Chapter 1',
+      sectionIndex: 0,
     }
 
     beforeEach(() => {
@@ -369,7 +369,7 @@ describe('Audio Store', () => {
         bookId: 'book-1',
         isPlaying: true,
         isVisible: true,
-        sections: [{ id: '1', title: 'Test', chapterIndex: 0, chapterTitle: 'Ch 1' }],
+        sections: [{ id: '1', title: 'Test', chapterIndex: 0, chapterTitle: 'Ch 1', sectionIndex: 0 }],
       })
 
       const { close } = useAudioStore.getState()

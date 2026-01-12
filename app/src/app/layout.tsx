@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { AudioProvider } from "@/components/audio/AudioProvider";
+import { NotificationProvider } from "@/components/ui/Notifications";
 import { ServiceWorkerRegistration, InstallPrompt } from "@/components/pwa";
 import { NativeInit } from "@/components/native";
 import "./globals.css";
@@ -58,12 +59,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AudioProvider>
-          {children}
-        </AudioProvider>
-        <ServiceWorkerRegistration />
-        <InstallPrompt />
-        <NativeInit />
+        <NotificationProvider>
+          <AudioProvider>
+            {children}
+          </AudioProvider>
+          <ServiceWorkerRegistration />
+          <InstallPrompt />
+          <NativeInit />
+        </NotificationProvider>
         <Analytics />
       </body>
     </html>

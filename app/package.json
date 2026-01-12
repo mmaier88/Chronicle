@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run test:run && npm run build",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -18,7 +20,8 @@
     "cap:android": "npx cap open android",
     "cap:build:ios": "npx cap sync ios && npx cap open ios",
     "cap:build:android": "npx cap sync android && npx cap open android",
-    "icons:generate": "node scripts/generate-icons.js"
+    "icons:generate": "node scripts/generate-icons.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -73,6 +76,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",
+    "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",

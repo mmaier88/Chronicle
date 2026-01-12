@@ -62,7 +62,9 @@ describe('api-client', () => {
 
       expect(result.data).toBeNull()
       expect(result.error).toBe('Rate limit exceeded')
-      expect(result.code).toBe('RATE_LIMITED')
+      if (result.error) {
+        expect(result.code).toBe('RATE_LIMITED')
+      }
     })
 
     it('handles network errors gracefully', async () => {
@@ -125,6 +127,7 @@ describe('api-client', () => {
           cast: [],
           setting: 'Test setting',
           promise: [],
+          warnings: { violence: 'none', romance: 'none' },
         },
         length: 30,
         mode: 'draft',

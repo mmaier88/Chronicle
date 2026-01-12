@@ -35,18 +35,24 @@ export default async function LandingPage() {
         <div className="hero-content">
           <p className="hero-tagline">Stories made for you</p>
           <h1 className="hero-headline">
-            Find the story you<br />
+            Listen to the story you<br />
             didn&apos;t know you needed
           </h1>
           <p className="hero-subheadline">
-            Chronicle creates original stories shaped around your taste, your mood, and what you&apos;re drawn to. Not algorithms. Not bestseller lists. Just you.
+            Chronicle creates original stories — written for you and read aloud in a calm, human voice.
+            Shaped around your taste, your mood, and the moment you&apos;re in.
+            Not algorithms. Not bestseller lists. Just you.
           </p>
-          <Link href="/login?redirect=/create" className="cta-button">
-            Find Your Story
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </Link>
+          <p className="hero-audio-badge">Every story is available in immersive audio.</p>
+          <div className="hero-cta-group">
+            <Link href="/login?redirect=/create" className="cta-button">
+              Start Listening
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+            <p className="hero-micro-cue">Perfect for evenings, walks, and quiet moments.</p>
+          </div>
         </div>
 
         {/* Footer */}

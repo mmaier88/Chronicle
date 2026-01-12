@@ -1,0 +1,2 @@
+# Pre-commit hook - run linting on staged files
+# Full verification runs on pre-push
