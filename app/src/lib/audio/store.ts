@@ -259,8 +259,19 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
           // Get audio as blob and create object URL
           const audioBlob = await audioResponse.blob()
-          const blobUrl = URL.createObjectURL(audioBlob)
-          console.log('[Audio] Created blob URL:', blobUrl)
+          console.log('[Audio] Blob info:', {
+            size: audioBlob.size,
+            type: audioBlob.type,
+            contentType
+          })
+
+          // Create blob with explicit audio/mpeg type if needed
+          const typedBlob = audioBlob.type === 'audio/mpeg'
+            ? audioBlob
+            : new Blob([audioBlob], { type: 'audio/mpeg' })
+
+          const blobUrl = URL.createObjectURL(typedBlob)
+          console.log('[Audio] Created blob URL:', blobUrl, 'size:', typedBlob.size)
 
           set(state => ({
             audioCache: {
