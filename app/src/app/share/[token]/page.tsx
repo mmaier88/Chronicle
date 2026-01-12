@@ -171,6 +171,8 @@ export default async function SharedBookPage({
               bookTitle={book.title}
               sections={allSections}
               shareToken={token}
+              bookId={book.id}
+              coverUrl={book.cover_url}
             />
           </div>
         )}

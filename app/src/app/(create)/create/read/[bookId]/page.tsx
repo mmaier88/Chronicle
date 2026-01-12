@@ -167,7 +167,7 @@ export default async function VibeReadPage({
         {/* Audio Player & Reader Mode */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
           {allSections.length > 0 && (
-            <BookAudioPlayer bookTitle={book.title} sections={allSections} />
+            <BookAudioPlayer bookTitle={book.title} sections={allSections} bookId={book.id} coverUrl={book.cover_url} />
           )}
           <Link
             href={`/reader/${book.id}`}
