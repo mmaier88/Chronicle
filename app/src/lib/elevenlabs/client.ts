@@ -174,3 +174,151 @@ export function estimateDuration(text: string): number {
   const wordCount = text.split(/\s+/).length;
   return Math.ceil((wordCount / 150) * 60); // seconds
 }
+
+/**
+ * Stream speech generation from ElevenLabs
+ * Returns a ReadableStream that can be piped directly to the response
+ * Also provides a way to collect the full buffer for caching
+ */
+export async function streamSpeech(
+  text: string,
+  voiceId: string = DEFAULT_VOICE_ID
+): Promise<{
+  stream: ReadableStream<Uint8Array>;
+  getBuffer: () => Promise<Buffer>;
+}> {
+  const cleanText = preprocessTextForTTS(text);
+
+  if (!cleanText || cleanText.length === 0) {
+    throw new Error("No text to generate speech from");
+  }
+
+  // For streaming, we need to handle long text differently
+  // ElevenLabs streaming works best with single requests
+  // For very long text (>5000 chars), we'll chunk it
+  if (cleanText.length > 5000) {
+    return streamSpeechChunked(cleanText, voiceId);
+  }
+
+  const audioStream = await getClient().textToSpeech.convert(voiceId, {
+    text: cleanText,
+    modelId: "eleven_turbo_v2_5",
+    outputFormat: "mp3_44100_128",
+    voiceSettings: {
+      stability: 0.5,
+      similarityBoost: 0.75,
+      style: 0.0,
+      useSpeakerBoost: true,
+    },
+  });
+
+  // Collect chunks for caching while streaming
+  const chunks: Uint8Array[] = [];
+  let bufferResolve: (buffer: Buffer) => void;
+  const bufferPromise = new Promise<Buffer>((resolve) => {
+    bufferResolve = resolve;
+  });
+
+  // Create a transform stream that collects chunks while passing them through
+  const collectingStream = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      chunks.push(chunk);
+      controller.enqueue(chunk);
+    },
+    flush() {
+      bufferResolve(Buffer.concat(chunks));
+    },
+  });
+
+  // Pipe the ElevenLabs stream through our collecting transform
+  const outputStream = audioStream.pipeThrough(collectingStream);
+
+  return {
+    stream: outputStream,
+    getBuffer: () => bufferPromise,
+  };
+}
+
+/**
+ * Stream speech for long text by chunking
+ * Returns concatenated streaming audio
+ */
+async function streamSpeechChunked(
+  text: string,
+  voiceId: string
+): Promise<{
+  stream: ReadableStream<Uint8Array>;
+  getBuffer: () => Promise<Buffer>;
+}> {
+  // Split into paragraphs
+  const paragraphs = text.split(/\n\n+/);
+  const textChunks: string[] = [];
+  let currentChunk = "";
+
+  for (const paragraph of paragraphs) {
+    if ((currentChunk + "\n\n" + paragraph).length > 4800) {
+      if (currentChunk) {
+        textChunks.push(currentChunk);
+      }
+      currentChunk = paragraph;
+    } else {
+      currentChunk = currentChunk ? currentChunk + "\n\n" + paragraph : paragraph;
+    }
+  }
+  if (currentChunk) {
+    textChunks.push(currentChunk);
+  }
+
+  // Collect all chunks for the buffer
+  const allChunks: Uint8Array[] = [];
+  let bufferResolve: (buffer: Buffer) => void;
+  const bufferPromise = new Promise<Buffer>((resolve) => {
+    bufferResolve = resolve;
+  });
+
+  let chunkIndex = 0;
+
+  // Create a ReadableStream that processes chunks sequentially
+  const stream = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      if (chunkIndex >= textChunks.length) {
+        bufferResolve(Buffer.concat(allChunks));
+        controller.close();
+        return;
+      }
+
+      try {
+        const audioStream = await getClient().textToSpeech.convert(voiceId, {
+          text: textChunks[chunkIndex],
+          modelId: "eleven_turbo_v2_5",
+          outputFormat: "mp3_44100_128",
+          voiceSettings: {
+            stability: 0.5,
+            similarityBoost: 0.75,
+            style: 0.0,
+            useSpeakerBoost: true,
+          },
+        });
+
+        const reader = audioStream.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            allChunks.push(value);
+            controller.enqueue(value);
+          }
+        }
+        chunkIndex++;
+      } catch (error) {
+        bufferResolve(Buffer.concat(allChunks));
+        controller.error(error);
+      }
+    },
+  });
+
+  return {
+    stream,
+    getBuffer: () => bufferPromise,
+  };
+}

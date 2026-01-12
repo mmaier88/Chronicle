@@ -1,7 +1,7 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { BookOpen, Clock, Sparkles } from 'lucide-react'
-import { BookCover } from '@/components/cover/BookCover'
+import { AudioStoryCard } from '@/components/audio/AudioStoryCard'
 import { CoverStatus } from '@/types/chronicle'
 
 export default async function StoriesPage() {
@@ -52,7 +52,7 @@ export default async function StoriesPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* Completed Stories */}
+          {/* Completed Stories - Audio First */}
           {completedStories.length > 0 && (
             <section>
               <h2 className="app-label" style={{ marginBottom: '1rem' }}>
@@ -60,93 +60,18 @@ export default async function StoriesPage() {
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {completedStories.map((story) => (
-                  <div
+                  <AudioStoryCard
                     key={story.id}
-                    className="app-card"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
+                    story={{
+                      id: story.id,
+                      title: story.title,
+                      status: story.status,
+                      created_at: story.created_at,
+                      core_question: story.core_question,
+                      cover_url: story.cover_url,
+                      cover_status: story.cover_status as CoverStatus,
                     }}
-                  >
-                    <Link
-                      href={`/create/read/${story.id}`}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        flex: 1,
-                        textDecoration: 'none',
-                        color: 'inherit'
-                      }}
-                    >
-                      <BookCover
-                        coverUrl={story.cover_url}
-                        title={story.title}
-                        status={story.cover_status as CoverStatus}
-                        size="sm"
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <h3 className="app-heading-3" style={{ marginBottom: '0.25rem' }}>
-                          {story.title}
-                        </h3>
-                        {story.core_question && (
-                          <p className="app-body-sm" style={{
-                            marginBottom: '0.5rem',
-                            opacity: 0.8,
-                            fontStyle: 'italic',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
-                            {story.core_question}
-                          </p>
-                        )}
-                        <p className="app-body-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.6 }}>
-                          <Clock style={{ width: 12, height: 12 }} />
-                          {new Date(story.created_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                    </Link>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '1rem' }}>
-                      <Link
-                        href={`/reader/${story.id}`}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.375rem',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: 8,
-                          background: 'rgba(212, 165, 116, 0.1)',
-                          color: 'var(--amber-warm)',
-                          fontSize: '0.8125rem',
-                          fontWeight: 500,
-                          textDecoration: 'none',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <BookOpen style={{ width: 14, height: 14 }} />
-                        Reader
-                      </Link>
-                      <Link
-                        href={`/create/read/${story.id}`}
-                        style={{
-                          color: 'var(--moon-soft)',
-                          fontSize: '0.875rem',
-                          textDecoration: 'none',
-                          opacity: 0.7
-                        }}
-                      >
-                        View →
-                      </Link>
-                    </div>
-                  </div>
+                  />
                 ))}
               </div>
             </section>

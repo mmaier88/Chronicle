@@ -1,7 +1,7 @@
 import { createServiceClient, getUser } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import {
-  generateSpeechChunked,
+  streamSpeech,
   computeContentHash,
   estimateDuration,
   DEFAULT_VOICE_ID,
@@ -13,14 +13,17 @@ interface RouteParams {
   params: Promise<{ sectionId: string }>
 }
 
-// GET: Get or generate audio for a section
+// GET: Get or stream audio for a section
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { sectionId } = await params
-  const { user, isDevUser } = await getUser()
+  const { user } = await getUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  // Check if client wants streaming (default) or JSON metadata
+  const wantsMetadata = request.nextUrl.searchParams.get('metadata') === 'true'
 
   // Rate limit per user
   const rateLimit = checkRateLimit(`tts:${user.id}`, RATE_LIMITS.tts)
@@ -75,7 +78,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   // Build full text with chapter and section titles for narration
-  // Only read chapter intro on the first section of each chapter
   const isFirstSection = section.index === 0
   const chapterNumber = (chapter.index || 0) + 1
   const chapterIntro = isFirstSection && chapter.title
@@ -84,9 +86,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const sectionIntro = section.title ? `${section.title}.\n\n` : ''
   const fullText = `${chapterIntro}${sectionIntro}${section.content_text}`
 
-  const contentHash = computeContentHash(fullText) // Hash includes titles
+  const contentHash = computeContentHash(fullText)
   const voiceId = book.audio_voice_id || DEFAULT_VOICE_ID
   const voiceName = BOOK_VOICES.find(v => v.id === voiceId)?.name || 'Unknown'
+  const storagePath = `${user.id}/${sectionId}/${contentHash}.mp3`
 
   // Check if we already have cached audio
   const { data: existingAudio } = await supabase
@@ -104,19 +107,37 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Get signed URL for the audio file
     const { data: signedUrl } = await supabase.storage
       .from('audio')
-      .createSignedUrl(existingAudio.storage_path, 3600) // 1 hour expiry
+      .createSignedUrl(existingAudio.storage_path, 3600)
 
     if (signedUrl) {
-      return NextResponse.json({
-        status: 'ready',
-        audio_url: signedUrl.signedUrl,
-        duration_seconds: existingAudio.duration_seconds,
-        voice_name: existingAudio.voice_name,
-      })
+      // Return JSON metadata if requested (for player to know it's cached)
+      if (wantsMetadata) {
+        return NextResponse.json({
+          status: 'ready',
+          audio_url: signedUrl.signedUrl,
+          duration_seconds: existingAudio.duration_seconds,
+          voice_name: existingAudio.voice_name,
+          cached: true,
+        })
+      }
+
+      // Otherwise redirect to the cached audio
+      return NextResponse.redirect(signedUrl.signedUrl)
     }
   }
 
-  // Check if generation is in progress
+  // For metadata-only requests, indicate we need to stream
+  if (wantsMetadata) {
+    return NextResponse.json({
+      status: 'streaming',
+      stream_url: `/api/tts/section/${sectionId}`,
+      duration_seconds: estimateDuration(fullText),
+      voice_name: voiceName,
+      cached: false,
+    })
+  }
+
+  // Check if generation is already in progress
   const { data: pendingAudio } = await supabase
     .from('section_audio')
     .select('*')
@@ -125,19 +146,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     .single()
 
   if (pendingAudio) {
+    // Wait a bit and retry - another request is generating
     return NextResponse.json({
-      status: pendingAudio.status,
+      status: 'generating',
       message: 'Audio generation in progress',
-    })
+      retry_after: 2,
+    }, { status: 202 })
   }
 
-  // Create pending record
+  // Create generating record
   const { data: audioRecord, error: insertError } = await supabase
     .from('section_audio')
     .insert({
       section_id: sectionId,
       content_hash: contentHash,
-      storage_path: `${user.id}/${sectionId}/${contentHash}.mp3`,
+      storage_path: storagePath,
       voice_id: voiceId,
       voice_name: voiceName,
       status: 'generating',
@@ -151,46 +174,66 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    // Generate audio with chapter/section titles included
-    const audioBuffer = await generateSpeechChunked(fullText, voiceId)
-    const duration = estimateDuration(fullText)
+    // Start streaming from ElevenLabs
+    const { stream, getBuffer } = await streamSpeech(fullText, voiceId)
+    const estimatedDuration = estimateDuration(fullText)
 
-    // Upload to Supabase Storage
-    const storagePath = `${user.id}/${sectionId}/${contentHash}.mp3`
-    const { error: uploadError } = await supabase.storage
-      .from('audio')
-      .upload(storagePath, audioBuffer, {
-        contentType: 'audio/mpeg',
-        upsert: true,
-      })
+    // Set up background caching - this runs after the stream is consumed
+    const cachePromise = getBuffer().then(async (buffer) => {
+      try {
+        // Upload to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('audio')
+          .upload(storagePath, buffer, {
+            contentType: 'audio/mpeg',
+            upsert: true,
+          })
 
-    if (uploadError) {
-      throw new Error(`Storage upload failed: ${uploadError.message}`)
-    }
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`)
+        }
 
-    // Update record with success
-    await supabase
-      .from('section_audio')
-      .update({
-        status: 'ready',
-        duration_seconds: duration,
-        file_size_bytes: audioBuffer.length,
-      })
-      .eq('id', audioRecord.id)
+        // Update record with success
+        await supabase
+          .from('section_audio')
+          .update({
+            status: 'ready',
+            duration_seconds: estimatedDuration,
+            file_size_bytes: buffer.length,
+          })
+          .eq('id', audioRecord.id)
 
-    // Get signed URL
-    const { data: signedUrl } = await supabase.storage
-      .from('audio')
-      .createSignedUrl(storagePath, 3600)
+        console.log(`[TTS] Cached audio for section ${sectionId} (${buffer.length} bytes)`)
+      } catch (error) {
+        console.error('[TTS] Background caching failed:', error)
+        // Mark as failed so it can be regenerated
+        await supabase
+          .from('section_audio')
+          .update({
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Caching failed',
+          })
+          .eq('id', audioRecord.id)
+      }
+    })
 
-    return NextResponse.json({
-      status: 'ready',
-      audio_url: signedUrl?.signedUrl,
-      duration_seconds: duration,
-      voice_name: voiceName,
+    // Don't await the cache promise - let it run in background
+    // Edge runtime doesn't have waitUntil, but the promise will complete
+    // as long as the process stays alive (which it does in Node.js runtime)
+    cachePromise.catch(console.error)
+
+    // Return streaming response
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+        'X-Voice-Name': voiceName,
+        'X-Duration-Estimate': String(estimatedDuration),
+      },
     })
   } catch (error) {
-    console.error('TTS generation failed:', error)
+    console.error('TTS streaming failed:', error)
 
     // Update record with failure
     await supabase

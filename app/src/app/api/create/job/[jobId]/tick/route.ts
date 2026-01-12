@@ -297,6 +297,29 @@ Voice: ${constitution.narrative_voice}`
   return parseAIJson<VibeChapterPlan[]>(text)
 }
 
+// Build character constraint block for strict name adherence
+function buildCharacterConstraints(cast: VibePreview['cast']): string {
+  const lines: string[] = []
+  lines.push('╔═══════════════════════════════════════════════════════════════╗')
+  lines.push('║  MANDATORY CHARACTER LIST - USE THESE NAMES EXACTLY           ║')
+  lines.push('╚═══════════════════════════════════════════════════════════════╝')
+  lines.push('')
+  lines.push('The user has SPECIFICALLY chosen these character names.')
+  lines.push('You MUST use these exact names. DO NOT:')
+  lines.push('  - Invent new character names')
+  lines.push('  - Use nicknames unless the name below IS a nickname')
+  lines.push('  - Change spellings or use variations')
+  lines.push('')
+  cast.forEach((c, i) => {
+    lines.push(`${i + 1}. ${c.name} — ${c.tagline}`)
+  })
+  lines.push('')
+  lines.push('If you need minor characters (shopkeeper, passerby), use roles')
+  lines.push('like "the barista" or "a stranger" instead of inventing names.')
+  lines.push('═══════════════════════════════════════════════════════════════')
+  return lines.join('\n')
+}
+
 // Write a single section
 async function writeSection(
   preview: VibePreview,
@@ -315,11 +338,14 @@ async function writeSection(
     : 'This is the opening of the book.'
 
   const sliderBlock = buildSliderConstraints(resolvedSliders)
+  const characterBlock = buildCharacterConstraints(preview.cast)
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
     system: `You are a literary fiction writer crafting a section of a book. Your prose must feel human-authored, not AI-generated.
+
+${characterBlock}
 
 ${sliderBlock}
 
@@ -354,7 +380,6 @@ Story so far: ${storySynopsis || 'Beginning of story'}
 
 ${context}
 
-Characters: ${preview.cast.map(c => `${c.name}: ${c.tagline}`).join('; ')}
 Setting: ${preview.setting}
 
 Remember: Ground every moment in sensory detail. End on action or image, not explanation. Make dialogue messy and human. Vary your sentence rhythm.`
@@ -369,17 +394,24 @@ Remember: Ground every moment in sensory detail. End on action or image, not exp
 async function checkConsistency(
   prose: string,
   constitution: Constitution,
-  previousSections: string[]
+  previousSections: string[],
+  allowedCharacters: VibePreview['cast']
 ): Promise<{ passed: boolean; issues: string[] }> {
+  const characterNames = allowedCharacters.map(c => c.name)
+
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1024,
     system: `You are checking a book section for consistency issues.
 
 Check for:
-1. Contradictions with previous sections (character names, events, timeline)
-2. Tone drift from the established voice
-3. Constitution violations
+1. UNAUTHORIZED CHARACTER NAMES - The ONLY allowed character names are: ${characterNames.join(', ')}
+   - Flag ANY other proper names that appear to be character names
+   - Minor unnamed roles like "the waiter" or "a passerby" are OK
+   - But invented names like "Marcus" or "Dr. Chen" are NOT allowed unless in the list above
+2. Contradictions with previous sections (events, timeline, established facts)
+3. Tone drift from the established voice
+4. Constitution violations
 
 Return JSON:
 {
@@ -391,6 +423,8 @@ Return JSON:
       content: `Check this section:
 
 ${prose}
+
+ALLOWED CHARACTER NAMES: ${characterNames.join(', ')}
 
 Constitution voice: ${constitution.narrative_voice}
 Thesis: ${constitution.central_thesis}
@@ -410,12 +444,17 @@ async function rewriteSection(
   prose: string,
   issues: string[],
   constitution: Constitution,
-  sectionGoal: string
+  sectionGoal: string,
+  allowedCharacters: VibePreview['cast']
 ): Promise<string> {
+  const characterBlock = buildCharacterConstraints(allowedCharacters)
+
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
     system: `Rewrite this section to fix the identified issues while maintaining the same general content and flow.
+
+${characterBlock}
 
 ${PROSE_SYSTEM_PROMPT}
 
@@ -423,7 +462,7 @@ Voice: ${constitution.narrative_voice}
 Goal: ${sectionGoal}
 
 REVISION FOCUS:
-1. Fix the specific issues listed
+1. Fix the specific issues listed (especially any unauthorized character names)
 2. Add sensory detail to any paragraph missing it
 3. If any paragraph ends on a "realization" or moral, replace with action/image
 4. Ensure dialogue has pauses, stutters, or interruptions
@@ -700,11 +739,11 @@ export async function POST(
 
       if (mode === 'polished') {
         // POLISHED MODE: Full consistency check, rewrite, and polish pipeline
-        const consistency = await checkConsistency(result.prose, constitution, prevTexts)
+        const consistency = await checkConsistency(result.prose, constitution, prevTexts, preview.cast)
 
         // Rewrite if issues (up to MAX_RETRIES)
         if (!consistency.passed && vibeJob.attempt < MAX_RETRIES) {
-          finalProse = await rewriteSection(result.prose, consistency.issues, constitution, section.goal || '')
+          finalProse = await rewriteSection(result.prose, consistency.issues, constitution, section.goal || '', preview.cast)
           await updateJob(supabase, jobId, { attempt: vibeJob.attempt + 1 })
         }
 

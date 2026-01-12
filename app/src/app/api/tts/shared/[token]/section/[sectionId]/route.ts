@@ -1,7 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import {
-  generateSpeechChunked,
+  streamSpeech,
   computeContentHash,
   estimateDuration,
   DEFAULT_VOICE_ID,
@@ -12,9 +12,12 @@ interface RouteParams {
   params: Promise<{ token: string; sectionId: string }>
 }
 
-// GET: Get or generate audio for a shared section
+// GET: Get or stream audio for a shared section
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { token, sectionId } = await params
+
+  // Check if client wants streaming (default) or JSON metadata
+  const wantsMetadata = request.nextUrl.searchParams.get('metadata') === 'true'
 
   const supabase = createServiceClient()
 
@@ -78,6 +81,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const contentHash = computeContentHash(fullText)
   const voiceId = book.audio_voice_id || DEFAULT_VOICE_ID
   const voiceName = BOOK_VOICES.find((v) => v.id === voiceId)?.name || 'Unknown'
+  const storagePath = `${book.owner_id}/${sectionId}/${contentHash}.mp3`
 
   // Check if we already have cached audio
   const { data: existingAudio } = await supabase
@@ -98,13 +102,31 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .createSignedUrl(existingAudio.storage_path, 3600)
 
     if (signedUrl) {
-      return NextResponse.json({
-        status: 'ready',
-        audio_url: signedUrl.signedUrl,
-        duration_seconds: existingAudio.duration_seconds,
-        voice_name: existingAudio.voice_name,
-      })
+      // Return JSON metadata if requested
+      if (wantsMetadata) {
+        return NextResponse.json({
+          status: 'ready',
+          audio_url: signedUrl.signedUrl,
+          duration_seconds: existingAudio.duration_seconds,
+          voice_name: existingAudio.voice_name,
+          cached: true,
+        })
+      }
+
+      // Otherwise redirect to the cached audio
+      return NextResponse.redirect(signedUrl.signedUrl)
     }
+  }
+
+  // For metadata-only requests, indicate we need to stream
+  if (wantsMetadata) {
+    return NextResponse.json({
+      status: 'streaming',
+      stream_url: `/api/tts/shared/${token}/section/${sectionId}`,
+      duration_seconds: estimateDuration(fullText),
+      voice_name: voiceName,
+      cached: false,
+    })
   }
 
   // Check if generation is in progress
@@ -117,18 +139,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   if (pendingAudio) {
     return NextResponse.json({
-      status: pendingAudio.status,
+      status: 'generating',
       message: 'Audio generation in progress',
-    })
+      retry_after: 2,
+    }, { status: 202 })
   }
 
-  // Create pending record (use book owner's ID for storage path)
+  // Create generating record (use book owner's ID for storage path)
   const { data: audioRecord, error: insertError } = await supabase
     .from('section_audio')
     .insert({
       section_id: sectionId,
       content_hash: contentHash,
-      storage_path: `${book.owner_id}/${sectionId}/${contentHash}.mp3`,
+      storage_path: storagePath,
       voice_id: voiceId,
       voice_name: voiceName,
       status: 'generating',
@@ -145,44 +168,63 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    // Generate audio
-    const audioBuffer = await generateSpeechChunked(fullText, voiceId)
-    const duration = estimateDuration(fullText)
+    // Start streaming from ElevenLabs
+    const { stream, getBuffer } = await streamSpeech(fullText, voiceId)
+    const estimatedDuration = estimateDuration(fullText)
 
-    // Upload to Supabase Storage
-    const storagePath = `${book.owner_id}/${sectionId}/${contentHash}.mp3`
-    const { error: uploadError } = await supabase.storage.from('audio').upload(storagePath, audioBuffer, {
-      contentType: 'audio/mpeg',
-      upsert: true,
+    // Set up background caching
+    const cachePromise = getBuffer().then(async (buffer) => {
+      try {
+        // Upload to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('audio')
+          .upload(storagePath, buffer, {
+            contentType: 'audio/mpeg',
+            upsert: true,
+          })
+
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`)
+        }
+
+        // Update record with success
+        await supabase
+          .from('section_audio')
+          .update({
+            status: 'ready',
+            duration_seconds: estimatedDuration,
+            file_size_bytes: buffer.length,
+          })
+          .eq('id', audioRecord.id)
+
+        console.log(`[TTS Shared] Cached audio for section ${sectionId} (${buffer.length} bytes)`)
+      } catch (error) {
+        console.error('[TTS Shared] Background caching failed:', error)
+        await supabase
+          .from('section_audio')
+          .update({
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Caching failed',
+          })
+          .eq('id', audioRecord.id)
+      }
     })
 
-    if (uploadError) {
-      throw new Error(`Storage upload failed: ${uploadError.message}`)
-    }
+    // Don't await - let it run in background
+    cachePromise.catch(console.error)
 
-    // Update record with success
-    await supabase
-      .from('section_audio')
-      .update({
-        status: 'ready',
-        duration_seconds: duration,
-        file_size_bytes: audioBuffer.length,
-      })
-      .eq('id', audioRecord.id)
-
-    // Get signed URL
-    const { data: signedUrl } = await supabase.storage
-      .from('audio')
-      .createSignedUrl(storagePath, 3600)
-
-    return NextResponse.json({
-      status: 'ready',
-      audio_url: signedUrl?.signedUrl,
-      duration_seconds: duration,
-      voice_name: voiceName,
+    // Return streaming response
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+        'X-Voice-Name': voiceName,
+        'X-Duration-Estimate': String(estimatedDuration),
+      },
     })
   } catch (error) {
-    console.error('TTS generation failed:', error)
+    console.error('TTS streaming failed:', error)
 
     // Update record with failure
     await supabase
