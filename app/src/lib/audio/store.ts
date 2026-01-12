@@ -240,8 +240,10 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         return { url: streamUrl, duration }
       }
 
-      throw new Error('Audio not ready')
-    } catch {
+      console.error('[Audio] Unexpected metadata status:', data)
+      throw new Error(`Audio not ready: ${data.status || 'unknown status'}`)
+    } catch (err) {
+      console.error('[Audio] fetchAudio error:', err)
       set(state => ({
         audioCache: {
           ...state.audioCache,
@@ -272,54 +274,127 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   play: async () => {
     let { audioRef, sections, currentSectionIndex, fetchAudio, prefetchNext, playbackRate, progress } = get()
 
+    console.log('[Audio] play() called, currentSectionIndex:', currentSectionIndex)
+
     // Wait for audioRef to be available (max 2 seconds)
     if (!audioRef) {
+      console.log('[Audio] Waiting for audioRef...')
       for (let i = 0; i < 20; i++) {
         await new Promise(resolve => setTimeout(resolve, 100))
         audioRef = get().audioRef
-        if (audioRef) break
+        if (audioRef) {
+          console.log('[Audio] audioRef available after', (i + 1) * 100, 'ms')
+          break
+        }
       }
     }
 
-    if (!audioRef || sections.length === 0) {
-      console.error('[Audio] Cannot play: audioRef or sections not available')
+    if (!audioRef) {
+      console.error('[Audio] Cannot play: audioRef not available after 2 seconds')
+      alert('Audio player not ready. Please try again.')
+      return
+    }
+
+    if (sections.length === 0) {
+      console.error('[Audio] Cannot play: no sections available')
+      alert('No audio sections available.')
       return
     }
 
     const section = sections[currentSectionIndex]
     console.log('[Audio] Playing section:', section.id, section.title)
 
-    // Load audio if not already loaded
-    if (!audioRef.src || audioRef.src === '') {
+    // Always fetch audio if not playing or source is wrong
+    const needsNewAudio = !audioRef.src ||
+      audioRef.src === '' ||
+      audioRef.src === window.location.href || // Default empty src
+      audioRef.readyState === 0 // No audio loaded
+
+    if (needsNewAudio) {
       set({ isLoading: true })
       console.log('[Audio] Fetching audio for section:', section.id)
-      const audio = await fetchAudio(section.id)
 
-      if (audio) {
-        console.log('[Audio] Got audio URL:', audio.url?.substring(0, 50) + '...')
-        audioRef.src = audio.url
-        audioRef.playbackRate = playbackRate
-        set({ duration: audio.duration })
+      try {
+        const audio = await fetchAudio(section.id)
 
-        // Seek to saved position if any
-        if (progress > 0) {
-          audioRef.currentTime = progress
+        if (audio && audio.url) {
+          console.log('[Audio] Got audio URL:', audio.url?.substring(0, 80))
+
+          // Set source - convert relative URL to absolute if needed
+          const absoluteUrl = audio.url.startsWith('/')
+            ? `${window.location.origin}${audio.url}`
+            : audio.url
+          console.log('[Audio] Setting src to:', absoluteUrl.substring(0, 80))
+
+          audioRef.src = absoluteUrl
+          audioRef.playbackRate = playbackRate
+          set({ duration: audio.duration })
+
+          // Wait for audio to be ready
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('Audio load timeout'))
+            }, 15000) // 15 second timeout
+
+            const handleCanPlay = () => {
+              clearTimeout(timeout)
+              audioRef!.removeEventListener('canplay', handleCanPlay)
+              audioRef!.removeEventListener('error', handleError)
+              resolve()
+            }
+
+            const handleError = () => {
+              clearTimeout(timeout)
+              audioRef!.removeEventListener('canplay', handleCanPlay)
+              audioRef!.removeEventListener('error', handleError)
+              reject(new Error('Audio failed to load'))
+            }
+
+            audioRef!.addEventListener('canplay', handleCanPlay)
+            audioRef!.addEventListener('error', handleError)
+            audioRef!.load()
+          })
+
+          // Seek to saved position if any
+          if (progress > 0) {
+            audioRef.currentTime = progress
+          }
+        } else {
+          console.error('[Audio] Failed to fetch audio - no URL returned')
+          set({ isLoading: false })
+          alert('Failed to load audio. Please try again.')
+          return
         }
-      } else {
-        console.error('[Audio] Failed to fetch audio')
+      } catch (err) {
+        console.error('[Audio] Error loading audio:', err)
         set({ isLoading: false })
+        alert(`Failed to load audio: ${err instanceof Error ? err.message : 'Unknown error'}`)
         return
       }
+
       set({ isLoading: false })
     }
 
     try {
-      console.log('[Audio] Starting playback...')
+      console.log('[Audio] Starting playback, readyState:', audioRef.readyState)
       await audioRef.play()
+      console.log('[Audio] Playback started successfully')
       set({ isPlaying: true })
       prefetchNext(currentSectionIndex)
     } catch (err) {
       console.error('[Audio] Playback failed:', err)
+      set({ isLoading: false, isPlaying: false })
+
+      // Check for common errors
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          alert('Playback blocked. Please interact with the page first.')
+        } else if (err.name === 'NotSupportedError') {
+          alert('Audio format not supported by your browser.')
+        } else {
+          alert(`Playback failed: ${err.message}`)
+        }
+      }
     }
   },
 
