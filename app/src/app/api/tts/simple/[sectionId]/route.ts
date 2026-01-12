@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Get section
     const { data: section } = await supabase
       .from('sections')
-      .select('id, title, content_text, chapter_id')
+      .select('id, title, content_text, chapter_id, index')
       .eq('id', sectionId)
       .single()
 

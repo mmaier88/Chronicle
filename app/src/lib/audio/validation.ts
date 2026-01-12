@@ -50,7 +50,7 @@ export function validateTTSMetadata(data: unknown): { valid: boolean; error?: st
 
   return {
     valid: true,
-    data: response as TTSMetadataResponse
+    data: response as unknown as TTSMetadataResponse
   }
 }
 
