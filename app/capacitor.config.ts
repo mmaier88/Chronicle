@@ -2,10 +2,8 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 // For Next.js apps, we load from the server rather than bundled static files
 // This allows us to use server components, API routes, etc.
-const isProduction = process.env.NODE_ENV === 'production'
-const serverUrl = isProduction
-  ? 'https://chronicle.town'
-  : 'http://localhost:3000'
+// Use staging for testing, production for release builds
+const serverUrl = 'https://staging.chronicle.town'
 
 const config: CapacitorConfig = {
   appId: 'town.chronicle.app',
@@ -16,7 +14,6 @@ const config: CapacitorConfig = {
   server: {
     // Load app from the web server (enables all Next.js features)
     url: serverUrl,
-    cleartext: !isProduction, // Allow HTTP in dev
     androidScheme: 'https',
   },
   plugins: {
