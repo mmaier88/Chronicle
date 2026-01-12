@@ -294,11 +294,32 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
                         (byteArray[0] === 0x49 && byteArray[1] === 0x44 && byteArray[2] === 0x33) // ID3
           console.log('[Audio] Is MP3:', isMP3)
 
+          // Check if it's actually HTML (error page)
+          const isHTML = byteArray[0] === 0x3C // starts with '<'
+          if (isHTML) {
+            const text = await audioBlob.text()
+            console.error('[Audio] Got HTML instead of audio:', text.substring(0, 1000))
+            throw new Error('Server returned HTML error page instead of audio')
+          }
+
           if (audioBlob.size < 1000) {
             // Probably not real audio
             const text = await audioBlob.text()
             console.error('[Audio] Blob too small, content:', text.substring(0, 500))
             throw new Error('Audio response too small - likely an error')
+          }
+
+          if (!isMP3) {
+            // Log what we actually received
+            console.error('[Audio] Received data is not valid MP3. First 20 bytes:', bytesHex)
+            // Try to decode as text to see what it is
+            try {
+              const textPreview = await audioBlob.slice(0, 500).text()
+              console.error('[Audio] Content preview:', textPreview)
+            } catch (e) {
+              console.error('[Audio] Could not decode as text')
+            }
+            throw new Error('Audio response is not valid MP3 format')
           }
 
           // Create blob with explicit audio/mpeg type if needed
