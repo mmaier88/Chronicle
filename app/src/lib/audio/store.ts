@@ -187,10 +187,16 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       return null
     }
 
-    // Check local cache
-    if (audioCache[sectionId]?.status === 'ready') {
-      console.log('[Audio] Using local cache for:', sectionId)
-      return { url: audioCache[sectionId].url, duration: audioCache[sectionId].duration }
+    // Check local cache - only use if status is 'ready' and URL exists
+    const cached = audioCache[sectionId]
+    if (cached?.status === 'ready' && cached.url && cached.url.length > 0) {
+      console.log('[Audio] Using local cache for:', sectionId, 'url length:', cached.url.length)
+      return { url: cached.url, duration: cached.duration }
+    }
+
+    // Skip if in error state - will re-fetch
+    if (cached?.status === 'error') {
+      console.log('[Audio] Skipping errored cache entry for:', sectionId)
     }
 
     // Mark as loading

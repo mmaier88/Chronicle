@@ -47,8 +47,21 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       readyState: audio.readyState
     })
 
+    // Get current section and clear its cache entry so it will be re-fetched
+    const state = useAudioStore.getState()
+    const currentSection = state.sections[state.currentSectionIndex]
+    if (currentSection) {
+      console.log('[AudioProvider] Clearing cache for failed section:', currentSection.id)
+      useAudioStore.setState({
+        audioCache: {
+          ...state.audioCache,
+          [currentSection.id]: { url: '', duration: 0, status: 'error' }
+        }
+      })
+    }
+
     // Reset loading state but don't show blocking alert
-    useAudioStore.getState().pause()
+    state.pause()
     useAudioStore.setState({ isLoading: false })
 
     // Log error details for debugging (no blocking alert)
