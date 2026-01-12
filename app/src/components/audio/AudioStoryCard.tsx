@@ -31,8 +31,11 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
     e.preventDefault()
     e.stopPropagation()
 
+    console.log('[AudioStoryCard] Play clicked for story:', story.id)
+
     if (isCurrentlyPlaying) {
       // Already playing this book, just expand
+      console.log('[AudioStoryCard] Already playing, expanding')
       useAudioStore.getState().setExpanded(true)
       return
     }
@@ -41,10 +44,16 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
 
     try {
       // Fetch book sections
+      console.log('[AudioStoryCard] Fetching book sections...')
       const res = await fetch(`/api/audio/book/${story.id}`)
-      if (!res.ok) throw new Error('Failed to fetch book')
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('[AudioStoryCard] API error:', res.status, errorText)
+        throw new Error('Failed to fetch book')
+      }
 
       const { book, sections, savedProgress } = await res.json()
+      console.log('[AudioStoryCard] Got', sections.length, 'sections')
 
       if (sections.length === 0) {
         alert('This story has no audio content yet.')
@@ -53,6 +62,7 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
       }
 
       // Load into audio store
+      console.log('[AudioStoryCard] Loading book into store...')
       loadBook(
         book.id,
         book.title,
@@ -63,9 +73,11 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
       )
 
       // Auto-play
+      console.log('[AudioStoryCard] Starting playback...')
       await play()
+      console.log('[AudioStoryCard] Playback started')
     } catch (err) {
-      console.error('Failed to load audio:', err)
+      console.error('[AudioStoryCard] Failed to load audio:', err)
       alert('Failed to load audio. Please try again.')
     } finally {
       setIsLoading(false)

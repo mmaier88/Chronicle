@@ -180,10 +180,16 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   fetchAudio: async (sectionId) => {
     const { audioCache, getAudioEndpoint } = get()
 
-    if (!getAudioEndpoint) return null
+    console.log('[Audio] fetchAudio called for:', sectionId)
+
+    if (!getAudioEndpoint) {
+      console.error('[Audio] No getAudioEndpoint function set')
+      return null
+    }
 
     // Check local cache
     if (audioCache[sectionId]?.status === 'ready') {
+      console.log('[Audio] Using local cache for:', sectionId)
       return { url: audioCache[sectionId].url, duration: audioCache[sectionId].duration }
     }
 
@@ -198,8 +204,10 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     try {
       // First, check if audio is cached on server (metadata request)
       const metadataUrl = `${getAudioEndpoint(sectionId)}?metadata=true`
+      console.log('[Audio] Fetching metadata from:', metadataUrl)
       const response = await fetch(metadataUrl)
       const data = await response.json()
+      console.log('[Audio] Metadata response:', data)
 
       if (data.status === 'generating' || data.status === 'pending') {
         // Poll for completion
@@ -262,17 +270,33 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   // Playback controls
   play: async () => {
-    const { audioRef, sections, currentSectionIndex, fetchAudio, prefetchNext, playbackRate, progress } = get()
-    if (!audioRef || sections.length === 0) return
+    let { audioRef, sections, currentSectionIndex, fetchAudio, prefetchNext, playbackRate, progress } = get()
+
+    // Wait for audioRef to be available (max 2 seconds)
+    if (!audioRef) {
+      for (let i = 0; i < 20; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        audioRef = get().audioRef
+        if (audioRef) break
+      }
+    }
+
+    if (!audioRef || sections.length === 0) {
+      console.error('[Audio] Cannot play: audioRef or sections not available')
+      return
+    }
 
     const section = sections[currentSectionIndex]
+    console.log('[Audio] Playing section:', section.id, section.title)
 
     // Load audio if not already loaded
     if (!audioRef.src || audioRef.src === '') {
       set({ isLoading: true })
+      console.log('[Audio] Fetching audio for section:', section.id)
       const audio = await fetchAudio(section.id)
 
       if (audio) {
+        console.log('[Audio] Got audio URL:', audio.url?.substring(0, 50) + '...')
         audioRef.src = audio.url
         audioRef.playbackRate = playbackRate
         set({ duration: audio.duration })
@@ -281,16 +305,21 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         if (progress > 0) {
           audioRef.currentTime = progress
         }
+      } else {
+        console.error('[Audio] Failed to fetch audio')
+        set({ isLoading: false })
+        return
       }
       set({ isLoading: false })
     }
 
     try {
+      console.log('[Audio] Starting playback...')
       await audioRef.play()
       set({ isPlaying: true })
       prefetchNext(currentSectionIndex)
     } catch (err) {
-      console.error('Playback failed:', err)
+      console.error('[Audio] Playback failed:', err)
     }
   },
 
