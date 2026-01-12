@@ -232,12 +232,12 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
           const audioBlob = await audioResponse.blob()
           console.log('[Audio] Cached blob info:', { size: audioBlob.size, type: audioBlob.type })
 
-          // Reject empty or too-small cached audio - force streaming instead
+          // Reject empty or too-small cached audio - use direct stream endpoint
           if (audioBlob.size < 1000) {
-            console.error('[Audio] Cached audio is empty or too small, forcing regeneration')
-            // Force regeneration by fetching with regenerate flag
-            const streamUrl = `${getAudioEndpoint(sectionId)}?regenerate=true`
-            console.log('[Audio] Forcing regeneration from:', streamUrl)
+            console.error('[Audio] Cached audio is empty or too small, using direct stream')
+            // Use simple direct stream endpoint (bypasses cache)
+            const streamUrl = `/api/tts/stream/${sectionId}`
+            console.log('[Audio] Direct streaming from:', streamUrl)
             const streamResponse = await fetch(streamUrl)
             if (!streamResponse.ok) {
               // Try to get error details from response
@@ -249,12 +249,12 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
               } catch (e) {
                 // Response wasn't JSON
               }
-              throw new Error(`Stream fetch failed: ${streamResponse.status} ${errorDetails}`)
+              throw new Error(`Direct stream failed: ${streamResponse.status} ${errorDetails}`)
             }
             const streamBlob = await streamResponse.blob()
-            console.log('[Audio] Stream blob info:', { size: streamBlob.size, type: streamBlob.type })
+            console.log('[Audio] Direct stream blob info:', { size: streamBlob.size, type: streamBlob.type })
             if (streamBlob.size < 1000) {
-              throw new Error('Stream also returned empty audio')
+              throw new Error('Direct stream returned empty audio')
             }
             const streamBlobUrl = URL.createObjectURL(new Blob([streamBlob], { type: 'audio/mpeg' }))
             set(state => ({
