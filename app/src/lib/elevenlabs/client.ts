@@ -16,12 +16,12 @@ function getClient(): ElevenLabsClient {
 }
 
 // Default voice for book narration
-export const DEFAULT_VOICE_ID = "dCnu06FiOZma2KVNUoPZ";
+export const DEFAULT_VOICE_ID = "nPczCjzI2devNBz1zQrb";
 
 // Available voices for book narration
 export const BOOK_VOICES = [
-  { id: "dCnu06FiOZma2KVNUoPZ", name: "Aurora", gender: "female", description: "Warm, expressive female voice - default narrator" },
-  { id: "nPczCjzI2devNBz1zQrb", name: "Marcus", gender: "male", description: "Deep, engaging male voice - alternative narrator" },
+  { id: "nPczCjzI2devNBz1zQrb", name: "Marcus", gender: "male", description: "Deep, engaging male voice - default narrator" },
+  { id: "dCnu06FiOZma2KVNUoPZ", name: "Aurora", gender: "female", description: "Warm, expressive female voice - alternative narrator" },
 ] as const;
 
 export type VoiceId = typeof BOOK_VOICES[number]["id"];
