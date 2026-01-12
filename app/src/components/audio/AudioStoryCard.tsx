@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { BookOpen, Clock, Play, Loader2 } from 'lucide-react'
+import { Clock, Play, Loader2, Headphones } from 'lucide-react'
 import { BookCover } from '@/components/cover/BookCover'
 import { CoverStatus } from '@/types/chronicle'
 import { useAudioStore } from '@/lib/audio/store'
@@ -27,11 +27,11 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
 
   const isCurrentlyPlaying = isVisible && bookId === story.id
 
-  const handlePlayClick = async (e: React.MouseEvent) => {
+  const handleListenClick = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
-    console.log('[AudioStoryCard] Play clicked for story:', story.id)
+    console.log('[AudioStoryCard] Listen clicked for story:', story.id)
 
     if (isCurrentlyPlaying) {
       // Already playing this book, just expand
@@ -93,63 +93,25 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
         justifyContent: 'space-between',
       }}
     >
-      {/* Main clickable area - opens player */}
-      <div
-        onClick={handlePlayClick}
+      {/* Main clickable area - goes to reader */}
+      <Link
+        href={`/reader/${story.id}`}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '1rem',
           flex: 1,
-          cursor: 'pointer',
+          textDecoration: 'none',
+          color: 'inherit',
         }}
       >
-        {/* Cover with play overlay */}
-        <div style={{ position: 'relative' }}>
-          <BookCover
-            coverUrl={story.cover_url}
-            title={story.title}
-            status={story.cover_status}
-            size="sm"
-          />
-          {/* Play overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: isCurrentlyPlaying
-                ? 'rgba(212, 165, 116, 0.3)'
-                : 'rgba(0, 0, 0, 0.4)',
-              borderRadius: 12,
-              opacity: isLoading || isCurrentlyPlaying ? 1 : 0,
-              transition: 'opacity 0.2s',
-            }}
-            className="play-overlay"
-          >
-            {isLoading ? (
-              <Loader2
-                style={{
-                  width: 24,
-                  height: 24,
-                  color: 'white',
-                  animation: 'spin 1s linear infinite',
-                }}
-              />
-            ) : (
-              <Play
-                style={{
-                  width: 24,
-                  height: 24,
-                  color: 'white',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                }}
-              />
-            )}
-          </div>
-        </div>
+        {/* Cover - no play overlay */}
+        <BookCover
+          coverUrl={story.cover_url}
+          title={story.title}
+          status={story.cover_status}
+          size="sm"
+        />
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 className="app-heading-3" style={{ marginBottom: '0.25rem' }}>
@@ -189,37 +151,46 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
             })}
           </p>
         </div>
-      </div>
+      </Link>
 
-      {/* Secondary actions */}
-      <div
+      {/* Listen button */}
+      <button
+        onClick={handleListenClick}
+        disabled={isLoading}
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.75rem',
+          gap: '0.375rem',
+          padding: '0.5rem 0.75rem',
+          borderRadius: 8,
+          background: isCurrentlyPlaying
+            ? 'var(--amber-warm)'
+            : 'rgba(212, 165, 116, 0.1)',
+          color: isCurrentlyPlaying ? 'var(--night-deep)' : 'var(--amber-warm)',
+          fontSize: '0.8125rem',
+          fontWeight: 500,
+          border: 'none',
+          cursor: isLoading ? 'wait' : 'pointer',
+          whiteSpace: 'nowrap',
           marginLeft: '1rem',
+          transition: 'all 0.2s',
         }}
       >
-        <Link
-          href={`/reader/${story.id}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.375rem',
-            padding: '0.5rem 0.75rem',
-            borderRadius: 8,
-            background: 'rgba(212, 165, 116, 0.1)',
-            color: 'var(--amber-warm)',
-            fontSize: '0.8125rem',
-            fontWeight: 500,
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <BookOpen style={{ width: 14, height: 14 }} />
-          Read
-        </Link>
-      </div>
+        {isLoading ? (
+          <Loader2
+            style={{
+              width: 14,
+              height: 14,
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+        ) : isCurrentlyPlaying ? (
+          <Headphones style={{ width: 14, height: 14 }} />
+        ) : (
+          <Play style={{ width: 14, height: 14 }} />
+        )}
+        {isCurrentlyPlaying ? 'Playing' : 'Listen'}
+      </button>
 
       <style jsx>{`
         @keyframes spin {
@@ -230,8 +201,9 @@ export function AudioStoryCard({ story }: AudioStoryCardProps) {
             transform: rotate(360deg);
           }
         }
-        .app-card:hover .play-overlay {
-          opacity: 1;
+        button:hover:not(:disabled) {
+          background: var(--amber-warm);
+          color: var(--night-deep);
         }
       `}</style>
     </div>

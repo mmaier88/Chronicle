@@ -1,7 +1,7 @@
 import { createServiceClient, getUser } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { parseAPIError, formatErrorForLog } from '@/lib/errors/api-errors'
-import { DEFAULT_VOICE_ID } from '@/lib/elevenlabs/client'
+import { DEFAULT_VOICE_ID, BOOK_VOICES } from '@/lib/elevenlabs/client'
 
 interface RouteParams {
   params: Promise<{ sectionId: string }>
@@ -93,6 +93,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    // Get user's voice preference
+    const { data: userPrefs } = await supabase
+      .from('user_preferences')
+      .select('voice_id')
+      .eq('user_id', user.id)
+      .single()
+
+    const voiceId = userPrefs?.voice_id || DEFAULT_VOICE_ID
+
     // Build full text with chapter intro if first section
     const isFirstSection = section.index === 0
     const chapterNumber = (chapter.index || 0) + 1
@@ -136,7 +145,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Request streaming response from ElevenLabs
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${DEFAULT_VOICE_ID}/stream`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
       {
         method: 'POST',
         headers: {
@@ -218,12 +227,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                       console.log('[TTS] Cached audio to:', storagePath, `(${totalSize} bytes)`)
 
                       // Also save to section_audio table for tracking
+                      const voiceName = BOOK_VOICES.find(v => v.id === voiceId)?.name || 'Unknown'
                       return supabase.from('section_audio').upsert({
                         section_id: sectionId,
                         content_hash: contentHash,
                         storage_path: storagePath,
-                        voice_id: DEFAULT_VOICE_ID,
-                        voice_name: 'Rachel',
+                        voice_id: voiceId,
+                        voice_name: voiceName,
                         status: 'ready',
                         duration_seconds: estimateDuration(fullText),
                         file_size_bytes: totalSize,

@@ -1,6 +1,6 @@
 import { getUser, createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Sparkles, User, LogOut, Library, Wand2 } from 'lucide-react'
+import { Sparkles, Settings, Library, Wand2 } from 'lucide-react'
 import './app-theme.css'
 
 export default async function CreateLayout({
@@ -44,23 +44,12 @@ export default async function CreateLayout({
           </div>
 
           <div className="app-user">
-            {user && (
-              <>
-                <div className="app-user-info">
-                  <User />
-                  {isDevUser ? 'Guest Mode' : user.email}
-                </div>
-                {!isDevUser && (
-                  <form action="/api/auth/signout" method="POST">
-                    <button type="submit" className="app-signout">
-                      <LogOut />
-                      <span>Sign out</span>
-                    </button>
-                  </form>
-                )}
-              </>
-            )}
-            {!user && (
+            {user ? (
+              <Link href="/create/settings" className="app-nav-link" title="Settings">
+                <Settings />
+                <span className="app-nav-label-mobile">Settings</span>
+              </Link>
+            ) : (
               <Link href="/login" className="app-signin">
                 Sign in
               </Link>

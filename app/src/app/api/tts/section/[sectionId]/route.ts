@@ -80,6 +80,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Section has no content' }, { status: 400 })
   }
 
+  // Get user's voice preference
+  const { data: userPrefs } = await supabase
+    .from('user_preferences')
+    .select('voice_id')
+    .eq('user_id', user.id)
+    .single()
+
   // Build full text with chapter and section titles for narration
   const isFirstSection = section.index === 0
   const chapterNumber = (chapter.index || 0) + 1
@@ -90,7 +97,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const fullText = `${chapterIntro}${sectionIntro}${section.content_text}`
 
   const contentHash = computeContentHash(fullText)
-  const voiceId = book.audio_voice_id || DEFAULT_VOICE_ID
+  // Priority: book-specific voice > user preference > default
+  const voiceId = book.audio_voice_id || userPrefs?.voice_id || DEFAULT_VOICE_ID
   const voiceName = BOOK_VOICES.find(v => v.id === voiceId)?.name || 'Unknown'
   const storagePath = `${user.id}/${sectionId}/${contentHash}.mp3`
 
