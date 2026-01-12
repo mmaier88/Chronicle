@@ -240,7 +240,16 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
             console.log('[Audio] Forcing regeneration from:', streamUrl)
             const streamResponse = await fetch(streamUrl)
             if (!streamResponse.ok) {
-              throw new Error(`Stream fetch failed: ${streamResponse.status}`)
+              // Try to get error details from response
+              let errorDetails = ''
+              try {
+                const errorBody = await streamResponse.json()
+                errorDetails = errorBody.details || errorBody.error || ''
+                console.error('[Audio] Server error details:', errorBody)
+              } catch (e) {
+                // Response wasn't JSON
+              }
+              throw new Error(`Stream fetch failed: ${streamResponse.status} ${errorDetails}`)
             }
             const streamBlob = await streamResponse.blob()
             console.log('[Audio] Stream blob info:', { size: streamBlob.size, type: streamBlob.type })
