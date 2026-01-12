@@ -29,9 +29,8 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, serviceKey)
 
     // Use the database function that bypasses RLS
-    const { data, error } = await supabase.rpc('get_staff_picks', {
-      pick_limit: 6
-    })
+    // Call without params to use default (6)
+    const { data, error } = await supabase.rpc('get_staff_picks')
 
     if (error) {
       console.error('[Staff Picks] Database error:', error.message, error.details, error.hint)

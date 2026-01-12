@@ -26,9 +26,9 @@ export default async function CreateLandingPage() {
     .order('created_at', { ascending: false })
     .limit(3)
 
-  // Fetch staff picks using RPC function
+  // Fetch staff picks using RPC function (use default limit)
   const { data: staffPicksRaw, error: staffPicksError } = await serviceClient
-    .rpc('get_staff_picks', { pick_limit: 6 })
+    .rpc('get_staff_picks')
 
   // Debug logging
   if (staffPicksError) {
