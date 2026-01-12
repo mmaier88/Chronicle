@@ -175,8 +175,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     // Start streaming from ElevenLabs
+    console.log(`[TTS] Starting ElevenLabs stream for section ${sectionId}, text length: ${fullText.length}`)
     const { stream, getBuffer } = await streamSpeech(fullText, voiceId)
     const estimatedDuration = estimateDuration(fullText)
+    console.log(`[TTS] ElevenLabs stream ready, estimated duration: ${estimatedDuration}s`)
 
     // Set up background caching - this runs after the stream is consumed
     const cachePromise = getBuffer().then(async (buffer) => {

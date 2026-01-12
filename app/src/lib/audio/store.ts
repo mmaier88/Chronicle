@@ -215,15 +215,33 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         return get().fetchAudio(sectionId)
       }
 
-      // If cached, use the signed URL
+      // If cached, fetch as blob to avoid CORS/redirect issues
       if (data.status === 'ready' && data.audio_url) {
-        set(state => ({
-          audioCache: {
-            ...state.audioCache,
-            [sectionId]: { url: data.audio_url, duration: data.duration_seconds || 0, status: 'ready' }
+        console.log('[Audio] Fetching cached audio from:', data.audio_url.substring(0, 80))
+        try {
+          const audioResponse = await fetch(data.audio_url)
+          if (!audioResponse.ok) {
+            throw new Error(`Failed to fetch cached audio: ${audioResponse.status}`)
           }
-        }))
-        return { url: data.audio_url, duration: data.duration_seconds || 0 }
+          const audioBlob = await audioResponse.blob()
+          console.log('[Audio] Cached blob info:', { size: audioBlob.size, type: audioBlob.type })
+
+          const typedBlob = audioBlob.type === 'audio/mpeg'
+            ? audioBlob
+            : new Blob([audioBlob], { type: 'audio/mpeg' })
+
+          const blobUrl = URL.createObjectURL(typedBlob)
+          set(state => ({
+            audioCache: {
+              ...state.audioCache,
+              [sectionId]: { url: blobUrl, duration: data.duration_seconds || 0, status: 'ready' }
+            }
+          }))
+          return { url: blobUrl, duration: data.duration_seconds || 0 }
+        } catch (err) {
+          console.error('[Audio] Error fetching cached audio:', err)
+          // Fall through to streaming
+        }
       }
 
       // If streaming, fetch the audio ourselves and create blob URL
