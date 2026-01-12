@@ -234,9 +234,9 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
           // Reject empty or too-small cached audio - use direct stream endpoint
           if (audioBlob.size < 1000) {
-            console.error('[Audio] Cached audio is empty or too small, using direct stream')
-            // Use simple direct stream endpoint (bypasses cache)
-            const streamUrl = `/api/tts/stream/${sectionId}`
+            console.error('[Audio] Cached audio is empty or too small, using simple TTS endpoint')
+            // Use simple direct HTTP endpoint (bypasses SDK and streaming)
+            const streamUrl = `/api/tts/simple/${sectionId}`
             console.log('[Audio] Direct streaming from:', streamUrl)
             const streamResponse = await fetch(streamUrl)
             if (!streamResponse.ok) {
@@ -284,14 +284,14 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         }
       }
 
-      // If streaming, fetch the audio ourselves and create blob URL
-      // This avoids issues with the browser receiving JSON errors
-      if (data.status === 'streaming' && data.stream_url) {
-        console.log('[Audio] Fetching streaming audio from:', data.stream_url)
+      // If streaming, use simple endpoint to bypass SDK issues
+      if (data.status === 'streaming') {
+        const simpleUrl = `/api/tts/simple/${sectionId}`
+        console.log('[Audio] Using simple TTS endpoint:', simpleUrl)
         const duration = data.duration_seconds || 0
 
         try {
-          const audioResponse = await fetch(data.stream_url)
+          const audioResponse = await fetch(simpleUrl)
 
           if (!audioResponse.ok) {
             const errorText = await audioResponse.text()
