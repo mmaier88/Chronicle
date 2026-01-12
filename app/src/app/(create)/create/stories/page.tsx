@@ -1,27 +1,58 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { BookOpen, Clock, Sparkles } from 'lucide-react'
+import { BookOpen, Clock, Sparkles, AlertCircle, RefreshCw, Trash2 } from 'lucide-react'
 import { AudioStoryCard } from '@/components/audio/AudioStoryCard'
-import { CoverStatus } from '@/types/chronicle'
+import { CoverStatus, VibeJobStatus } from '@/types/chronicle'
+import { InProgressCard } from './InProgressCard'
+
+// Stale timeout: 1 hour
+const STALE_TIMEOUT_MS = 60 * 60 * 1000
 
 export default async function StoriesPage() {
   const supabase = await createClient()
   const { user } = await getUser()
 
-  // Fetch all user's vibe-generated stories
+  // Fetch all user's vibe-generated stories with their job status
   const { data: stories, error } = await supabase
+    .from('books')
+    .select(`
+      id, title, status, created_at, core_question, cover_url, cover_status,
+      vibe_jobs!inner(id, status, step, progress, error, updated_at)
+    `)
+    .eq('owner_id', user?.id)
+    .eq('source', 'vibe')
+    .order('created_at', { ascending: false })
+
+  // Also fetch stories without jobs (completed ones)
+  const { data: completedOnly } = await supabase
     .from('books')
     .select('id, title, status, created_at, core_question, cover_url, cover_status')
     .eq('owner_id', user?.id)
     .eq('source', 'vibe')
+    .eq('status', 'final')
     .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Error fetching stories:', error)
   }
 
-  const completedStories = (stories || []).filter(s => s.status === 'final')
-  const inProgressStories = (stories || []).filter(s => s.status !== 'final')
+  // Merge results - use completedOnly for final stories
+  const completedStories = completedOnly || []
+
+  // In progress stories with job info
+  type StoryWithJob = typeof stories extends (infer T)[] | null ? T : never
+  const inProgressStories = (stories || []).filter((s: StoryWithJob) => {
+    const job = Array.isArray(s.vibe_jobs) ? s.vibe_jobs[0] : s.vibe_jobs
+    return s.status !== 'final' && job
+  }).map((s: StoryWithJob) => {
+    const job = Array.isArray(s.vibe_jobs) ? s.vibe_jobs[0] : s.vibe_jobs
+    const isStale = job && new Date().getTime() - new Date(job.updated_at).getTime() > STALE_TIMEOUT_MS
+    return {
+      ...s,
+      job,
+      isStale: isStale && (job.status === 'running' || job.status === 'queued')
+    }
+  })
 
   return (
     <div style={{ maxWidth: 800 }}>
@@ -85,41 +116,16 @@ export default async function StoriesPage() {
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {inProgressStories.map((story) => (
-                  <div
+                  <InProgressCard
                     key={story.id}
-                    className="app-card"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      opacity: 0.7
+                    story={{
+                      id: story.id,
+                      title: story.title,
+                      status: story.status,
+                      job: story.job,
+                      isStale: story.isStale
                     }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div style={{
-                        width: 48,
-                        height: 48,
-                        background: 'rgba(26, 39, 68, 0.5)',
-                        borderRadius: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <BookOpen style={{ width: 20, height: 20, color: 'var(--moon-soft)' }} />
-                      </div>
-                      <div>
-                        <h3 className="app-heading-3" style={{ marginBottom: '0.25rem' }}>
-                          {story.title || 'Untitled'}
-                        </h3>
-                        <p className="app-body-sm">
-                          {story.status === 'drafting' ? 'Generating...' : story.status}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="app-badge app-badge-warning">
-                      {story.status}
-                    </span>
-                  </div>
+                  />
                 ))}
               </div>
             </section>
