@@ -35,8 +35,7 @@ export default async function LandingPage() {
         <div className="hero-content">
           <p className="hero-tagline">Stories made for you</p>
           <h1 className="hero-headline">
-            Listen to the story you<br />
-            didn&apos;t know you needed
+            Listen to the story you didn&apos;t know you needed
           </h1>
           <p className="hero-subheadline">
             Chronicle creates original stories — written for you and read aloud in a calm, human voice.
