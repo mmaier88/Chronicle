@@ -3,6 +3,14 @@
 import { X, Volume2 } from 'lucide-react'
 import { useAudioStore, useCurrentSection } from '@/lib/audio/store'
 
+// Colors (hardcoded since we render outside route group CSS scope)
+const colors = {
+  moonLight: '#faf6ed',
+  moonSoft: '#e8e0d0',
+  nightDeep: '#141e30',
+  amberWarm: '#d4a574',
+}
+
 interface ChapterMenuProps {
   onClose: () => void
 }
@@ -79,7 +87,7 @@ export function ChapterMenu({ onClose }: ChapterMenuProps) {
             style={{
               fontSize: '1rem',
               fontWeight: 600,
-              color: 'var(--moon-light)',
+              color: colors.moonLight,
             }}
           >
             Chapters
@@ -90,7 +98,7 @@ export function ChapterMenu({ onClose }: ChapterMenuProps) {
               padding: '0.5rem',
               background: 'transparent',
               border: 'none',
-              color: 'var(--moon-soft)',
+              color: colors.moonSoft,
               cursor: 'pointer',
             }}
           >
@@ -137,9 +145,9 @@ export function ChapterMenu({ onClose }: ChapterMenuProps) {
                     justifyContent: 'center',
                     borderRadius: '50%',
                     background: isCurrentChapter
-                      ? 'var(--amber-warm)'
+                      ? colors.amberWarm
                       : 'rgba(250, 246, 237, 0.1)',
-                    color: isCurrentChapter ? 'var(--night-deep)' : 'var(--moon-soft)',
+                    color: isCurrentChapter ? colors.nightDeep : colors.moonSoft,
                     fontSize: '0.875rem',
                     fontWeight: 500,
                     flexShrink: 0,
@@ -154,7 +162,7 @@ export function ChapterMenu({ onClose }: ChapterMenuProps) {
                     style={{
                       fontSize: '0.9375rem',
                       fontWeight: isCurrentChapter ? 600 : 400,
-                      color: isCurrentChapter ? 'var(--amber-warm)' : 'var(--moon-light)',
+                      color: isCurrentChapter ? colors.amberWarm : colors.moonLight,
                       marginBottom: duration ? 4 : 0,
                     }}
                   >
@@ -164,7 +172,7 @@ export function ChapterMenu({ onClose }: ChapterMenuProps) {
                     <p
                       style={{
                         fontSize: '0.75rem',
-                        color: 'var(--moon-soft)',
+                        color: colors.moonSoft,
                       }}
                     >
                       {formatDuration(duration)}
@@ -178,7 +186,7 @@ export function ChapterMenu({ onClose }: ChapterMenuProps) {
                     style={{
                       width: 18,
                       height: 18,
-                      color: 'var(--amber-warm)',
+                      color: colors.amberWarm,
                       flexShrink: 0,
                     }}
                   />

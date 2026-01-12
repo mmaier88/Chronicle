@@ -17,6 +17,14 @@ import { useAudioStore, useCurrentSection, useCurrentChapter } from '@/lib/audio
 import { ChapterMenu } from './ChapterMenu'
 import { SleepTimerMenu } from './SleepTimerMenu'
 
+// Colors (hardcoded since we render outside route group CSS scope)
+const colors = {
+  moonLight: '#faf6ed',
+  moonSoft: '#e8e0d0',
+  nightDeep: '#141e30',
+  amberWarm: '#d4a574',
+}
+
 export function FullScreenPlayer() {
   const {
     bookTitle,
@@ -111,7 +119,7 @@ export function FullScreenPlayer() {
             padding: '0.5rem',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonSoft,
             cursor: 'pointer',
             fontSize: '0.875rem',
           }}
@@ -123,7 +131,7 @@ export function FullScreenPlayer() {
           style={{
             fontSize: '0.875rem',
             fontWeight: 500,
-            color: 'var(--moon-light)',
+            color: colors.moonLight,
             textAlign: 'center',
             flex: 1,
             whiteSpace: 'nowrap',
@@ -156,7 +164,7 @@ export function FullScreenPlayer() {
             borderRadius: 16,
             background: coverUrl
               ? `url(${coverUrl}) center/cover`
-              : 'linear-gradient(135deg, rgba(212, 165, 116, 0.3), rgba(212, 165, 116, 0.1))',
+              : `linear-gradient(135deg, rgba(212, 165, 116, 0.3), rgba(212, 165, 116, 0.1))`,
             boxShadow: '0 24px 48px rgba(0, 0, 0, 0.4)',
           }}
         />
@@ -172,14 +180,14 @@ export function FullScreenPlayer() {
           gap: '0.5rem',
           padding: '0.75rem 1.5rem',
           margin: '0 auto',
-          background: 'rgba(250, 246, 237, 0.05)',
-          border: '1px solid rgba(250, 246, 237, 0.1)',
+          background: 'rgba(250, 246, 237, 0.08)',
+          border: '1px solid rgba(250, 246, 237, 0.15)',
           borderRadius: 50,
-          color: 'var(--moon-light)',
+          color: colors.moonLight,
           cursor: 'pointer',
         }}
       >
-        <List style={{ width: 18, height: 18, color: 'var(--amber-warm)' }} />
+        <List style={{ width: 18, height: 18, color: colors.amberWarm }} />
         <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
           {currentChapter?.title || currentSection?.chapterTitle || 'Chapter'}
         </span>
@@ -198,7 +206,7 @@ export function FullScreenPlayer() {
             style={{
               width: '100%',
               height: 4,
-              background: 'rgba(250, 246, 237, 0.15)',
+              background: 'rgba(250, 246, 237, 0.2)',
               borderRadius: 9999,
               appearance: 'none',
               cursor: 'pointer',
@@ -214,7 +222,7 @@ export function FullScreenPlayer() {
               marginTop: '0.75rem',
             }}
           >
-            {chapters.map((chapter, idx) => (
+            {chapters.map((chapter) => (
               <div
                 key={chapter.index}
                 style={{
@@ -223,8 +231,8 @@ export function FullScreenPlayer() {
                   borderRadius: '50%',
                   background:
                     currentSection?.chapterIndex === chapter.index
-                      ? 'var(--amber-warm)'
-                      : 'rgba(250, 246, 237, 0.3)',
+                      ? colors.amberWarm
+                      : 'rgba(250, 246, 237, 0.4)',
                   transition: 'background 0.2s',
                 }}
               />
@@ -243,7 +251,7 @@ export function FullScreenPlayer() {
           <span
             style={{
               fontSize: '0.75rem',
-              color: 'var(--moon-soft)',
+              color: colors.moonSoft,
               fontFamily: 'monospace',
             }}
           >
@@ -252,7 +260,7 @@ export function FullScreenPlayer() {
           <span
             style={{
               fontSize: '0.75rem',
-              color: 'var(--moon-soft)',
+              color: colors.moonSoft,
             }}
           >
             {formatTime(timeRemaining)} left
@@ -260,7 +268,7 @@ export function FullScreenPlayer() {
           <span
             style={{
               fontSize: '0.75rem',
-              color: 'var(--moon-soft)',
+              color: colors.moonSoft,
               fontFamily: 'monospace',
             }}
           >
@@ -291,7 +299,7 @@ export function FullScreenPlayer() {
             justifyContent: 'center',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonLight,
             cursor: 'pointer',
           }}
         >
@@ -301,6 +309,7 @@ export function FullScreenPlayer() {
               position: 'absolute',
               fontSize: '0.625rem',
               fontWeight: 600,
+              color: colors.moonLight,
             }}
           >
             30
@@ -319,7 +328,7 @@ export function FullScreenPlayer() {
             justifyContent: 'center',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonLight,
             cursor: 'pointer',
             opacity: currentSectionIndex === 0 && progress < 3 ? 0.3 : 1,
           }}
@@ -337,10 +346,10 @@ export function FullScreenPlayer() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--moon-light)',
+            background: colors.moonLight,
             border: 'none',
             borderRadius: '50%',
-            color: 'var(--night-deep)',
+            color: colors.nightDeep,
             cursor: isLoading ? 'wait' : 'pointer',
           }}
         >
@@ -365,7 +374,7 @@ export function FullScreenPlayer() {
             justifyContent: 'center',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonLight,
             cursor: 'pointer',
             opacity: currentSectionIndex >= sections.length - 1 ? 0.3 : 1,
           }}
@@ -385,7 +394,7 @@ export function FullScreenPlayer() {
             justifyContent: 'center',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonLight,
             cursor: 'pointer',
           }}
         >
@@ -395,6 +404,7 @@ export function FullScreenPlayer() {
               position: 'absolute',
               fontSize: '0.625rem',
               fontWeight: 600,
+              color: colors.moonLight,
             }}
           >
             30
@@ -410,7 +420,7 @@ export function FullScreenPlayer() {
           justifyContent: 'space-around',
           padding: '1rem 1.5rem',
           paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-          borderTop: '1px solid rgba(250, 246, 237, 0.1)',
+          borderTop: '1px solid rgba(250, 246, 237, 0.15)',
         }}
       >
         {/* Playback speed */}
@@ -424,12 +434,12 @@ export function FullScreenPlayer() {
             padding: '0.5rem 1rem',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonLight,
             cursor: 'pointer',
           }}
         >
           <span style={{ fontSize: '1rem', fontWeight: 600 }}>{playbackRate}x</span>
-          <span style={{ fontSize: '0.625rem', textTransform: 'uppercase' }}>Speed</span>
+          <span style={{ fontSize: '0.625rem', textTransform: 'uppercase', opacity: 0.7 }}>Speed</span>
         </button>
 
         {/* Sleep Timer */}
@@ -443,12 +453,12 @@ export function FullScreenPlayer() {
             padding: '0.5rem 1rem',
             background: 'transparent',
             border: 'none',
-            color: sleepTimeRemaining ? 'var(--amber-warm)' : 'var(--moon-soft)',
+            color: sleepTimeRemaining ? colors.amberWarm : colors.moonLight,
             cursor: 'pointer',
           }}
         >
           <Timer style={{ width: 24, height: 24 }} />
-          <span style={{ fontSize: '0.625rem', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '0.625rem', textTransform: 'uppercase', opacity: sleepTimeRemaining ? 1 : 0.7 }}>
             {sleepTimeRemaining || 'Timer'}
           </span>
         </button>
@@ -467,7 +477,7 @@ export function FullScreenPlayer() {
           appearance: none;
           width: 16px;
           height: 16px;
-          background: var(--amber-warm);
+          background: ${colors.amberWarm};
           border-radius: 50%;
           cursor: pointer;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);

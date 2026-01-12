@@ -3,6 +3,15 @@
 import { Play, Pause, Loader2, ChevronUp, X } from 'lucide-react'
 import { useAudioStore, useCurrentSection } from '@/lib/audio/store'
 
+// Colors (hardcoded since we render outside route group CSS scope)
+const colors = {
+  moonLight: '#faf6ed',
+  moonSoft: '#e8e0d0',
+  nightDeep: '#141e30',
+  amberWarm: '#d4a574',
+  amberGlow: '#e8c49a',
+}
+
 export function MiniPlayer() {
   const {
     bookTitle,
@@ -57,7 +66,7 @@ export function MiniPlayer() {
           style={{
             height: '100%',
             width: `${progressPercent}%`,
-            background: 'var(--amber-warm)',
+            background: colors.amberWarm,
             transition: 'width 0.1s linear',
           }}
         />
@@ -83,7 +92,7 @@ export function MiniPlayer() {
             borderRadius: 8,
             background: coverUrl
               ? `url(${coverUrl}) center/cover`
-              : 'linear-gradient(135deg, rgba(212, 165, 116, 0.3), rgba(212, 165, 116, 0.1))',
+              : `linear-gradient(135deg, rgba(212, 165, 116, 0.3), rgba(212, 165, 116, 0.1))`,
             flexShrink: 0,
           }}
         />
@@ -94,7 +103,7 @@ export function MiniPlayer() {
             style={{
               fontSize: '0.875rem',
               fontWeight: 500,
-              color: 'var(--moon-light)',
+              color: colors.moonLight,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -106,7 +115,7 @@ export function MiniPlayer() {
           <p
             style={{
               fontSize: '0.75rem',
-              color: 'var(--amber-warm)',
+              color: colors.amberWarm,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -120,7 +129,7 @@ export function MiniPlayer() {
         <span
           style={{
             fontSize: '0.75rem',
-            color: 'var(--moon-soft)',
+            color: colors.moonSoft,
             fontFamily: 'monospace',
             flexShrink: 0,
           }}
@@ -141,10 +150,10 @@ export function MiniPlayer() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, var(--amber-warm), var(--amber-glow))',
+            background: `linear-gradient(135deg, ${colors.amberWarm}, ${colors.amberGlow})`,
             border: 'none',
             borderRadius: '50%',
-            color: 'var(--night-deep)',
+            color: colors.nightDeep,
             cursor: isLoading ? 'wait' : 'pointer',
             flexShrink: 0,
           }}
@@ -168,7 +177,7 @@ export function MiniPlayer() {
             padding: '0.5rem',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonSoft,
             cursor: 'pointer',
             flexShrink: 0,
           }}
@@ -186,7 +195,7 @@ export function MiniPlayer() {
             padding: '0.5rem',
             background: 'transparent',
             border: 'none',
-            color: 'var(--moon-soft)',
+            color: colors.moonSoft,
             cursor: 'pointer',
             opacity: 0.6,
             flexShrink: 0,

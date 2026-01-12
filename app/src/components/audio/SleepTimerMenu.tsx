@@ -4,6 +4,13 @@ import { X, Check } from 'lucide-react'
 import { useAudioStore } from '@/lib/audio/store'
 import { SLEEP_TIMER_OPTIONS } from '@/lib/audio/types'
 
+// Colors (hardcoded since we render outside route group CSS scope)
+const colors = {
+  moonLight: '#faf6ed',
+  moonSoft: '#e8e0d0',
+  amberWarm: '#d4a574',
+}
+
 interface SleepTimerMenuProps {
   onClose: () => void
 }
@@ -60,7 +67,7 @@ export function SleepTimerMenu({ onClose }: SleepTimerMenuProps) {
             style={{
               fontSize: '1rem',
               fontWeight: 600,
-              color: 'var(--moon-light)',
+              color: colors.moonLight,
             }}
           >
             Sleep Timer
@@ -71,7 +78,7 @@ export function SleepTimerMenu({ onClose }: SleepTimerMenuProps) {
               padding: '0.5rem',
               background: 'transparent',
               border: 'none',
-              color: 'var(--moon-soft)',
+              color: colors.moonSoft,
               cursor: 'pointer',
             }}
           >
@@ -105,7 +112,7 @@ export function SleepTimerMenu({ onClose }: SleepTimerMenuProps) {
                   style={{
                     fontSize: '0.9375rem',
                     fontWeight: selected ? 600 : 400,
-                    color: selected ? 'var(--amber-warm)' : 'var(--moon-light)',
+                    color: selected ? colors.amberWarm : colors.moonLight,
                   }}
                 >
                   {option.label}
@@ -116,7 +123,7 @@ export function SleepTimerMenu({ onClose }: SleepTimerMenuProps) {
                     style={{
                       width: 20,
                       height: 20,
-                      color: 'var(--amber-warm)',
+                      color: colors.amberWarm,
                     }}
                   />
                 )}
@@ -131,7 +138,7 @@ export function SleepTimerMenu({ onClose }: SleepTimerMenuProps) {
             style={{
               padding: '0.75rem 1.5rem 1rem',
               fontSize: '0.75rem',
-              color: 'var(--moon-soft)',
+              color: colors.moonSoft,
               borderTop: '1px solid rgba(250, 246, 237, 0.1)',
             }}
           >
