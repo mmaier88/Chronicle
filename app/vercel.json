@@ -3,6 +3,10 @@
     {
       "path": "/api/tts/cleanup",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/create/job/auto-resume",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

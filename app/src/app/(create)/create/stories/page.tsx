@@ -4,9 +4,7 @@ import { BookOpen, Clock, Sparkles, AlertCircle, RefreshCw, Trash2 } from 'lucid
 import { AudioStoryCard } from '@/components/audio/AudioStoryCard'
 import { CoverStatus, VibeJobStatus } from '@/types/chronicle'
 import { InProgressCard } from './InProgressCard'
-
-// Stale timeout: 1 hour
-const STALE_TIMEOUT_MS = 60 * 60 * 1000
+import { isJobStuck, JOB_RECOVERY_CONFIG } from '@/lib/job-recovery'
 
 export default async function StoriesPage() {
   const supabase = await createClient()
@@ -17,7 +15,7 @@ export default async function StoriesPage() {
     .from('books')
     .select(`
       id, title, status, created_at, core_question, cover_url, cover_status,
-      vibe_jobs!inner(id, status, step, progress, error, updated_at)
+      vibe_jobs!inner(id, status, step, progress, error, updated_at, auto_resume_attempts)
     `)
     .eq('owner_id', user?.id)
     .eq('source', 'vibe')
@@ -46,11 +44,20 @@ export default async function StoriesPage() {
     return s.status !== 'final' && job
   }).map((s: StoryWithJob) => {
     const job = Array.isArray(s.vibe_jobs) ? s.vibe_jobs[0] : s.vibe_jobs
-    const isStale = job && new Date().getTime() - new Date(job.updated_at).getTime() > STALE_TIMEOUT_MS
+    // Use centralized isJobStuck function
+    const jobStatus = {
+      id: job.id,
+      status: job.status,
+      step: job.step,
+      progress: job.progress,
+      updated_at: job.updated_at,
+      auto_resume_attempts: job.auto_resume_attempts,
+      error: job.error,
+    }
     return {
       ...s,
       job,
-      isStale: isStale && (job.status === 'running' || job.status === 'queued')
+      isStale: isJobStuck(jobStatus)
     }
   })
 

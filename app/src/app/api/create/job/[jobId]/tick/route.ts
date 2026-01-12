@@ -514,20 +514,34 @@ export async function POST(
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   const { jobId } = await params
+
+  // Check for cron-based auto-resume authentication
+  const cronSecret = request.headers.get('x-cron-secret')
+  const isAutoResume = request.headers.get('x-auto-resume') === 'true'
+  const cronUserId = request.headers.get('x-user-id')
+
+  const isCronAuth = cronSecret === process.env.CRON_SECRET && isAutoResume && cronUserId
+
+  // Standard user authentication
   const { user, isDevUser } = await getUser()
 
-  if (!user) {
+  if (!user && !isCronAuth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = isDevUser ? createServiceClient() : await createClient()
+  // Use service client for cron jobs, otherwise respect dev user setting
+  const supabase = isCronAuth || isDevUser ? createServiceClient() : await createClient()
+
+  // For cron jobs, fetch by job ID and verify user_id matches header
+  // For regular users, fetch by job ID and user ID
+  const effectiveUserId = isCronAuth ? cronUserId : user!.id
 
   // Fetch job
   const { data: job, error: jobError } = await supabase
     .from('vibe_jobs')
     .select('id, user_id, book_id, genre, user_prompt, preview, status, step, progress, story_synopsis, error, attempt')
     .eq('id', jobId)
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .single()
 
   if (jobError || !job) {
@@ -762,7 +776,7 @@ export async function POST(
           content_text: finalProse,
           status: 'canonical',
           promoted_at: new Date().toISOString(),
-          promoted_by: user.id
+          promoted_by: effectiveUserId
         })
         .eq('id', section.id)
 

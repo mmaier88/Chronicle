@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BookOpen, AlertCircle, RefreshCw, Trash2, Loader2, Play } from 'lucide-react'
 import { VibeJobStatus } from '@/types/chronicle'
+import { getJobStatusMessage, isJobStuck, hasExceededMaxAttempts } from '@/lib/job-recovery'
 
 interface InProgressCardProps {
   story: {
@@ -18,6 +19,7 @@ interface InProgressCardProps {
       progress: number
       error: string | null
       updated_at: string
+      auto_resume_attempts?: number
     }
     isStale: boolean
   }
@@ -30,10 +32,23 @@ export function InProgressCard({ story }: InProgressCardProps) {
 
   const { job, isStale } = story
   const isFailed = job.status === 'failed'
-  const isRunning = job.status === 'running' || job.status === 'queued'
 
-  // Show as stuck if stale or failed
-  const isStuck = isStale || isFailed
+  // Use centralized logic for determining stuck status
+  const jobStatus = {
+    id: job.id,
+    status: job.status,
+    step: job.step,
+    progress: job.progress,
+    updated_at: job.updated_at,
+    auto_resume_attempts: job.auto_resume_attempts,
+    error: job.error,
+  }
+
+  const stuck = isJobStuck(jobStatus)
+  const exceededAttempts = hasExceededMaxAttempts(jobStatus)
+
+  // Show as stuck if stale, failed, or exceeded attempts
+  const isStuck = isStale || stuck || isFailed || exceededAttempts
 
   const handleResume = async () => {
     setIsResuming(true)
@@ -64,23 +79,8 @@ export function InProgressCard({ story }: InProgressCardProps) {
     }
   }
 
-  const getStatusText = () => {
-    if (isFailed) return job.error || 'Generation failed'
-    if (isStale) return 'Generation appears stuck'
-    if (job.step) {
-      const step = job.step
-      if (step === 'constitution') return 'Creating story foundation...'
-      if (step === 'plan') return 'Planning chapters...'
-      if (step.startsWith('write_')) {
-        const match = step.match(/write_ch(\d+)_s(\d+)/)
-        if (match) {
-          return `Writing chapter ${parseInt(match[1]) + 1}, section ${parseInt(match[2]) + 1}...`
-        }
-      }
-      if (step === 'finalize') return 'Finalizing...'
-    }
-    return 'Generating...'
-  }
+  // Use centralized status message
+  const getStatusText = () => getJobStatusMessage(jobStatus)
 
   return (
     <div
