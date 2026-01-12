@@ -38,10 +38,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Section not found' }, { status: 404 })
     }
 
-    // Get book for ownership check
+    // Get chapter with title and book_id for ownership check
     const { data: chapter } = await supabase
       .from('chapters')
-      .select('book_id')
+      .select('book_id, title, index')
       .eq('id', section.chapter_id)
       .single()
 
@@ -59,9 +59,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // Truncate text for test
-    const text = section.content_text.substring(0, 500)
-    console.log('[TTS Simple] Generating audio for text length:', text.length)
+    // Build full text with chapter intro if first section
+
+    const isFirstSection = section.index === 0
+    const chapterNumber = (chapter?.index || 0) + 1
+    const chapterIntro = isFirstSection && chapter?.title
+      ? `Chapter ${chapterNumber}: ${chapter.title}.\n\n`
+      : ''
+    const sectionIntro = section.title ? `${section.title}.\n\n` : ''
+    const fullText = `${chapterIntro}${sectionIntro}${section.content_text}`
+
+    console.log('[TTS Simple] Generating audio for text length:', fullText.length)
 
     // Direct HTTP call to ElevenLabs
     const response = await fetch(
@@ -73,7 +81,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: text,
+          text: fullText,
           model_id: 'eleven_turbo_v2_5',
           output_format: 'mp3_44100_128',
         }),
