@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { StaffPicks } from '@/components/StaffPicks'
 import './landing.css'
 
 // Low-quality placeholder for progressive loading
@@ -53,15 +54,18 @@ export default async function LandingPage() {
             <p className="hero-micro-cue">Perfect for evenings, walks, and quiet moments.</p>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="landing-footer">
-          <div className="footer-links">
-            <Link href="/imprint">Imprint</Link>
-            <Link href="/legal">Legal</Link>
-          </div>
-        </footer>
       </section>
+
+      {/* Staff Picks */}
+      <StaffPicks />
+
+      {/* Footer */}
+      <footer className="landing-footer-bottom">
+        <div className="footer-links">
+          <Link href="/imprint">Imprint</Link>
+          <Link href="/legal">Legal</Link>
+        </div>
+      </footer>
     </div>
   )
 }
