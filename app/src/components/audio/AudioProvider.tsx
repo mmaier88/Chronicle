@@ -86,7 +86,6 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         onLoadStart={handleLoadStart}
         onWaiting={handleWaiting}
         preload="auto"
-        crossOrigin="anonymous"
       />
 
       {/* Player UI - conditionally rendered based on state */}
