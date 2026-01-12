@@ -15,17 +15,13 @@ function getClient(): ElevenLabsClient {
   return _elevenlabs;
 }
 
-// Default voice for book narration (Rachel - warm, clear, great for narration)
-export const DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+// Default voice for book narration
+export const DEFAULT_VOICE_ID = "dCnu06FiOZma2KVNUoPZ";
 
-// Curated voices for book narration
+// Available voices for book narration
 export const BOOK_VOICES = [
-  { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", description: "Warm, clear female voice - great for non-fiction" },
-  { id: "29vD33N1CtxCmqQRPOHJ", name: "Drew", description: "Confident male voice - great for business books" },
-  { id: "EXAVITQu4vr4xnSDxMaL", name: "Bella", description: "Soft, engaging female voice - great for literary fiction" },
-  { id: "ErXwobaYiN019PkySvjV", name: "Antoni", description: "Well-rounded male voice - versatile narrator" },
-  { id: "MF3mGyEYCl7XYWbV9V6O", name: "Elli", description: "Young female voice - great for contemporary fiction" },
-  { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", description: "Deep male voice - great for thrillers and drama" },
+  { id: "dCnu06FiOZma2KVNUoPZ", name: "Aurora", gender: "female", description: "Warm, expressive female voice - default narrator" },
+  { id: "nPczCjzI2devNBz1zQrb", name: "Marcus", gender: "male", description: "Deep, engaging male voice - alternative narrator" },
 ] as const;
 
 export type VoiceId = typeof BOOK_VOICES[number]["id"];

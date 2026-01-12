@@ -1,13 +1,11 @@
 import { createServiceClient, getUser } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { parseAPIError, formatErrorForLog } from '@/lib/errors/api-errors'
+import { DEFAULT_VOICE_ID } from '@/lib/elevenlabs/client'
 
 interface RouteParams {
   params: Promise<{ sectionId: string }>
 }
-
-// Voice settings
-const VOICE_ID = '21m00Tcm4TlvDq8ikWAM' // Rachel
 
 // Hash content to create cache key
 function hashContent(text: string): string {
@@ -138,7 +136,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Request streaming response from ElevenLabs
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${DEFAULT_VOICE_ID}/stream`,
       {
         method: 'POST',
         headers: {
@@ -224,7 +222,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                         section_id: sectionId,
                         content_hash: contentHash,
                         storage_path: storagePath,
-                        voice_id: VOICE_ID,
+                        voice_id: DEFAULT_VOICE_ID,
                         voice_name: 'Rachel',
                         status: 'ready',
                         duration_seconds: estimateDuration(fullText),
