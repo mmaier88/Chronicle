@@ -200,6 +200,8 @@ export async function streamSpeech(
     return streamSpeechChunked(cleanText, voiceId);
   }
 
+  console.log('[ElevenLabs] Starting text-to-speech conversion, text length:', cleanText.length)
+
   const audioStream = await getClient().textToSpeech.convert(voiceId, {
     text: cleanText,
     modelId: "eleven_turbo_v2_5",
@@ -212,6 +214,8 @@ export async function streamSpeech(
     },
   });
 
+  console.log('[ElevenLabs] Got audio stream from API')
+
   // Collect chunks for caching while streaming
   const chunks: Uint8Array[] = [];
   let bufferResolve: (buffer: Buffer) => void;
@@ -220,12 +224,21 @@ export async function streamSpeech(
   });
 
   // Create a transform stream that collects chunks while passing them through
+  let totalBytes = 0;
+  let firstChunkLogged = false;
   const collectingStream = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
       chunks.push(chunk);
+      totalBytes += chunk.length;
+      if (!firstChunkLogged) {
+        const bytesHex = Array.from(chunk.slice(0, 10)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        console.log('[ElevenLabs] First chunk received, first 10 bytes:', bytesHex, 'size:', chunk.length);
+        firstChunkLogged = true;
+      }
       controller.enqueue(chunk);
     },
     flush() {
+      console.log('[ElevenLabs] Stream complete, total bytes:', totalBytes, 'chunks:', chunks.length);
       bufferResolve(Buffer.concat(chunks));
     },
   });
