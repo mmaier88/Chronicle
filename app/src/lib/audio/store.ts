@@ -232,18 +232,43 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
           const audioBlob = await audioResponse.blob()
           console.log('[Audio] Cached blob info:', { size: audioBlob.size, type: audioBlob.type })
 
-          const typedBlob = audioBlob.type === 'audio/mpeg'
-            ? audioBlob
-            : new Blob([audioBlob], { type: 'audio/mpeg' })
-
-          const blobUrl = URL.createObjectURL(typedBlob)
-          set(state => ({
-            audioCache: {
-              ...state.audioCache,
-              [sectionId]: { url: blobUrl, duration: data.duration_seconds || 0, status: 'ready' }
+          // Reject empty or too-small cached audio - force streaming instead
+          if (audioBlob.size < 1000) {
+            console.error('[Audio] Cached audio is empty or too small, forcing regeneration')
+            // Force regeneration by fetching with regenerate flag
+            const streamUrl = `${getAudioEndpoint(sectionId)}?regenerate=true`
+            console.log('[Audio] Forcing regeneration from:', streamUrl)
+            const streamResponse = await fetch(streamUrl)
+            if (!streamResponse.ok) {
+              throw new Error(`Stream fetch failed: ${streamResponse.status}`)
             }
-          }))
-          return { url: blobUrl, duration: data.duration_seconds || 0 }
+            const streamBlob = await streamResponse.blob()
+            console.log('[Audio] Stream blob info:', { size: streamBlob.size, type: streamBlob.type })
+            if (streamBlob.size < 1000) {
+              throw new Error('Stream also returned empty audio')
+            }
+            const streamBlobUrl = URL.createObjectURL(new Blob([streamBlob], { type: 'audio/mpeg' }))
+            set(state => ({
+              audioCache: {
+                ...state.audioCache,
+                [sectionId]: { url: streamBlobUrl, duration: data.duration_seconds || 0, status: 'ready' }
+              }
+            }))
+            return { url: streamBlobUrl, duration: data.duration_seconds || 0 }
+          } else {
+            const typedBlob = audioBlob.type === 'audio/mpeg'
+              ? audioBlob
+              : new Blob([audioBlob], { type: 'audio/mpeg' })
+
+            const blobUrl = URL.createObjectURL(typedBlob)
+            set(state => ({
+              audioCache: {
+                ...state.audioCache,
+                [sectionId]: { url: blobUrl, duration: data.duration_seconds || 0, status: 'ready' }
+              }
+            }))
+            return { url: blobUrl, duration: data.duration_seconds || 0 }
+          }
         } catch (err) {
           console.error('[Audio] Error fetching cached audio:', err)
           // Fall through to streaming

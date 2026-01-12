@@ -18,8 +18,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { sectionId } = await params
   const { user } = await getUser()
   const wantsMetadata = request.nextUrl.searchParams.get('metadata') === 'true'
+  const forceRegenerate = request.nextUrl.searchParams.get('regenerate') === 'true'
 
-  console.log(`[TTS] GET /api/tts/section/${sectionId}`, { wantsMetadata, userId: user?.id?.substring(0, 8) })
+  console.log(`[TTS] GET /api/tts/section/${sectionId}`, { wantsMetadata, forceRegenerate, userId: user?.id?.substring(0, 8) })
 
   if (!user) {
     console.log('[TTS] Unauthorized - no user')
@@ -91,6 +92,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const voiceId = book.audio_voice_id || DEFAULT_VOICE_ID
   const voiceName = BOOK_VOICES.find(v => v.id === voiceId)?.name || 'Unknown'
   const storagePath = `${user.id}/${sectionId}/${contentHash}.mp3`
+
+  // If force regenerate, delete existing cached audio
+  if (forceRegenerate) {
+    console.log('[TTS] Force regenerate requested, deleting cached audio')
+    await supabase
+      .from('section_audio')
+      .delete()
+      .eq('section_id', sectionId)
+    await supabase.storage
+      .from('audio')
+      .remove([storagePath])
+  }
 
   // Check if we already have cached audio
   const { data: existingAudio } = await supabase
