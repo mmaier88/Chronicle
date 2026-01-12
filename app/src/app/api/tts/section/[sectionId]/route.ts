@@ -100,7 +100,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   // Priority: book-specific voice > user preference > default
   const voiceId = book.audio_voice_id || userPrefs?.voice_id || DEFAULT_VOICE_ID
   const voiceName = BOOK_VOICES.find(v => v.id === voiceId)?.name || 'Unknown'
-  const storagePath = `${user.id}/${sectionId}/${contentHash}.mp3`
+  // Include voice in storage path to support voice switching
+  const storagePath = `${user.id}/${sectionId}/${voiceId}/${contentHash}.mp3`
 
   // If force regenerate, delete existing cached audio
   if (forceRegenerate) {
@@ -125,12 +126,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
   }
 
-  // Check if we already have cached audio
+  // Check if we already have cached audio (must match voice too!)
   const { data: existingAudio } = await supabase
     .from('section_audio')
     .select('*')
     .eq('section_id', sectionId)
     .eq('content_hash', contentHash)
+    .eq('voice_id', voiceId)
     .eq('status', 'ready')
     .single()
 

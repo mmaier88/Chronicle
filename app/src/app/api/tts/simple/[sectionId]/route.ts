@@ -111,9 +111,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const sectionIntro = section.title ? `${section.title}.\n\n` : ''
     const fullText = `${chapterIntro}${sectionIntro}${section.content_text}`
 
-    // Create cache path based on content hash
+    // Create cache path based on content hash AND voice
     const contentHash = hashContent(fullText)
-    const storagePath = `${user.id}/${sectionId}/${contentHash}.mp3`
+    // Include voice in path to support voice switching
+    const storagePath = `${user.id}/${sectionId}/${voiceId}/${contentHash}.mp3`
 
     // ============================
     // STEP 1: Check cache
@@ -121,7 +122,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.log('[TTS] Checking cache:', storagePath)
     const { data: existingFile } = await supabase.storage
       .from('audio')
-      .list(`${user.id}/${sectionId}`, {
+      .list(`${user.id}/${sectionId}/${voiceId}`, {
         search: `${contentHash}.mp3`
       })
 
