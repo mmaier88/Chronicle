@@ -39,13 +39,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     const audio = e.currentTarget
     const error = audio.error
-    console.error('[AudioProvider] Audio error:', error?.code, error?.message)
+    console.error('[AudioProvider] Audio error:', {
+      code: error?.code,
+      message: error?.message,
+      src: audio.src?.substring(0, 100),
+      networkState: audio.networkState,
+      readyState: audio.readyState
+    })
 
-    // Reset loading state
+    // Reset loading state but don't show blocking alert
     useAudioStore.getState().pause()
     useAudioStore.setState({ isLoading: false })
 
-    // Show user-friendly error
+    // Log error details for debugging (no blocking alert)
     const errorMessages: Record<number, string> = {
       1: 'Audio loading was aborted',
       2: 'Network error while loading audio',
@@ -53,7 +59,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       4: 'Audio format not supported',
     }
     const message = error ? errorMessages[error.code] || 'Unknown audio error' : 'Audio playback failed'
-    alert(`Audio Error: ${message}. Please try again.`)
+    console.error('[AudioProvider] Error message:', message)
   }
 
   const handleCanPlay = () => {
