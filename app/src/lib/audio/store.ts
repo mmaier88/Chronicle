@@ -226,18 +226,53 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         return { url: data.audio_url, duration: data.duration_seconds || 0 }
       }
 
-      // If streaming, use the stream URL directly
-      // The audio element can handle streaming audio
+      // If streaming, fetch the audio ourselves and create blob URL
+      // This avoids issues with the browser receiving JSON errors
       if (data.status === 'streaming' && data.stream_url) {
-        const streamUrl = data.stream_url
+        console.log('[Audio] Fetching streaming audio from:', data.stream_url)
         const duration = data.duration_seconds || 0
-        set(state => ({
-          audioCache: {
-            ...state.audioCache,
-            [sectionId]: { url: streamUrl, duration, status: 'ready' }
+
+        try {
+          const audioResponse = await fetch(data.stream_url)
+
+          if (!audioResponse.ok) {
+            const errorText = await audioResponse.text()
+            console.error('[Audio] Stream fetch failed:', audioResponse.status, errorText)
+            throw new Error(`Failed to fetch audio: ${audioResponse.status}`)
           }
-        }))
-        return { url: streamUrl, duration }
+
+          // Check content type - if JSON, there's an error
+          const contentType = audioResponse.headers.get('content-type') || ''
+          if (contentType.includes('application/json')) {
+            const errorData = await audioResponse.json()
+            console.error('[Audio] Got JSON instead of audio:', errorData)
+
+            // If generating, poll again
+            if (errorData.status === 'generating') {
+              console.log('[Audio] Audio is generating, waiting...')
+              await new Promise(resolve => setTimeout(resolve, 2000))
+              return get().fetchAudio(sectionId)
+            }
+
+            throw new Error(errorData.error || 'Unexpected response')
+          }
+
+          // Get audio as blob and create object URL
+          const audioBlob = await audioResponse.blob()
+          const blobUrl = URL.createObjectURL(audioBlob)
+          console.log('[Audio] Created blob URL:', blobUrl)
+
+          set(state => ({
+            audioCache: {
+              ...state.audioCache,
+              [sectionId]: { url: blobUrl, duration, status: 'ready' }
+            }
+          }))
+          return { url: blobUrl, duration }
+        } catch (err) {
+          console.error('[Audio] Error fetching stream:', err)
+          throw err
+        }
       }
 
       console.error('[Audio] Unexpected metadata status:', data)
