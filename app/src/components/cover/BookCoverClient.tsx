@@ -45,8 +45,8 @@ export function BookCoverClient({
   }, [bookId])
 
   useEffect(() => {
-    // Poll for cover status if generating
-    if (status === 'generating') {
+    // Poll for cover status if generating or pending (cover may not have started yet)
+    if (status === 'generating' || status === 'pending' || status === null) {
       const interval = setInterval(pollCoverStatus, 3000) // Poll every 3 seconds
       return () => clearInterval(interval)
     }

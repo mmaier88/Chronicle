@@ -53,20 +53,23 @@ const GENRE_FONTS: Record<string, FontStyle> = {
 
 /**
  * SVG text styling by font style
+ * Using server-compatible fonts that work with librsvg/Sharp
+ * DejaVu fonts are commonly available on Linux servers
+ * Generic families are used as final fallbacks
  */
 const FONT_STYLES: Record<FontStyle, { family: string; weight: number; letterSpacing: string }> = {
   serif: {
-    family: 'Georgia, Times New Roman, serif',
+    family: 'DejaVu Serif, Liberation Serif, Times, serif',
     weight: 400,
     letterSpacing: '0.02em',
   },
   sans: {
-    family: 'Helvetica Neue, Arial, sans-serif',
+    family: 'DejaVu Sans, Liberation Sans, Arial, sans-serif',
     weight: 500,
     letterSpacing: '0.05em',
   },
   mono: {
-    family: 'SF Mono, Menlo, monospace',
+    family: 'DejaVu Sans Mono, Liberation Mono, Courier, monospace',
     weight: 400,
     letterSpacing: '0.1em',
   },
@@ -83,6 +86,8 @@ export interface ComposeOptions {
   author?: string
   genre?: string
   textColor?: TextColor
+  /** Skip text overlay entirely (useful when fonts aren't available) */
+  skipText?: boolean
 }
 
 /**
@@ -215,7 +220,7 @@ function escapeXml(text: string): string {
  * The AI model never saw this title.
  */
 export async function composeCover(options: ComposeOptions): Promise<Buffer> {
-  const { imageBuffer, title, author, genre = 'default', textColor: forcedTextColor } = options
+  const { imageBuffer, title, author, genre = 'default', textColor: forcedTextColor, skipText = true } = options
 
   // Resize image to cover dimensions
   const resizedImage = await sharp(imageBuffer)
@@ -224,6 +229,11 @@ export async function composeCover(options: ComposeOptions): Promise<Buffer> {
       position: 'center',
     })
     .toBuffer()
+
+  // Skip text overlay if requested (avoids font rendering issues on servers without fonts)
+  if (skipText) {
+    return sharp(resizedImage).png().toBuffer()
+  }
 
   // Determine text color
   const textColor = forcedTextColor || (await analyzeImageBrightness(resizedImage))

@@ -60,9 +60,11 @@ Flat, even lighting with soft shadows.
 Muted color palette (maximum 3 colors).
 
 Composition:
-- Object occupies approximately 50% of the frame
-- Centered vertically
-- Clear empty space above and below the object
+- IMPORTANT: The object must be LARGE and PROMINENT
+- Object occupies approximately 60-70% of the frame width
+- Object is the dominant visual element - do not make it tiny
+- Centered vertically in the frame
+- Some empty space above and below, but the object should feel substantial
 - No environment or scenery
 - No depth-of-field blur
 
@@ -111,8 +113,10 @@ Background: Seamless ${backgroundColor} backdrop.
 Professional studio lighting, soft and even.
 
 Composition:
+- IMPORTANT: The object must be LARGE and PROMINENT
+- Object occupies approximately 60-70% of the frame width
 - Object centered in frame
-- Clear negative space above and below
+- Some negative space above and below, but object should feel substantial
 - Shot straight-on or with minimal angle
 
 MANDATORY CONSTRAINTS:
