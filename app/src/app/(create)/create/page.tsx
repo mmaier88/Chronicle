@@ -1,4 +1,5 @@
-import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Sparkles } from 'lucide-react'
 import { AudioStoryCard } from '@/components/audio/AudioStoryCard'
@@ -7,8 +8,13 @@ import Image from 'next/image'
 
 export default async function CreateLandingPage() {
   const supabase = await createClient()
-  const serviceClient = createServiceClient()
   const { user } = await getUser()
+
+  // Create service client directly for staff picks (bypasses RLS)
+  const serviceClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   // Fetch user's recent completed books (hide skeletons/in-progress)
   const { data: recentBooks } = await supabase

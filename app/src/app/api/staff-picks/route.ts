@@ -1,4 +1,4 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 export interface StaffPick {
@@ -17,7 +17,16 @@ export interface StaffPick {
  */
 export async function GET() {
   try {
-    const supabase = createServiceClient()
+    // Create client directly with service role to bypass RLS
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !serviceKey) {
+      console.error('[Staff Picks] Missing Supabase config')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey)
 
     // Use the database function that bypasses RLS
     const { data, error } = await supabase.rpc('get_staff_picks', {
@@ -25,8 +34,8 @@ export async function GET() {
     })
 
     if (error) {
-      console.error('[Staff Picks] Database error:', error)
-      return NextResponse.json({ error: 'Failed to load staff picks' }, { status: 500 })
+      console.error('[Staff Picks] Database error:', error.message, error.details, error.hint)
+      return NextResponse.json({ error: 'Failed to load staff picks', details: error.message }, { status: 500 })
     }
 
     const staffPicks: StaffPick[] = (data || []).map((pick: StaffPick) => ({
