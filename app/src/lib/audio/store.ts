@@ -277,11 +277,29 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
           // Get audio as blob and create object URL
           const audioBlob = await audioResponse.blob()
+
+          // Debug: check first few bytes to verify it's actually audio
+          const firstBytes = await audioBlob.slice(0, 20).arrayBuffer()
+          const byteArray = new Uint8Array(firstBytes)
+          const bytesHex = Array.from(byteArray).map(b => b.toString(16).padStart(2, '0')).join(' ')
           console.log('[Audio] Blob info:', {
             size: audioBlob.size,
             type: audioBlob.type,
-            contentType
+            contentType,
+            firstBytes: bytesHex
           })
+
+          // Check if it looks like MP3 (starts with FF FB or ID3)
+          const isMP3 = (byteArray[0] === 0xFF && (byteArray[1] & 0xE0) === 0xE0) ||
+                        (byteArray[0] === 0x49 && byteArray[1] === 0x44 && byteArray[2] === 0x33) // ID3
+          console.log('[Audio] Is MP3:', isMP3)
+
+          if (audioBlob.size < 1000) {
+            // Probably not real audio
+            const text = await audioBlob.text()
+            console.error('[Audio] Blob too small, content:', text.substring(0, 500))
+            throw new Error('Audio response too small - likely an error')
+          }
 
           // Create blob with explicit audio/mpeg type if needed
           const typedBlob = audioBlob.type === 'audio/mpeg'
