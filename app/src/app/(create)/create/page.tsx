@@ -20,19 +20,20 @@ export default async function CreateLandingPage() {
     .order('created_at', { ascending: false })
     .limit(3)
 
-  // Fetch staff picks using direct query (more reliable than RPC)
-  const { data: staffPicks } = await serviceClient
-    .from('books')
-    .select(`
-      id, title, core_question, cover_url, genre, created_at,
-      book_shares!inner(share_token, enabled)
-    `)
-    .eq('is_staff_pick', true)
-    .eq('status', 'final')
-    .not('cover_url', 'is', null)
-    .eq('book_shares.enabled', true)
-    .order('staff_pick_order', { ascending: true })
-    .limit(6)
+  // Fetch staff picks using RPC function
+  const { data: staffPicksRaw, error: staffPicksError } = await serviceClient
+    .rpc('get_staff_picks', { pick_limit: 6 })
+
+  // Debug logging
+  if (staffPicksError) {
+    console.error('[Create Page] Staff picks error:', staffPicksError)
+  }
+
+  // Transform to expected format
+  const staffPicks = (staffPicksRaw || []).map((p: { id: string; title: string; cover_url: string | null; share_token: string }) => ({
+    ...p,
+    book_shares: [{ share_token: p.share_token }]
+  }))
 
   return (
     <div style={{ maxWidth: 800 }}>
