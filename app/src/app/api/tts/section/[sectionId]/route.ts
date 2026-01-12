@@ -203,6 +203,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Set up background caching - this runs after the stream is consumed
     const cachePromise = getBuffer().then(async (buffer) => {
       try {
+        // Validate buffer has actual content
+        if (buffer.length < 1000) {
+          throw new Error(`Audio buffer too small (${buffer.length} bytes) - likely failed generation`)
+        }
+
+        console.log(`[TTS] Uploading ${buffer.length} bytes to storage`)
+
         // Upload to Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from('audio')
