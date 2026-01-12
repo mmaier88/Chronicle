@@ -330,34 +330,12 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
           audioRef.playbackRate = playbackRate
           set({ duration: audio.duration })
 
-          // Wait for audio to be ready
-          await new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('Audio load timeout'))
-            }, 15000) // 15 second timeout
-
-            const handleCanPlay = () => {
-              clearTimeout(timeout)
-              audioRef!.removeEventListener('canplay', handleCanPlay)
-              audioRef!.removeEventListener('error', handleError)
-              resolve()
-            }
-
-            const handleError = () => {
-              clearTimeout(timeout)
-              audioRef!.removeEventListener('canplay', handleCanPlay)
-              audioRef!.removeEventListener('error', handleError)
-              reject(new Error('Audio failed to load'))
-            }
-
-            audioRef!.addEventListener('canplay', handleCanPlay)
-            audioRef!.addEventListener('error', handleError)
-            audioRef!.load()
-          })
-
-          // Seek to saved position if any
+          // Browser auto-loads when src is set
+          // Seek to saved position if any (after a small delay for load to start)
           if (progress > 0) {
-            audioRef.currentTime = progress
+            setTimeout(() => {
+              if (audioRef) audioRef.currentTime = progress
+            }, 100)
           }
         } else {
           console.error('[Audio] Failed to fetch audio - no URL returned')
