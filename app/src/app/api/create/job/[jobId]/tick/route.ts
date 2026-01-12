@@ -827,7 +827,54 @@ export async function POST(
 
     // STEP: Finalize
     if (step === 'finalize') {
-      // Mark book as final (cover generation was already triggered at constitution step)
+      // Check cover status - we MUST have a cover before completing
+      const coverStatus = book.cover_status as string | null
+
+      // If cover is still generating, wait for it
+      if (coverStatus === 'generating' || coverStatus === 'pending') {
+        logger.info('Waiting for cover generation', { bookId: book.id, coverStatus })
+        return NextResponse.json({
+          status: 'running',
+          step: 'finalize',
+          progress: 98,
+          message: 'Waiting for cover to finish generating...'
+        })
+      }
+
+      // If cover failed, retry it before completing
+      if (coverStatus === 'failed' || !coverStatus) {
+        logger.info('Cover failed or missing, triggering regeneration', { bookId: book.id, coverStatus })
+
+        // Trigger cover regeneration
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        try {
+          await fetch(`${baseUrl}/api/cover/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookId: book.id, regenerate: true })
+          })
+        } catch (err) {
+          logger.error('Cover regeneration trigger failed', err, { bookId: book.id })
+        }
+
+        // Update status to generating and wait
+        await supabase
+          .from('books')
+          .update({ cover_status: 'generating' })
+          .eq('id', book.id)
+
+        return NextResponse.json({
+          status: 'running',
+          step: 'finalize',
+          progress: 97,
+          message: 'Regenerating cover...'
+        })
+      }
+
+      // Cover is ready - proceed with finalization
+      logger.info('Cover ready, finalizing book', { bookId: book.id })
+
+      // Mark book as final
       await supabase
         .from('books')
         .update({
