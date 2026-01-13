@@ -39,7 +39,6 @@
     "@capacitor/splash-screen": "^8.0.0",
     "@capacitor/status-bar": "^8.0.0",
     "@elevenlabs/elevenlabs-js": "^2.29.0",
-    "@elevenlabs/react": "^0.13.0",
     "@sendgrid/mail": "^8.1.6",
     "@stripe/stripe-js": "^8.6.1",
     "@supabase/ssr": "^0.8.0",

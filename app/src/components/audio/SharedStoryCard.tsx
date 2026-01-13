@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Clock, Play, Loader2, Headphones } from 'lucide-react'
+import { Clock, Play, Loader2, Headphones, BookOpen } from 'lucide-react'
 import { BookCover } from '@/components/cover/BookCover'
 import { useAudioStore } from '@/lib/audio/store'
 
@@ -25,9 +25,11 @@ export function SharedStoryCard({ story }: SharedStoryCardProps) {
 
   const isCurrentlyPlaying = isVisible && bookId === story.id
 
-  const handleListenClick = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleListenClick = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
 
     if (isCurrentlyPlaying) {
       useAudioStore.getState().setExpanded(true)
@@ -37,7 +39,6 @@ export function SharedStoryCard({ story }: SharedStoryCardProps) {
     setIsLoading(true)
 
     try {
-      // Fetch shared book data
       const res = await fetch(`/api/share/${story.share_token}`)
       if (!res.ok) {
         throw new Error('Failed to fetch book')
@@ -51,7 +52,6 @@ export function SharedStoryCard({ story }: SharedStoryCardProps) {
         return
       }
 
-      // Load into audio store with shared TTS endpoint
       loadBook(
         book.id,
         book.title,
@@ -69,24 +69,30 @@ export function SharedStoryCard({ story }: SharedStoryCardProps) {
     }
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, a')) {
+      return
+    }
+    handleListenClick()
+  }
+
   return (
     <div
       className="app-card"
+      onClick={handleCardClick}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        cursor: 'pointer',
       }}
     >
-      <Link
-        href={`/share/${story.share_token}`}
+      <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '1rem',
           flex: 1,
-          textDecoration: 'none',
-          color: 'inherit',
         }}
       >
         <BookCover
@@ -134,45 +140,73 @@ export function SharedStoryCard({ story }: SharedStoryCardProps) {
             })}
           </p>
         </div>
-      </Link>
+      </div>
 
-      <button
-        onClick={handleListenClick}
-        disabled={isLoading}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.375rem',
-          padding: '0.5rem 0.75rem',
-          borderRadius: 8,
-          background: isCurrentlyPlaying
-            ? 'var(--amber-warm)'
-            : 'rgba(212, 165, 116, 0.1)',
-          color: isCurrentlyPlaying ? 'var(--night-deep)' : 'var(--amber-warm)',
-          fontSize: '0.8125rem',
-          fontWeight: 500,
-          border: 'none',
-          cursor: isLoading ? 'wait' : 'pointer',
-          whiteSpace: 'nowrap',
-          marginLeft: '1rem',
-          transition: 'all 0.2s',
-        }}
-      >
-        {isLoading ? (
-          <Loader2
-            style={{
-              width: 14,
-              height: 14,
-              animation: 'spin 1s linear infinite',
-            }}
-          />
-        ) : isCurrentlyPlaying ? (
-          <Headphones style={{ width: 14, height: 14 }} />
-        ) : (
-          <Play style={{ width: 14, height: 14 }} />
-        )}
-        {isCurrentlyPlaying ? 'Playing' : 'Listen'}
-      </button>
+      {/* Action buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginLeft: '1rem' }}>
+        {/* Listen button */}
+        <button
+          onClick={handleListenClick}
+          disabled={isLoading}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            padding: '0.5rem 0.75rem',
+            borderRadius: 8,
+            background: isCurrentlyPlaying
+              ? 'var(--amber-warm)'
+              : 'rgba(212, 165, 116, 0.1)',
+            color: isCurrentlyPlaying ? 'var(--night-deep)' : 'var(--amber-warm)',
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            border: 'none',
+            cursor: isLoading ? 'wait' : 'pointer',
+            whiteSpace: 'nowrap',
+            transition: 'all 0.2s',
+          }}
+          className="story-card-btn"
+        >
+          {isLoading ? (
+            <Loader2
+              style={{
+                width: 14,
+                height: 14,
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+          ) : isCurrentlyPlaying ? (
+            <Headphones style={{ width: 14, height: 14 }} />
+          ) : (
+            <Play style={{ width: 14, height: 14 }} />
+          )}
+          {isCurrentlyPlaying ? 'Playing' : 'Listen'}
+        </button>
+
+        {/* Read button */}
+        <Link
+          href={`/share/${story.share_token}`}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            padding: '0.5rem 0.75rem',
+            borderRadius: 8,
+            background: 'rgba(212, 165, 116, 0.1)',
+            color: 'var(--amber-warm)',
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+            transition: 'all 0.2s',
+          }}
+          className="story-card-btn"
+        >
+          <BookOpen style={{ width: 14, height: 14 }} />
+          Read
+        </Link>
+      </div>
 
       <style jsx>{`
         @keyframes spin {
@@ -183,9 +217,11 @@ export function SharedStoryCard({ story }: SharedStoryCardProps) {
             transform: rotate(360deg);
           }
         }
-        button:hover:not(:disabled) {
-          background: var(--amber-warm);
-          color: var(--night-deep);
+      `}</style>
+      <style jsx global>{`
+        .story-card-btn:hover:not(:disabled) {
+          background: var(--amber-warm) !important;
+          color: var(--night-deep) !important;
         }
       `}</style>
     </div>

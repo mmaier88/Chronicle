@@ -381,149 +381,6 @@ typography_settings (user_id, font_size, line_height, font_family, theme)
 
 ---
 
-### Phase 14.11: Voice Mode (Audio Path) - STAGING ONLY
-
-**Goal:** Voice-based story creation interface. Users speak instead of type to create their story. Same output, different input modality.
-
-**Status:** In Progress (Staging Only)
-
-#### Core Concept
-
-Voice Mode is an alternative interface to the existing `/create/new` flow. Instead of typing a prompt and selecting options, users have a natural conversation with an AI agent that:
-1. Asks what kind of story they want
-2. Explores their preferences (length, tone, themes)
-3. Confirms the concept
-4. Passes structured data to the existing preview flow
-
-**Route:** `/create/audio` → speaks with ElevenLabs agent → redirects to `/create/preview`
-
-#### ElevenLabs Integration
-
-**SDK:** `@elevenlabs/react` with `useConversation` hook
-**Connection:** WebRTC for low-latency real-time audio
-**Authentication:** Signed URLs from `/api/voice/signed-url`
-
-#### Agent Configuration (ElevenLabs Dashboard)
-
-**System Prompt:**
-```
-You are Chronicle's story guide. Your job is to help users discover and articulate the story they want to read.
-
-CONVERSATION FLOW:
-1. Greet warmly and ask what kind of story they're in the mood for
-2. Listen and reflect back what you heard, adding creative flourishes
-3. Ask about length preference (short story ~30 pages, novella ~60, novel ~120, epic ~300)
-4. Gently explore tone/mood preferences (hopeful vs tragic, high vs low violence, romantic elements)
-5. Summarize the concept back to them for confirmation
-6. When confirmed, call the `createStoryPreview` tool with extracted data
-
-PERSONALITY:
-- Warm, curious, literary
-- Never clinical or transactional
-- Speak like a thoughtful friend who loves books
-- Keep responses concise (2-3 sentences max unless elaborating on their idea)
-- Use "we" language ("Let's explore...", "We could take this...")
-
-CONSTRAINTS:
-- Only gather story information, never discuss Chronicle features/pricing
-- If they ask off-topic questions, gently redirect to their story
-- Minimum viable data: prompt (their story idea as a sentence or two)
-- Default length: 30 pages if not specified
-- Default preferences: "auto" for all sliders if not discussed
-```
-
-**Voice:** Aurora (warm, expressive female voice) or Marcus (deep, engaging male voice)
-
-**Client Tool - `createStoryPreview`:**
-```typescript
-{
-  name: "createStoryPreview",
-  description: "Called when user confirms their story concept. Creates the preview.",
-  parameters: {
-    prompt: { type: "string", description: "1-5 sentence story concept" },
-    length: { type: "number", enum: [30, 60, 120, 300], description: "Target page count" },
-    tone: { type: "string", enum: ["auto", "hopeful", "bittersweet", "tragic"], optional: true },
-    violence: { type: "string", enum: ["auto", "minimal", "balanced", "extreme"], optional: true },
-    romance: { type: "string", enum: ["auto", "minimal", "balanced", "extreme"], optional: true }
-  }
-}
-```
-
-#### Implementation Tasks
-
-| Task | Priority | Status |
-|------|----------|--------|
-| Create ElevenLabs agent in dashboard | High | Planned |
-| Configure agent system prompt and tools | High | Planned |
-| Install `@elevenlabs/react` package | High | Planned |
-| Create `/api/voice/signed-url` endpoint | High | Planned |
-| Create `/create/audio` page with voice UI | High | Planned |
-| Implement `createStoryPreview` client tool | High | Planned |
-| Add microphone permission flow | High | Planned |
-| Handle conversation-to-preview data flow | High | Planned |
-| Add visual feedback (speaking/listening states) | Medium | Planned |
-| Add fallback for browsers without mic support | Medium | Planned |
-| Test on staging environment | High | Planned |
-| Add link from `/create` page (staging only) | High | Planned |
-
-#### Technical Implementation
-
-**Frontend (`/create/audio/page.tsx`):**
-```typescript
-// Core flow
-1. Request microphone permission
-2. Get signed URL from /api/voice/signed-url
-3. Start ElevenLabs conversation with agentId
-4. Listen for `createStoryPreview` client tool call
-5. When called: store data in localStorage, redirect to /create/preview
-```
-
-**Backend (`/api/voice/signed-url/route.ts`):**
-```typescript
-// Generate signed URL for authenticated conversation
-1. Verify user is authenticated
-2. Call ElevenLabs API to generate signed URL
-3. Return URL with short TTL
-```
-
-**Environment Variables:**
-```
-ELEVENLABS_API_KEY          # Already exists
-ELEVENLABS_AGENT_ID         # New: Agent ID from dashboard
-```
-
-#### UI Design
-
-**States:**
-1. **Idle** - "Tap to start talking" button
-2. **Connecting** - Loading spinner
-3. **Listening** - Pulsing microphone, "I'm listening..."
-4. **Speaking** - Audio waveform, agent's words displayed
-5. **Processing** - "Creating your preview..." then redirect
-
-**Visual Style:**
-- Full-screen dark background
-- Central floating orb that pulses with audio
-- Minimal text, maximum voice interaction
-- Matches Chronicle's warm night aesthetic
-
-#### Acceptance Tests
-
-1. User grants mic permission → conversation starts
-2. User describes story → agent reflects and asks follow-ups
-3. User confirms concept → redirects to preview with correct data
-4. User denies mic → shows fallback to text input
-5. Connection drops → graceful error with retry option
-
-#### Notes
-
-- **Staging only**: Feature flag `NEXT_PUBLIC_VOICE_MODE_ENABLED=true` on staging
-- **Same backend**: No engine changes needed, just a new input interface
-- **Cost tracking**: ElevenLabs Conversational AI charged per minute
-- **Privacy**: Audio is processed by ElevenLabs, not stored by Chronicle
-
----
-
 ### Phase 15: Discovery & Public Library
 
 **Goal:** Transform Chronicle from a creation tool into a content network. Users should be able to browse and discover stories, not just create them.
@@ -861,11 +718,9 @@ ANTHROPIC_API_KEY             # Claude API key
 ```
 GOOGLE_API_KEY                # Cover generation (Gemini)
 ELEVENLABS_API_KEY            # Text-to-speech
-ELEVENLABS_AGENT_ID           # Voice Mode agent ID (Conversational AI)
 SENDGRID_API_KEY              # Transactional emails
 VOYAGE_API_KEY                # Embeddings for semantic search
 NEXT_PUBLIC_APP_URL           # Production URL (https://chronicle.town)
-NEXT_PUBLIC_VOICE_MODE_ENABLED # Enable voice mode (staging only)
 ```
 
 **Security:**
@@ -921,16 +776,6 @@ ANTHROPIC_API_KEY
 ---
 
 ## Changelog
-
-### 2026-01-13
-- **Phase 14.11 started: Voice Mode (Audio Path)**
-  - Voice-based story creation using ElevenLabs Conversational AI
-  - New route `/create/audio` with voice interface
-  - Backend endpoint `/api/voice/signed-url` for authenticated WebSocket connections
-  - Installed `@elevenlabs/react` SDK for conversation management
-  - Feature flag `NEXT_PUBLIC_VOICE_MODE_ENABLED` for staging-only deployment
-  - Voice link added to `/create/new` page (visible on staging)
-  - **Requires**: ElevenLabs agent creation in dashboard + `ELEVENLABS_AGENT_ID` env var
 
 ### 2026-01-09
 - **Phase 14.10 complete: Chronicle Reader V1**
