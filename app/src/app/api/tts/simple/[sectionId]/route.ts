@@ -155,7 +155,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
         body: JSON.stringify({
           text: fullText,
-          model_id: 'eleven_turbo_v2_5',
+          model_id: 'eleven_multilingual_v2',
           output_format: 'mp3_44100_128',
         }),
       }

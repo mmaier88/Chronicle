@@ -81,7 +81,7 @@ export async function generateSpeech(
 
   const audioStream = await getClient().textToSpeech.convert(voiceId, {
     text: cleanText,
-    modelId: "eleven_turbo_v2_5", // Fast, cost-effective model
+    modelId: "eleven_multilingual_v2", // Standard model - better value
     outputFormat: "mp3_44100_128", // High quality MP3
     voiceSettings: {
       stability: 0.5,
@@ -200,7 +200,7 @@ export async function streamSpeech(
 
   const audioStream = await getClient().textToSpeech.convert(voiceId, {
     text: cleanText,
-    modelId: "eleven_turbo_v2_5",
+    modelId: "eleven_multilingual_v2",
     outputFormat: "mp3_44100_128",
     voiceSettings: {
       stability: 0.5,
@@ -299,7 +299,7 @@ async function streamSpeechChunked(
       try {
         const audioStream = await getClient().textToSpeech.convert(voiceId, {
           text: textChunks[chunkIndex],
-          modelId: "eleven_turbo_v2_5",
+          modelId: "eleven_multilingual_v2",
           outputFormat: "mp3_44100_128",
           voiceSettings: {
             stability: 0.5,
