@@ -33,10 +33,11 @@ export default async function CreateLandingPage() {
       id,
       title,
       cover_url,
-      book_shares!inner (share_token)
+      book_shares!inner(share_token)
     `)
     .eq('is_staff_pick', true)
     .eq('status', 'final')
+    .not('cover_url', 'is', null)
     .order('staff_pick_order', { ascending: true })
     .order('created_at', { ascending: false })
     .limit(6)
