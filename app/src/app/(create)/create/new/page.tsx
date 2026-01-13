@@ -2,13 +2,17 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Loader2, Shuffle } from 'lucide-react'
+import Link from 'next/link'
+import { Sparkles, Loader2, Shuffle, Mic } from 'lucide-react'
 import { BookGenre, StorySliders, DEFAULT_SLIDERS } from '@/types/chronicle'
 import { StorySliders as StorySlidersComponent } from '@/components/create/StorySliders'
 import { api } from '@/lib/api-client'
 
 // Only literary fiction for now
 const DEFAULT_GENRE: BookGenre = 'literary_fiction'
+
+// Voice mode feature flag (staging only)
+const VOICE_MODE_ENABLED = process.env.NEXT_PUBLIC_VOICE_MODE_ENABLED === 'true'
 
 // Book length options
 type BookLength = 30 | 60 | 120 | 300
@@ -86,6 +90,27 @@ export default function CreateNewPage() {
         <p className="app-body" style={{ opacity: 0.7 }}>
           Share what you&apos;re drawn to. We&apos;ll craft the rest.
         </p>
+
+        {/* Voice mode link (staging only) */}
+        {VOICE_MODE_ENABLED && (
+          <Link
+            href="/create/audio"
+            className="app-nav-link"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              marginTop: '1rem',
+              padding: '0.5rem 1rem',
+              background: 'rgba(212, 165, 116, 0.1)',
+              borderRadius: 8,
+              border: '1px solid rgba(212, 165, 116, 0.2)',
+            }}
+          >
+            <Mic style={{ width: 16, height: 16 }} />
+            Or speak your story instead
+          </Link>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
