@@ -214,7 +214,7 @@ describe('Audio Store', () => {
         json: async () => ({ status: 'streaming', duration_seconds: 60 })
       })
 
-      // Mock simple endpoint response with valid MP3
+      // Mock stream endpoint response with valid MP3
       mockFetch.mockResolvedValueOnce({
         ok: true,
         headers: new Headers({ 'content-type': 'audio/mpeg' }),
@@ -225,8 +225,8 @@ describe('Audio Store', () => {
       const result = await fetchAudio('section-1')
 
       expect(result).not.toBeNull()
-      // Verify simple endpoint was called
-      expect(mockFetch).toHaveBeenLastCalledWith('/api/tts/simple/section-1')
+      // Verify the configured endpoint was called (not hardcoded simple endpoint)
+      expect(mockFetch).toHaveBeenLastCalledWith('/api/tts/section/section-1')
     })
 
     it('sets error status in cache when fetch fails', async () => {
@@ -238,6 +238,38 @@ describe('Audio Store', () => {
       expect(result).toBeNull()
       const state = useAudioStore.getState()
       expect(state.audioCache['section-1'].status).toBe('error')
+    })
+
+    it('uses custom endpoint for shared audio (not hardcoded simple endpoint)', async () => {
+      // This test ensures shared audio uses the correct endpoint
+      // Bug fix: previously fell back to /api/tts/simple/ which requires ownership
+      const sharedToken = 'abc123'
+      const sharedEndpoint = (id: string) => `/api/tts/shared/${sharedToken}/section/${id}`
+
+      useAudioStore.setState({
+        sections: [mockSection],
+        getAudioEndpoint: sharedEndpoint,
+      })
+
+      // Mock metadata response indicating streaming is needed
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: 'streaming', duration_seconds: 60 })
+      })
+
+      // Mock the stream response - will fail but we just want to verify the URL
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        text: async () => 'Test error'
+      })
+
+      const { fetchAudio } = useAudioStore.getState()
+      await fetchAudio('section-1')
+
+      // Verify the shared endpoint was called, NOT /api/tts/simple/
+      const calls = mockFetch.mock.calls
+      expect(calls[0][0]).toBe('/api/tts/shared/abc123/section/section-1?metadata=true')
+      expect(calls[1][0]).toBe('/api/tts/shared/abc123/section/section-1')
     })
 
     it.skip('rejects small/empty audio blobs (browser only)', async () => {
