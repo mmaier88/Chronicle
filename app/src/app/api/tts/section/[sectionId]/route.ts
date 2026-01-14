@@ -196,6 +196,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }, { status: 202 })
   }
 
+  // Clean up any failed records before creating new one
+  // (failed records block new inserts due to unique constraint)
+  await supabase
+    .from('section_audio')
+    .delete()
+    .eq('section_id', sectionId)
+    .eq('content_hash', contentHash)
+    .eq('status', 'failed')
+
   // Create generating record
   const { data: audioRecord, error: insertError } = await supabase
     .from('section_audio')
