@@ -159,8 +159,8 @@ export function FullScreenPlayer() {
         <div
           style={{
             width: '100%',
-            maxWidth: 320,
-            aspectRatio: '1',
+            maxWidth: 280,
+            aspectRatio: '2 / 3',
             borderRadius: 16,
             background: coverUrl
               ? `url(${coverUrl}) center/cover`

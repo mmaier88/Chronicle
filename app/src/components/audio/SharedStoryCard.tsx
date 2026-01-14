@@ -55,7 +55,7 @@ export function SharedStoryCard({ story }: SharedStoryCardProps) {
       loadBook(
         book.id,
         book.title,
-        book.coverUrl,
+        book.cover_url,
         sections,
         (sectionId: string) => `/api/tts/shared/${story.share_token}/section/${sectionId}`
       )
