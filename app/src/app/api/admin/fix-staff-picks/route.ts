@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     // Create new share link
     const shareToken = crypto.randomBytes(16).toString('hex')
 
-    // Staff picks don't expire
+    // Create share record
     const { data: newShare, error: createError } = await supabase
       .from('book_shares')
       .insert({
@@ -58,7 +58,6 @@ export async function POST(request: Request) {
         share_token: shareToken,
         enabled: true,
         view_count: 0,
-        expires_at: null, // No expiration for staff picks
       })
       .select('id, share_token')
       .single()

@@ -61,11 +61,7 @@ export async function POST(request: Request) {
     // Generate new share token
     const shareToken = crypto.randomBytes(16).toString('hex')
 
-    // Set expiration to 90 days from now
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + 90)
-
-    // Create share record
+    // Create share record (no expiration - shares are permanent until disabled)
     const { data: newShare, error: createError } = await supabase
       .from('book_shares')
       .insert({
@@ -73,9 +69,8 @@ export async function POST(request: Request) {
         share_token: shareToken,
         enabled: true,
         view_count: 0,
-        expires_at: expiresAt.toISOString(),
       })
-      .select('id, share_token, created_at, expires_at')
+      .select('id, share_token, created_at')
       .single()
 
     if (createError) {
@@ -89,7 +84,6 @@ export async function POST(request: Request) {
       shareUrl: `${baseUrl}/share/${newShare.share_token}`,
       viewCount: 0,
       createdAt: newShare.created_at,
-      expiresAt: newShare.expires_at,
       isNew: true,
     })
   } catch (error) {

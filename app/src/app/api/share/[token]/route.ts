@@ -14,14 +14,15 @@ export async function GET(
 
     const supabase = createServiceClient()
 
-    // First check if share exists and is not expired
+    // First check if share exists and is enabled
     const { data: share, error: shareError } = await supabase
       .from('book_shares')
-      .select('id, enabled, expires_at')
+      .select('id, enabled')
       .eq('share_token', token)
       .single()
 
     if (shareError || !share) {
+      console.error('[Share] Share not found:', token, shareError?.message)
       return NextResponse.json(
         { error: 'Share link not found' },
         { status: 404 }
@@ -32,14 +33,6 @@ export async function GET(
       return NextResponse.json(
         { error: 'Share link has been disabled' },
         { status: 403 }
-      )
-    }
-
-    // Check expiration
-    if (share.expires_at && new Date(share.expires_at) < new Date()) {
-      return NextResponse.json(
-        { error: 'Share link has expired' },
-        { status: 410 }
       )
     }
 
@@ -85,6 +78,14 @@ export async function GET(
         { status: 500 }
       )
     }
+
+    // Track share view analytics (fire and forget)
+    void supabase.from('share_analytics').insert({
+      share_id: share.id,
+      event_type: 'view',
+      user_agent: request.headers.get('user-agent')?.slice(0, 255) || null,
+      referrer: request.headers.get('referer')?.slice(0, 255) || null,
+    })  // Ignore errors - analytics shouldn't block response
 
     return NextResponse.json({
       book,
