@@ -20,10 +20,19 @@ const {
  * - updated_at is older than STALE_TIMEOUT_MINUTES
  * - auto_resume_attempts < MAX_AUTO_RESUME_ATTEMPTS
  */
+// Clean env var value - remove quotes, trailing \n literal, and whitespace
+function cleanEnvValue(value: string | undefined): string | undefined {
+  if (!value) return value
+  return value
+    .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+    .replace(/\\n$/g, '')          // Remove literal \n at end
+    .trim()
+}
+
 export async function POST(request: NextRequest) {
-  // Verify cron secret - trim to handle env vars with trailing newlines
-  const cronSecret = (request.headers.get('x-cron-secret') || request.headers.get('authorization')?.replace('Bearer ', ''))?.trim()
-  const expectedSecret = process.env.CRON_SECRET?.trim()
+  // Verify cron secret - clean env vars that may have trailing \n or quotes
+  const cronSecret = cleanEnvValue(request.headers.get('x-cron-secret') || request.headers.get('authorization')?.replace('Bearer ', ''))
+  const expectedSecret = cleanEnvValue(process.env.CRON_SECRET)
 
   if (!cronSecret || cronSecret !== expectedSecret) {
     console.log('[AutoResume] Unauthorized - invalid cron secret', {

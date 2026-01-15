@@ -516,9 +516,10 @@ export async function POST(
   const { jobId } = await params
 
   // Check for cron-based auto-resume authentication
-  // Trim secrets to handle env vars with trailing newlines
-  const cronSecret = request.headers.get('x-cron-secret')?.trim()
-  const expectedSecret = process.env.CRON_SECRET?.trim()
+  // Clean env vars that may have trailing \n literal or quotes
+  const cleanEnvValue = (v: string | null | undefined) => v?.replace(/^["']|["']$/g, '').replace(/\\n$/g, '').trim()
+  const cronSecret = cleanEnvValue(request.headers.get('x-cron-secret'))
+  const expectedSecret = cleanEnvValue(process.env.CRON_SECRET)
   const isAutoResume = request.headers.get('x-auto-resume') === 'true'
   const cronUserId = request.headers.get('x-user-id')
 
