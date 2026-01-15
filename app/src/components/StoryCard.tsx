@@ -22,7 +22,7 @@ interface StoryCardProps {
 export function StoryCard({ story }: StoryCardProps) {
   return (
     <Link
-      href={`/create/read/${story.id}`}
+      href={`/create/reader/${story.id}`}
       className="app-card"
       style={{
         display: 'flex',

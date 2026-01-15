@@ -149,7 +149,7 @@ export default async function VibeReadPage({
         {/* Reader Mode */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
           <Link
-            href={`/reader/${book.id}`}
+            href={`/create/reader/${book.id}`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',

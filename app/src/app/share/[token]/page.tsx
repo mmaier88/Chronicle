@@ -66,7 +66,14 @@ export default async function SharedBookPage({
   )
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: '2rem 1rem' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#0F172A',
+        color: '#B8C4D9',
+      }}
+    >
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '2rem 1rem' }}>
       {/* Book Header */}
       <header
         style={{
@@ -97,7 +104,7 @@ export default async function SharedBookPage({
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            color: 'var(--moon-soft)',
+            color: '#B8C4D9',
             fontSize: '0.875rem',
             marginBottom: '1rem',
           }}
@@ -115,7 +122,7 @@ export default async function SharedBookPage({
           <p
             style={{
               fontSize: '1.25rem',
-              color: 'var(--moon-soft)',
+              color: '#B8C4D9',
               lineHeight: 1.6,
               fontStyle: 'italic',
               opacity: 0.8,
@@ -131,7 +138,7 @@ export default async function SharedBookPage({
             gap: '1.5rem',
             marginTop: '2rem',
             fontSize: '0.875rem',
-            color: 'var(--moon-soft)',
+            color: '#B8C4D9',
             opacity: 0.7,
           }}
         >
@@ -162,7 +169,7 @@ export default async function SharedBookPage({
                   alignItems: 'baseline',
                   gap: '1rem',
                   padding: '0.5rem 0',
-                  color: 'var(--moon-soft)',
+                  color: '#B8C4D9',
                   textDecoration: 'none',
                   transition: 'color 0.2s',
                 }}
@@ -170,7 +177,7 @@ export default async function SharedBookPage({
                 <span
                   style={{
                     fontSize: '0.875rem',
-                    color: 'var(--amber-warm)',
+                    color: '#D4A574',
                     fontWeight: 500,
                     width: 32,
                     opacity: 0.6,
@@ -225,7 +232,7 @@ export default async function SharedBookPage({
                     {section.content_text ? (
                       <div
                         style={{
-                          color: 'var(--moon-mid)',
+                          color: '#94A3B8',
                           lineHeight: 1.8,
                           fontSize: '1.125rem',
                           fontFamily: 'var(--font-serif)',
@@ -235,7 +242,7 @@ export default async function SharedBookPage({
                     ) : (
                       <div
                         style={{
-                          color: 'var(--moon-mid)',
+                          color: '#94A3B8',
                           lineHeight: 1.8,
                           fontSize: '1.125rem',
                           fontFamily: 'var(--font-serif)',
@@ -243,7 +250,7 @@ export default async function SharedBookPage({
                       >
                         <span
                           style={{
-                            color: 'var(--moon-soft)',
+                            color: '#B8C4D9',
                             fontStyle: 'italic',
                             opacity: 0.5,
                           }}
@@ -264,13 +271,13 @@ export default async function SharedBookPage({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      color: 'var(--amber-warm)',
+                      color: '#D4A574',
                       opacity: 0.3,
                     }}
                   >
-                    <span style={{ width: 32, height: 1, background: 'var(--amber-warm)' }} />
+                    <span style={{ width: 32, height: 1, background: '#D4A574' }} />
                     <span style={{ fontSize: '1.125rem' }}>✦</span>
-                    <span style={{ width: 32, height: 1, background: 'var(--amber-warm)' }} />
+                    <span style={{ width: 32, height: 1, background: '#D4A574' }} />
                   </div>
                 </div>
               )}
@@ -292,7 +299,7 @@ export default async function SharedBookPage({
           style={{
             fontFamily: 'var(--font-serif)',
             fontSize: '1.5rem',
-            color: 'var(--amber-warm)',
+            color: '#D4A574',
             fontStyle: 'italic',
             marginBottom: '1.5rem',
             opacity: 0.6,
@@ -306,7 +313,7 @@ export default async function SharedBookPage({
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
-            color: 'var(--amber-warm)',
+            color: '#D4A574',
             marginBottom: '2rem',
           }}
         >
@@ -318,6 +325,7 @@ export default async function SharedBookPage({
           <span style={{ color: 'var(--night-deep)' }}>→</span>
         </Link>
       </footer>
+      </div>
     </div>
   )
 }
