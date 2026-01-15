@@ -1,20 +1,22 @@
 'use client'
 
 import { useEffect } from 'react'
-import { initializeNativeApp, isNative, platform } from '@/lib/native'
+import { initializeNativeApp } from '@/lib/native'
 
 export function NativeInit() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Initialize native app
-    initializeNativeApp()
-
-    // Add platform class to body for platform-specific styling
-    if (isNative) {
-      document.body.classList.add('native-app')
-      document.body.classList.add(`platform-${platform}`)
-    }
+    // Initialize native app (handles platform detection internally)
+    initializeNativeApp().then(() => {
+      // Add platform class to body for platform-specific styling after detection
+      // Check if Capacitor is available on window (injected by native shell)
+      const capacitor = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string } }).Capacitor
+      if (capacitor?.isNativePlatform?.()) {
+        document.body.classList.add('native-app')
+        document.body.classList.add(`platform-${capacitor.getPlatform?.() || 'unknown'}`)
+      }
+    })
 
     // Handle app state changes (iOS/Android)
     const handleVisibilityChange = () => {

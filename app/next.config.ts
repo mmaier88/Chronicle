@@ -6,7 +6,31 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Optimize imports for large packages - tree-shakes unused exports
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@supabase/supabase-js',
+      '@supabase/ssr',
+      'zustand',
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+      '@tiptap/pm',
+      '@stripe/stripe-js',
+    ],
+  },
+
+  // Enable compression
+  compress: true,
+
+  // Optimize images
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+  },
+
+  // Reduce powered-by header
+  poweredByHeader: false,
 };
 
 // Sentry configuration

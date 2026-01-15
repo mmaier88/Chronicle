@@ -22,7 +22,7 @@ export default async function BooksPage() {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 className="app-heading-1">Remix</h1>
+        <h1 className="app-heading-1">Editor</h1>
         <p className="app-body" style={{ marginTop: '0.25rem', opacity: 0.7 }}>
           Edit and republish your stories
         </p>

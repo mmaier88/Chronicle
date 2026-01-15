@@ -3,20 +3,43 @@
  *
  * Provides access to native device features via Capacitor.
  * Falls back gracefully when running in browser.
+ *
+ * PERFORMANCE: All Capacitor imports are dynamic to avoid loading
+ * native code for web users.
  */
 
-import { Capacitor } from '@capacitor/core'
+// Lazy-loaded platform detection to avoid bundling Capacitor for web users
+let _isNative: boolean | null = null
+let _platform: string | null = null
 
-// Check if running in native app
-export const isNative = Capacitor.isNativePlatform()
-export const platform = Capacitor.getPlatform() // 'ios' | 'android' | 'web'
+async function detectPlatform() {
+  if (_isNative !== null) return { isNative: _isNative, platform: _platform! }
+
+  try {
+    const { Capacitor } = await import('@capacitor/core')
+    _isNative = Capacitor.isNativePlatform()
+    _platform = Capacitor.getPlatform()
+  } catch {
+    _isNative = false
+    _platform = 'web'
+  }
+
+  return { isNative: _isNative, platform: _platform }
+}
+
+// Synchronous check - returns cached value or false if not yet detected
+export const isNative = typeof window !== 'undefined' &&
+  (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.() || false
+export const platform = typeof window !== 'undefined' &&
+  (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() || 'web'
 
 /**
  * Initialize native app
  * Call this once on app startup
  */
 export async function initializeNativeApp() {
-  if (!isNative) return
+  const { isNative: native, platform: plat } = await detectPlatform()
+  if (!native) return
 
   try {
     // Initialize splash screen
@@ -26,7 +49,7 @@ export async function initializeNativeApp() {
     // Configure status bar
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     await StatusBar.setStyle({ style: Style.Dark })
-    if (platform === 'android') {
+    if (plat === 'android') {
       await StatusBar.setBackgroundColor({ color: '#0a0f18' })
     }
 
@@ -39,7 +62,7 @@ export async function initializeNativeApp() {
       document.body.classList.remove('keyboard-open')
     })
 
-    console.log('[Native] App initialized on', platform)
+    console.log('[Native] App initialized on', plat)
   } catch (error) {
     console.error('[Native] Initialization error:', error)
   }
@@ -49,7 +72,8 @@ export async function initializeNativeApp() {
  * Request push notification permissions
  */
 export async function requestPushPermission(): Promise<boolean> {
-  if (!isNative) return false
+  const { isNative: native } = await detectPlatform()
+  if (!native) return false
 
   try {
     const { PushNotifications } = await import('@capacitor/push-notifications')
@@ -74,7 +98,8 @@ export async function showLocalNotification(
   body: string,
   data?: Record<string, string>
 ) {
-  if (!isNative) {
+  const { isNative: native } = await detectPlatform()
+  if (!native) {
     // Fall back to web notifications
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(title, { body })
@@ -103,7 +128,8 @@ export async function showLocalNotification(
  * Trigger haptic feedback
  */
 export async function hapticFeedback(type: 'light' | 'medium' | 'heavy' = 'medium') {
-  if (!isNative) return
+  const { isNative: native } = await detectPlatform()
+  if (!native) return
 
   try {
     const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
@@ -148,7 +174,8 @@ export async function saveFile(
   filename: string,
   directory: 'Documents' | 'Cache' = 'Documents'
 ): Promise<string | null> {
-  if (!isNative) {
+  const { isNative: native } = await detectPlatform()
+  if (!native) {
     // Web fallback: trigger download
     const url = URL.createObjectURL(data)
     const a = document.createElement('a')
@@ -196,7 +223,8 @@ export async function fileExists(
   filename: string,
   directory: 'Documents' | 'Cache' = 'Cache'
 ): Promise<boolean> {
-  if (!isNative) return false
+  const { isNative: native } = await detectPlatform()
+  if (!native) return false
 
   try {
     const { Filesystem, Directory } = await import('@capacitor/filesystem')
@@ -219,7 +247,8 @@ export async function readFile(
   filename: string,
   directory: 'Documents' | 'Cache' = 'Cache'
 ): Promise<string | null> {
-  if (!isNative) return null
+  const { isNative: native } = await detectPlatform()
+  if (!native) return null
 
   try {
     const { Filesystem, Directory } = await import('@capacitor/filesystem')
@@ -243,7 +272,8 @@ export async function deleteFile(
   filename: string,
   directory: 'Documents' | 'Cache' = 'Cache'
 ): Promise<boolean> {
-  if (!isNative) return false
+  const { isNative: native } = await detectPlatform()
+  if (!native) return false
 
   try {
     const { Filesystem, Directory } = await import('@capacitor/filesystem')
