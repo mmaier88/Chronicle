@@ -615,7 +615,11 @@ export async function POST(
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       fetch(`${baseUrl}/api/cover/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cron-secret': process.env.CRON_SECRET || '',
+          'x-user-id': effectiveUserId
+        },
         body: JSON.stringify({ bookId: book.id })
       }).catch(err => {
         logger.error('Cover generation trigger failed', err, { bookId: book.id, operation: 'cover_trigger' })
@@ -848,12 +852,16 @@ export async function POST(
       if (coverStatus === 'failed' || !coverStatus) {
         logger.info('Cover failed or missing, triggering regeneration', { bookId: book.id, coverStatus })
 
-        // Trigger cover regeneration
+        // Trigger cover regeneration with service auth
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
         try {
           await fetch(`${baseUrl}/api/cover/generate`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-cron-secret': process.env.CRON_SECRET || '',
+              'x-user-id': effectiveUserId
+            },
             body: JSON.stringify({ bookId: book.id, regenerate: true })
           })
         } catch (err) {

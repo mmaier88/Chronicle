@@ -20,20 +20,51 @@ import {
   coverGenerateSchema,
 } from '@/lib/api-utils'
 
+// Clean env var value - remove quotes, trailing \n literal, and whitespace
+const cleanEnvValue = (v: string | null | undefined) =>
+  v?.replace(/^["']|["']$/g, '').replace(/\\n$/g, '').trim()
+
 export async function POST(request: Request) {
   try {
-    const { user } = await getUser()
-    if (!user) {
-      return ApiErrors.unauthorized()
-    }
+    const supabase = createServiceClient()
 
-    // Rate limit per user
-    const rateLimit = checkRateLimit(`cover:${user.id}`, RATE_LIMITS.cover)
-    if (!rateLimit.success) {
-      return NextResponse.json(
-        { success: false, error: 'Rate limit exceeded. Please wait before generating more covers.' },
-        { status: 429, headers: rateLimitHeaders(rateLimit) }
-      )
+    // Check for service-level auth (internal calls from tick endpoint)
+    const cronSecret = cleanEnvValue(request.headers.get('x-cron-secret'))
+    const expectedSecret = cleanEnvValue(process.env.CRON_SECRET)
+    const serviceUserId = request.headers.get('x-user-id')
+
+    const isServiceAuth = cronSecret && expectedSecret && cronSecret === expectedSecret && serviceUserId
+
+    // Get user - either from session or service auth
+    let effectiveUserId: string
+    let userDisplayName: string | undefined
+
+    if (isServiceAuth) {
+      // Service-level auth for internal calls
+      effectiveUserId = serviceUserId
+
+      // Look up user info for author name
+      const { data: userData } = await supabase.auth.admin.getUserById(effectiveUserId)
+      userDisplayName = userData?.user?.user_metadata?.full_name || userData?.user?.email?.split('@')[0]
+
+      logger.info('Cover generation: service auth', { userId: effectiveUserId })
+    } else {
+      // Regular user auth
+      const { user } = await getUser()
+      if (!user) {
+        return ApiErrors.unauthorized()
+      }
+      effectiveUserId = user.id
+      userDisplayName = user.user_metadata?.full_name || user.email?.split('@')[0]
+
+      // Rate limit per user (skip for service auth - internal calls are controlled)
+      const rateLimit = checkRateLimit(`cover:${user.id}`, RATE_LIMITS.cover)
+      if (!rateLimit.success) {
+        return NextResponse.json(
+          { success: false, error: 'Rate limit exceeded. Please wait before generating more covers.' },
+          { status: 429, headers: rateLimitHeaders(rateLimit) }
+        )
+      }
     }
 
     // Validate request body
@@ -41,8 +72,6 @@ export async function POST(request: Request) {
     if (isApiError(validated)) return validated
 
     const { bookId, regenerate } = validated
-
-    const supabase = createServiceClient()
 
     // Get book with preview data from vibe_jobs
     const { data: book, error: bookError } = await supabase
@@ -55,8 +84,8 @@ export async function POST(request: Request) {
       return ApiErrors.notFound('Book')
     }
 
-    // Verify ownership
-    if (book.owner_id !== user.id) {
+    // Verify ownership (service auth bypasses this since it's internal)
+    if (!isServiceAuth && book.owner_id !== effectiveUserId) {
       return ApiErrors.forbidden()
     }
 
@@ -103,7 +132,7 @@ export async function POST(request: Request) {
         result = await regenerateCover(
           book.cover_concept as Concept,
           book.title,
-          user.user_metadata?.full_name || user.email?.split('@')[0],
+          userDisplayName,
           book.genre
         )
       } else {
@@ -114,7 +143,7 @@ export async function POST(request: Request) {
           genre: book.genre,
           mood: preview?.promise?.[0], // Use first promise as mood hint
           title: book.title,
-          author: user.user_metadata?.full_name || user.email?.split('@')[0],
+          author: userDisplayName,
         })
       }
 
@@ -123,7 +152,7 @@ export async function POST(request: Request) {
       }
 
       // Upload to Supabase Storage (WebP for better compression)
-      const storagePath = `${user.id}/${bookId}/cover.webp`
+      const storagePath = `${effectiveUserId}/${bookId}/cover.webp`
 
       const { error: uploadError } = await supabase.storage
         .from('covers')
