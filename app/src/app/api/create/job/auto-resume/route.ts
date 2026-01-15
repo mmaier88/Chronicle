@@ -21,11 +21,17 @@ const {
  * - auto_resume_attempts < MAX_AUTO_RESUME_ATTEMPTS
  */
 export async function POST(request: NextRequest) {
-  // Verify cron secret
-  const cronSecret = request.headers.get('x-cron-secret') || request.headers.get('authorization')?.replace('Bearer ', '')
+  // Verify cron secret - trim to handle env vars with trailing newlines
+  const cronSecret = (request.headers.get('x-cron-secret') || request.headers.get('authorization')?.replace('Bearer ', ''))?.trim()
+  const expectedSecret = process.env.CRON_SECRET?.trim()
 
-  if (cronSecret !== process.env.CRON_SECRET) {
-    console.log('[AutoResume] Unauthorized - invalid cron secret')
+  if (!cronSecret || cronSecret !== expectedSecret) {
+    console.log('[AutoResume] Unauthorized - invalid cron secret', {
+      provided: cronSecret?.substring(0, 10) + '...',
+      expected: expectedSecret?.substring(0, 10) + '...',
+      providedLength: cronSecret?.length,
+      expectedLength: expectedSecret?.length,
+    })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

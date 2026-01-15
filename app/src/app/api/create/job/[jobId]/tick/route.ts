@@ -516,11 +516,13 @@ export async function POST(
   const { jobId } = await params
 
   // Check for cron-based auto-resume authentication
-  const cronSecret = request.headers.get('x-cron-secret')
+  // Trim secrets to handle env vars with trailing newlines
+  const cronSecret = request.headers.get('x-cron-secret')?.trim()
+  const expectedSecret = process.env.CRON_SECRET?.trim()
   const isAutoResume = request.headers.get('x-auto-resume') === 'true'
   const cronUserId = request.headers.get('x-user-id')
 
-  const isCronAuth = cronSecret === process.env.CRON_SECRET && isAutoResume && cronUserId
+  const isCronAuth = cronSecret === expectedSecret && isAutoResume && cronUserId
 
   // Standard user authentication
   const { user, isDevUser } = await getUser()
