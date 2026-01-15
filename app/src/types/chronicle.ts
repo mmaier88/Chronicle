@@ -36,6 +36,9 @@ export interface Book {
   cover_storage_path: string | null
   cover_status: CoverStatus
   cover_generated_at: string | null
+  // Regeneration lineage fields
+  source_book_id: string | null
+  source_chapter_index: number | null
   created_at: string
   updated_at: string
 }
@@ -165,6 +168,9 @@ export interface VibeJob {
   story_synopsis: string | null
   error: string | null
   attempt: number
+  // Regeneration context
+  source_book_id: string | null
+  source_chapter_index: number | null
   created_at: string
   updated_at: string
   started_at: string | null

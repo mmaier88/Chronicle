@@ -22,13 +22,32 @@ export default async function StoriesPage() {
     .order('created_at', { ascending: false })
 
   // Also fetch stories without jobs (completed ones)
+  // Include source_book_id and fetch source book title for lineage display
   const { data: completedOnly } = await supabase
     .from('books')
-    .select('id, title, status, created_at, core_question, cover_url, cover_status')
+    .select('id, title, status, created_at, core_question, cover_url, cover_status, source_book_id')
     .eq('owner_id', user?.id)
     .eq('source', 'vibe')
     .eq('status', 'final')
     .order('created_at', { ascending: false })
+
+  // Fetch source book titles for regenerated books
+  const sourceBookIds = (completedOnly || [])
+    .map(s => s.source_book_id)
+    .filter((id): id is string => id !== null)
+
+  let sourceBookTitles: Record<string, string> = {}
+  if (sourceBookIds.length > 0) {
+    const { data: sourceBooks } = await supabase
+      .from('books')
+      .select('id, title')
+      .in('id', sourceBookIds)
+
+    sourceBookTitles = (sourceBooks || []).reduce((acc, book) => {
+      acc[book.id] = book.title
+      return acc
+    }, {} as Record<string, string>)
+  }
 
   if (error) {
     console.error('Error fetching stories:', error)
@@ -108,6 +127,7 @@ export default async function StoriesPage() {
                       core_question: story.core_question,
                       cover_url: story.cover_url,
                       cover_status: story.cover_status as CoverStatus,
+                      source_book_title: story.source_book_id ? sourceBookTitles[story.source_book_id] : null,
                     }}
                   />
                 ))}

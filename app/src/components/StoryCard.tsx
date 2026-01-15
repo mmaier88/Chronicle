@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Clock, BookOpen } from 'lucide-react'
+import { Clock, BookOpen, GitBranch } from 'lucide-react'
 import { BookCover } from '@/components/cover/BookCover'
 import { CoverStatus } from '@/types/chronicle'
 
@@ -13,6 +13,7 @@ interface Story {
   core_question: string | null
   cover_url: string | null
   cover_status: CoverStatus
+  source_book_title?: string | null  // Title of the source book if this is a regeneration
 }
 
 interface StoryCardProps {
@@ -69,22 +70,39 @@ export function StoryCard({ story }: StoryCardProps) {
               {story.core_question}
             </p>
           )}
-          <p
-            className="app-body-sm"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              opacity: 0.6,
-            }}
-          >
-            <Clock style={{ width: 12, height: 12 }} />
-            {new Date(story.created_at).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <p
+              className="app-body-sm"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                opacity: 0.6,
+              }}
+            >
+              <Clock style={{ width: 12, height: 12 }} />
+              {new Date(story.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+            {story.source_book_title && (
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  fontSize: '0.75rem',
+                  color: '#93c5fd',
+                  opacity: 0.8,
+                }}
+              >
+                <GitBranch style={{ width: 12, height: 12 }} />
+                Based on {story.source_book_title}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

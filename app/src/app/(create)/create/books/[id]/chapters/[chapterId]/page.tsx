@@ -56,66 +56,67 @@ export default async function ChapterPage({
     <div>
       <Link
         href={`/create/books/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-amber-700/70 hover:text-amber-900 mb-6"
+        className="app-nav-link"
+        style={{ marginBottom: '1.5rem', display: 'inline-flex' }}
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft style={{ width: 16, height: 16 }} />
         Back to {typedBook.title}
       </Link>
 
-      <div className="mb-8">
-        <span className="text-sm text-amber-600/70">Chapter {typedChapter.index + 1}</span>
-        <h1 className="text-2xl font-serif font-semibold text-amber-900">{typedChapter.title}</h1>
-        <div className="flex items-center gap-3 mt-2">
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            typedChapter.status === 'draft' ? 'bg-amber-100 text-amber-700' :
-            typedChapter.status === 'locked' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-green-100 text-green-800'
-          }`}>
+      <div style={{ marginBottom: '2rem' }}>
+        <span style={{ fontSize: '0.875rem', color: 'var(--moon-soft)', opacity: 0.7 }}>Chapter {typedChapter.index + 1}</span>
+        <h1 className="app-heading-1">{typedChapter.title}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <span className={typedChapter.status === 'draft' ? 'app-badge app-badge-warning' : typedChapter.status === 'locked' ? 'app-badge app-badge-info' : 'app-badge app-badge-success'}>
             {typedChapter.status}
           </span>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: '1fr' }}>
         <div className="lg:col-span-2">
-          <div className="bg-white/80 rounded-lg border border-amber-200/60 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-amber-900">Sections</h2>
+          <div className="app-card">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 className="app-heading-3">Sections</h2>
               <CreateSectionButton chapterId={chapterId} bookId={id} nextIndex={typedSections.length} />
             </div>
 
             {typedSections.length === 0 ? (
-              <div className="text-center py-8 border border-dashed border-amber-300/60 rounded-lg">
-                <FileText className="w-8 h-8 text-amber-400 mx-auto mb-3" />
-                <p className="text-amber-800 mb-2">No sections yet</p>
-                <p className="text-sm text-amber-600/70 mb-4">Add sections to structure this chapter</p>
+              <div style={{ textAlign: 'center', padding: '2rem', border: '1px dashed rgba(250, 246, 237, 0.2)', borderRadius: 12 }}>
+                <FileText style={{ width: 32, height: 32, color: 'var(--amber-warm)', margin: '0 auto 0.75rem', opacity: 0.5 }} />
+                <p className="app-body" style={{ marginBottom: '0.5rem' }}>No sections yet</p>
+                <p className="app-body-sm" style={{ marginBottom: '1rem' }}>Add sections to structure this chapter</p>
                 <CreateSectionButton chapterId={chapterId} bookId={id} nextIndex={0} />
               </div>
             ) : (
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {typedSections.map((section, idx) => (
                   <Link
                     key={section.id}
                     href={`/create/books/${id}/chapters/${chapterId}/sections/${section.id}`}
-                    className="block p-4 border border-amber-200/60 rounded-lg hover:border-amber-300 hover:shadow-sm transition-all bg-white/50"
+                    style={{
+                      display: 'block',
+                      padding: '1rem',
+                      border: '1px solid rgba(250, 246, 237, 0.08)',
+                      borderRadius: 12,
+                      background: 'rgba(26, 39, 68, 0.3)',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s'
+                    }}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <span className="text-xs text-amber-600/70">Section {idx + 1}</span>
-                        <h3 className="font-medium text-amber-900">{section.title}</h3>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--moon-soft)', opacity: 0.6 }}>Section {idx + 1}</span>
+                        <h3 className="app-heading-3" style={{ fontSize: '1rem' }}>{section.title}</h3>
                         {section.goal && (
-                          <p className="text-sm text-amber-700/70 mt-1 line-clamp-2">{section.goal}</p>
+                          <p className="app-body-sm" style={{ marginTop: '0.25rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{section.goal}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {section.status === 'canonical' && (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle style={{ width: 16, height: 16, color: '#6ee7b7' }} />
                         )}
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          section.status === 'draft' ? 'bg-amber-100 text-amber-700' :
-                          section.status === 'locked' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={section.status === 'draft' ? 'app-badge app-badge-warning' : section.status === 'locked' ? 'app-badge app-badge-info' : 'app-badge app-badge-success'}>
                           {section.status}
                         </span>
                       </div>
@@ -127,44 +128,44 @@ export default async function ChapterPage({
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white/80 rounded-lg border border-amber-200/60 p-6">
-            <h3 className="font-semibold text-amber-900 mb-4">Chapter Details</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="app-card">
+            <h3 className="app-heading-3" style={{ marginBottom: '1rem' }}>Chapter Details</h3>
 
             {typedChapter.purpose && (
-              <div className="mb-4">
-                <label className="text-xs font-medium text-amber-600/70 uppercase">Purpose</label>
-                <p className="text-sm text-amber-800 mt-1">{typedChapter.purpose}</p>
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="app-label">Purpose</label>
+                <p className="app-body-sm" style={{ marginTop: '0.25rem' }}>{typedChapter.purpose}</p>
               </div>
             )}
 
             {typedChapter.central_claim && (
-              <div className="mb-4">
-                <label className="text-xs font-medium text-amber-600/70 uppercase">Central Claim</label>
-                <p className="text-sm text-amber-800 mt-1">{typedChapter.central_claim}</p>
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="app-label">Central Claim</label>
+                <p className="app-body-sm" style={{ marginTop: '0.25rem' }}>{typedChapter.central_claim}</p>
               </div>
             )}
 
             {typedChapter.emotional_arc && (
-              <div className="mb-4">
-                <label className="text-xs font-medium text-amber-600/70 uppercase">Emotional Arc</label>
-                <p className="text-sm text-amber-800 mt-1">{typedChapter.emotional_arc}</p>
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="app-label">Emotional Arc</label>
+                <p className="app-body-sm" style={{ marginTop: '0.25rem' }}>{typedChapter.emotional_arc}</p>
               </div>
             )}
 
             {typedChapter.failure_mode && (
-              <div className="mb-4">
-                <label className="text-xs font-medium text-amber-600/70 uppercase">Failure Mode</label>
-                <p className="text-sm text-amber-800 mt-1">{typedChapter.failure_mode}</p>
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="app-label">Failure Mode</label>
+                <p className="app-body-sm" style={{ marginTop: '0.25rem' }}>{typedChapter.failure_mode}</p>
               </div>
             )}
 
             {typedChapter.motifs && typedChapter.motifs.length > 0 && (
               <div>
-                <label className="text-xs font-medium text-amber-600/70 uppercase">Motifs</label>
-                <div className="flex flex-wrap gap-2 mt-1">
+                <label className="app-label">Motifs</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
                   {typedChapter.motifs.map((motif, idx) => (
-                    <span key={idx} className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                    <span key={idx} style={{ fontSize: '0.75rem', background: 'rgba(212, 165, 116, 0.15)', color: 'var(--amber-warm)', padding: '0.25rem 0.5rem', borderRadius: '0.25rem' }}>
                       {motif}
                     </span>
                   ))}
@@ -173,7 +174,7 @@ export default async function ChapterPage({
             )}
 
             {!typedChapter.purpose && !typedChapter.central_claim && !typedChapter.emotional_arc && (
-              <p className="text-sm text-amber-600/70">No additional details set for this chapter.</p>
+              <p className="app-body-sm">No additional details set for this chapter.</p>
             )}
           </div>
         </div>

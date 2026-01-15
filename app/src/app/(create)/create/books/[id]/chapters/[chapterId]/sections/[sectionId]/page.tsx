@@ -61,31 +61,28 @@ export default async function SectionPage({
     <div>
       <Link
         href={`/create/books/${id}/chapters/${chapterId}`}
-        className="inline-flex items-center gap-1 text-sm text-amber-700/70 hover:text-amber-900 mb-6"
+        className="app-nav-link"
+        style={{ marginBottom: '1.5rem', display: 'inline-flex' }}
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft style={{ width: 16, height: 16 }} />
         Back to {typedChapter.title}
       </Link>
 
-      <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-amber-600/70 mb-1">
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--moon-soft)', opacity: 0.7, marginBottom: '0.25rem' }}>
           <span>{typedBook.title}</span>
           <span>/</span>
           <span>Chapter {typedChapter.index + 1}</span>
           <span>/</span>
           <span>Section {typedSection.index + 1}</span>
         </div>
-        <h1 className="text-2xl font-serif font-semibold text-amber-900">{typedSection.title}</h1>
-        <div className="flex items-center gap-3 mt-2">
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            typedSection.status === 'draft' ? 'bg-amber-100 text-amber-700' :
-            typedSection.status === 'locked' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-green-100 text-green-800'
-          }`}>
+        <h1 className="app-heading-1">{typedSection.title}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <span className={typedSection.status === 'draft' ? 'app-badge app-badge-warning' : typedSection.status === 'locked' ? 'app-badge app-badge-info' : 'app-badge app-badge-success'}>
             {typedSection.status}
           </span>
           {typedSection.promoted_at && (
-            <span className="text-xs text-amber-600/70">
+            <span className="app-body-sm" style={{ opacity: 0.7 }}>
               Promoted {new Date(typedSection.promoted_at).toLocaleDateString()}
             </span>
           )}
