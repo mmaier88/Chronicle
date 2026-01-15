@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ArrowLeft, Headphones } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Search } from 'lucide-react'
 import { TypographyControls, TypographyButton } from './TypographyControls'
+import { SearchOverlay } from './SearchOverlay'
 import type {
   ReaderBook,
   ReaderProgress,
@@ -11,12 +12,19 @@ import type {
   ReaderChapter,
   ReaderTheme,
 } from '@/lib/reader'
-import { DEFAULT_TYPOGRAPHY } from '@/lib/reader'
+import {
+  DEFAULT_TYPOGRAPHY,
+  THEME_COLORS,
+  MARGIN_VALUES,
+  createAnchor,
+  resolveAnchor,
+} from '@/lib/reader'
+import type { TextAnchor } from '@/lib/reader'
 
 interface ReaderShellProps {
   book: ReaderBook
   initialProgress: ReaderProgress | null
-  initialAudioProgress: AudioProgress | null
+  initialAudioProgress?: AudioProgress | null
   initialTypography: TypographySettings | null
   onSaveProgress: (progress: Omit<ReaderProgress, 'user_id' | 'updated_at'>) => Promise<void>
   onSaveTypography: (settings: Partial<TypographySettings>) => Promise<void>
@@ -46,21 +54,47 @@ export function ReaderShell({
   )
   const [showControls, setShowControls] = useState(false)
   const [showTypography, setShowTypography] = useState(false)
+  const [showChapterMenu, setShowChapterMenu] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [highlightText, setHighlightText] = useState<string | null>(null)
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0)
   const [scrollProgress, setScrollProgress] = useState(0)
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null)
+  const mainContentRef = useRef<HTMLDivElement>(null)
   const chapterRefs = useRef<Map<number, HTMLElement>>(new Map())
 
-  // Theme colors - matches Chronicle design system
-  const themeColors: Record<ReaderTheme, { bg: string; text: string; accent: string }> = {
-    light: { bg: '#FAF6ED', text: '#1A1A1A', accent: '#8B7355' },
-    dark: { bg: '#0F172A', text: '#B8C4D9', accent: '#D4A574' },
-    'warm-night': { bg: '#1C1410', text: '#E8D5C4', accent: '#D4A574' },
-  }
+  // Get plain text content for a chapter (for anchor creation)
+  const getChapterPlainText = useCallback((chapterIndex: number): string => {
+    const chapter = book.chapters[chapterIndex]
+    if (!chapter) return ''
+    // Strip HTML/markdown from raw content
+    return chapter.raw_content
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/\n+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }, [book.chapters])
 
-  const colors = themeColors[typography.theme]
+  // Get combined plain text for all chapters up to current position
+  const getFullPlainText = useCallback((): string => {
+    return book.chapters.map(ch =>
+      ch.raw_content
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    ).join(' ')
+  }, [book.chapters])
+
+  // Use theme colors from constants
+  const colors = THEME_COLORS[typography.theme]
+  const marginValue = MARGIN_VALUES[typography.margins]
 
   // Convert markdown to HTML (like old reader)
   const markdownToHtml = (text: string): string => {
@@ -78,13 +112,42 @@ export function ReaderShell({
   // Restore scroll position on load
   useEffect(() => {
     const container = containerRef.current
+    const mainContent = mainContentRef.current
     if (!container || !initialProgress) return
 
     // Wait for content to render
     const timeoutId = setTimeout(() => {
       const scrollHeight = container.scrollHeight - container.clientHeight
+      if (scrollHeight <= 0) return
+
+      // Try to restore from text-quote anchor first (most reliable)
+      if (initialProgress.anchor_exact && mainContent) {
+        const anchor: TextAnchor = {
+          chapterId: initialProgress.chapter_id,
+          charOffsetApprox: initialProgress.anchor_char_offset || 0,
+          prefix: initialProgress.anchor_prefix || '',
+          exact: initialProgress.anchor_exact,
+          suffix: initialProgress.anchor_suffix || '',
+        }
+
+        const fullText = getFullPlainText()
+        const resolution = resolveAnchor(anchor, fullText)
+
+        if (resolution.confidence !== 'fallback') {
+          // Calculate scroll position based on character offset
+          // Use a ratio of character offset to total characters
+          const totalChars = fullText.length
+          const charRatio = resolution.charOffset / totalChars
+          const targetScroll = scrollHeight * charRatio
+          container.scrollTo({ top: targetScroll, behavior: 'instant' })
+          setScrollProgress(Math.round(charRatio * 100))
+          return
+        }
+      }
+
+      // Fallback to scroll_offset_ratio (legacy or if anchor resolution failed)
       const savedRatio = initialProgress.scroll_offset_ratio || (initialProgress.scroll_offset / 100)
-      if (scrollHeight > 0 && savedRatio > 0) {
+      if (savedRatio > 0) {
         const targetScroll = scrollHeight * savedRatio
         container.scrollTo({ top: targetScroll, behavior: 'instant' })
         setScrollProgress(Math.round(savedRatio * 100))
@@ -92,7 +155,7 @@ export function ReaderShell({
     }, 100)
 
     return () => clearTimeout(timeoutId)
-  }, [initialProgress])
+  }, [initialProgress, getFullPlainText])
 
   // Track scroll position for progress
   useEffect(() => {
@@ -120,7 +183,7 @@ export function ReaderShell({
     return () => container.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Save progress periodically
+  // Save progress periodically with text-quote anchor
   useEffect(() => {
     if (scrollProgress === 0 || book.chapters.length === 0) return
 
@@ -128,22 +191,119 @@ export function ReaderShell({
     if (!chapter) return
 
     const timeoutId = setTimeout(() => {
+      // Calculate character offset from scroll position for anchor
+      const fullText = getFullPlainText()
+      const charOffset = Math.floor((scrollProgress / 100) * fullText.length)
+
+      // Create anchor for reliable resume
+      const anchor = createAnchor(chapter.chapter_id, charOffset, fullText)
+
       onSaveProgress({
         book_id: book.book_id,
         chapter_id: chapter.chapter_id,
         paragraph_id: chapter.paragraphs[0]?.id || '',
         scroll_offset: scrollProgress,
         scroll_offset_ratio: scrollProgress / 100,
+        // Include anchor fields
+        anchor_prefix: anchor.prefix,
+        anchor_exact: anchor.exact,
+        anchor_suffix: anchor.suffix,
+        anchor_char_offset: anchor.charOffsetApprox,
       })
     }, 3000)
 
     return () => clearTimeout(timeoutId)
-  }, [scrollProgress, currentChapterIndex, book, onSaveProgress])
+  }, [scrollProgress, currentChapterIndex, book, onSaveProgress, getFullPlainText])
 
-  // Toggle controls on tap
+  // Keyboard shortcut for search (Cmd/Ctrl+F)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault()
+        setShowSearch(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Clear highlight after animation
+  useEffect(() => {
+    if (highlightText) {
+      const timeoutId = setTimeout(() => setHighlightText(null), 3000)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [highlightText])
+
+  // Navigate to search result
+  const handleSearchNavigate = useCallback((chapterIndex: number, charOffset: number, searchTerm: string) => {
+    setShowSearch(false)
+    setHighlightText(searchTerm)
+
+    // Calculate scroll position based on character offset in that chapter
+    const fullText = getFullPlainText()
+    let totalCharsBeforeChapter = 0
+
+    for (let i = 0; i < chapterIndex; i++) {
+      const chapterText = getChapterPlainText(i)
+      totalCharsBeforeChapter += chapterText.length + 1 // +1 for space separator
+    }
+
+    const globalCharOffset = totalCharsBeforeChapter + charOffset
+    const charRatio = globalCharOffset / fullText.length
+
+    const container = containerRef.current
+    if (container) {
+      const scrollHeight = container.scrollHeight - container.clientHeight
+      const targetScroll = Math.floor(scrollHeight * charRatio)
+      container.scrollTo({ top: targetScroll, behavior: 'smooth' })
+    }
+  }, [getFullPlainText, getChapterPlainText])
+
+  // Navigate to previous chapter
+  const goToPreviousChapter = () => {
+    if (currentChapterIndex > 0) {
+      scrollToChapter(currentChapterIndex - 1)
+    }
+  }
+
+  // Navigate to next chapter
+  const goToNextChapter = () => {
+    if (currentChapterIndex < book.chapters.length - 1) {
+      scrollToChapter(currentChapterIndex + 1)
+    }
+  }
+
+  // Handle tap zones: left (30%) = prev chapter, right (30%) = next chapter, center (40%) = toggle chrome
   const handleContainerClick = (e: React.MouseEvent) => {
+    // Ignore if clicking on interactive elements
     if ((e.target as HTMLElement).closest('button')) return
     if ((e.target as HTMLElement).closest('a')) return
+
+    const container = containerRef.current
+    if (!container) {
+      setShowControls(!showControls)
+      return
+    }
+
+    const rect = container.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const containerWidth = rect.width
+
+    // Left 30% - previous chapter
+    if (clickX < containerWidth * 0.3) {
+      goToPreviousChapter()
+      return
+    }
+
+    // Right 30% - next chapter
+    if (clickX > containerWidth * 0.7) {
+      goToNextChapter()
+      return
+    }
+
+    // Center 40% - toggle chrome
     setShowControls(!showControls)
   }
 
@@ -156,6 +316,15 @@ export function ReaderShell({
 
   // Calculate time remaining
   const timeRemaining = Math.ceil(book.estimated_read_minutes * (1 - scrollProgress / 100))
+
+  // Scroll to chapter
+  const scrollToChapter = (chapterIndex: number) => {
+    const el = chapterRefs.current.get(chapterIndex)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setShowChapterMenu(false)
+    }
+  }
 
   return (
     <div
@@ -220,15 +389,36 @@ export function ReaderShell({
           {book.title}
         </div>
 
-        <TypographyButton onClick={() => setShowTypography(true)} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => setShowSearch(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: 8,
+              border: `1px solid ${colors.accent}44`,
+              background: 'transparent',
+              color: colors.text,
+              cursor: 'pointer',
+              opacity: 0.8,
+            }}
+          >
+            <Search size={18} />
+          </button>
+          <TypographyButton onClick={() => setShowTypography(true)} />
+        </div>
       </header>
 
       {/* Main Content - matches old reader styling */}
       <main
+        ref={mainContentRef}
         style={{
           maxWidth: 640,
           margin: '0 auto',
-          padding: '3rem 1.5rem 8rem',
+          padding: `3rem ${marginValue} 8rem`,
         }}
       >
         {/* Book Title */}
@@ -291,6 +481,9 @@ export function ReaderShell({
                   fontFamily: typography.font_family === 'serif'
                     ? 'var(--font-serif), Georgia, serif'
                     : '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+                  textAlign: typography.justify ? 'justify' : 'left',
+                  hyphens: typography.justify ? 'auto' : 'none',
+                  WebkitHyphens: typography.justify ? 'auto' : 'none',
                 }}
                 dangerouslySetInnerHTML={{ __html: markdownToHtml(chapter.raw_content) }}
               />
@@ -366,34 +559,114 @@ export function ReaderShell({
             {scrollProgress}% • {timeRemaining} min left
           </div>
 
-          {/* Listen button */}
-          {onListenFromHere && book.chapters[currentChapterIndex]?.paragraphs[0] && (
-            <button
-              onClick={() => {
-                const chapter = book.chapters[currentChapterIndex]
-                const paragraph = chapter.paragraphs[0]
-                onListenFromHere(paragraph.id, paragraph.section_id)
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.25rem',
-                borderRadius: 24,
-                border: 'none',
-                background: colors.accent,
-                color: colors.bg,
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-              }}
-            >
-              <Headphones size={18} />
-              Listen from here
-            </button>
-          )}
+          {/* Chapter selector */}
+          <button
+            onClick={() => setShowChapterMenu(!showChapterMenu)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.25rem',
+              borderRadius: 24,
+              border: `1px solid ${colors.accent}44`,
+              background: 'transparent',
+              color: colors.text,
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+            }}
+          >
+            Chapter {currentChapterIndex + 1}
+            <ChevronDown size={16} />
+          </button>
         </div>
       </footer>
+
+      {/* Chapter Menu Overlay */}
+      {showChapterMenu && (
+        <div
+          onClick={() => setShowChapterMenu(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: colors.bg,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              width: '100%',
+              maxWidth: 500,
+              maxHeight: '70vh',
+              overflow: 'auto',
+              padding: '1.5rem',
+            }}
+          >
+            <h3 style={{
+              fontSize: '1rem',
+              fontWeight: 600,
+              marginBottom: '1rem',
+              color: colors.text,
+            }}>
+              Chapters
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {book.chapters.map((chapter, idx) => (
+                <button
+                  key={chapter.chapter_id}
+                  onClick={() => scrollToChapter(idx)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.875rem 1rem',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: idx === currentChapterIndex ? `${colors.accent}22` : 'transparent',
+                    color: colors.text,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: colors.accent,
+                      opacity: 0.7,
+                    }}>
+                      {idx + 1}
+                    </span>
+                    <span style={{
+                      fontSize: '0.9375rem',
+                      fontWeight: idx === currentChapterIndex ? 600 : 400,
+                    }}>
+                      {chapter.title}
+                    </span>
+                  </span>
+                  {idx === currentChapterIndex && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      color: colors.accent,
+                      fontWeight: 500,
+                    }}>
+                      Reading
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progress info (always visible) */}
       <div
@@ -438,6 +711,16 @@ export function ReaderShell({
           settings={typography}
           onChange={handleTypographyChange}
           onClose={() => setShowTypography(false)}
+        />
+      )}
+
+      {/* Search Overlay */}
+      {showSearch && (
+        <SearchOverlay
+          book={book}
+          theme={typography.theme}
+          onClose={() => setShowSearch(false)}
+          onNavigateToResult={handleSearchNavigate}
         />
       )}
     </div>

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
-import { AudioProvider } from "@/components/audio/AudioProvider";
 import { NotificationProvider } from "@/components/ui/Notifications";
 import { ServiceWorkerRegistration, InstallPrompt } from "@/components/pwa";
 import { NativeInit } from "@/components/native";
@@ -86,9 +85,7 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <NotificationProvider>
-            <AudioProvider>
-              {children}
-            </AudioProvider>
+            {children}
             <ServiceWorkerRegistration />
             <InstallPrompt />
             <NativeInit />

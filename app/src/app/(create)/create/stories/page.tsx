@@ -1,7 +1,7 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { BookOpen, Clock, Sparkles, AlertCircle, RefreshCw, Trash2 } from 'lucide-react'
-import { AudioStoryCard } from '@/components/audio/AudioStoryCard'
+import { StoryCard } from '@/components/StoryCard'
 import { CoverStatus, VibeJobStatus } from '@/types/chronicle'
 import { InProgressCard } from './InProgressCard'
 import { isJobStuck, JOB_RECOVERY_CONFIG } from '@/lib/job-recovery'
@@ -98,7 +98,7 @@ export default async function StoriesPage() {
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {completedStories.map((story) => (
-                  <AudioStoryCard
+                  <StoryCard
                     key={story.id}
                     story={{
                       id: story.id,

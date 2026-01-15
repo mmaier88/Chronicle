@@ -525,6 +525,55 @@ typography_settings (user_id, font_size, line_height, font_family, theme)
 
 ---
 
+### Phase 14.13: Premium Reader V2 (In Progress)
+
+**Goal:** Kindle-class reading experience for web and mobile (single codebase via Capacitor).
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| 4 themes (+ Sepia, Midnight) | High | Done |
+| Margins control (narrow/normal/wide) | High | Done |
+| Justify toggle | High | Done |
+| Tap zones for chapter navigation | High | Done |
+| Text-quote anchors (reliable resume) | High | Done |
+| Search in book | Medium | Done |
+| Offline support (service worker) | Medium | Planned |
+
+#### Technical Details
+- Single web reader for all platforms (web, iOS, Android)
+- Scroll-based rendering (no pagination)
+- Text-quote anchors survive font/layout changes
+- Progressive enhancement for offline
+
+#### New Database Columns
+```sql
+-- typography_settings
+margins TEXT DEFAULT 'normal' CHECK (margins IN ('narrow', 'normal', 'wide'))
+justify BOOLEAN DEFAULT false
+
+-- reader_progress (text-quote anchors)
+anchor_prefix TEXT
+anchor_exact TEXT
+anchor_suffix TEXT
+anchor_char_offset INTEGER
+```
+
+#### Files Created/Modified
+| File | Purpose |
+|------|---------|
+| `src/lib/reader/anchors.ts` | Text-quote anchor system |
+| `src/components/reader/SearchOverlay.tsx` | In-book search UI |
+| `supabase/migrations/00017_typography_enhancements.sql` | Margins, justify columns |
+| `supabase/migrations/00018_text_quote_anchors.sql` | Anchor columns |
+
+#### Excluded from V2 (Future)
+- Annotations (highlights, notes, bookmarks)
+- In-book dictionary
+- Social sharing of excerpts
+- True pagination (pages vs scroll)
+
+---
+
 ### Phase 15: Discovery & Public Library
 
 **Goal:** Transform Chronicle from a creation tool into a content network. Users should be able to browse and discover stories, not just create them.
@@ -920,6 +969,17 @@ ANTHROPIC_API_KEY
 ---
 
 ## Changelog
+
+### 2026-01-15
+- **Phase 14.13 in progress: Premium Reader V2**
+  - 4 themes: Light, Dark, Sepia, Midnight
+  - Margins control: narrow, normal, wide
+  - Justify text toggle
+  - Tap zones for chapter navigation (left=prev, center=chrome, right=next)
+  - Text-quote anchors for reliable resume (survives font/layout changes)
+  - Search in book with keyboard shortcuts (Cmd/Ctrl+F)
+  - New files: `anchors.ts`, `SearchOverlay.tsx`
+  - New migrations: `00017_typography_enhancements.sql`, `00018_text_quote_anchors.sql`
 
 ### 2026-01-09
 - **Phase 14.10 complete: Chronicle Reader V1**

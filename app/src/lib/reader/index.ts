@@ -14,11 +14,12 @@ export type {
   TypographySettings,
   ReaderTheme,
   ReaderFont,
+  ReaderMargins,
   ReaderState,
 } from './types'
 
 // Constants
-export { DEFAULT_TYPOGRAPHY } from './types'
+export { DEFAULT_TYPOGRAPHY, THEME_COLORS, MARGIN_VALUES } from './types'
 
 // Utilities
 export {
@@ -47,3 +48,14 @@ export {
 } from './engine'
 
 export type { ResumeResult } from './engine'
+
+// Anchors
+export {
+  createAnchor,
+  resolveAnchor,
+  getCharOffsetFromScroll,
+  getScrollFromCharOffset,
+  extractPlainText,
+} from './anchors'
+
+export type { TextAnchor, AnchorResolution } from './anchors'

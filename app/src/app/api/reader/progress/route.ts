@@ -67,6 +67,11 @@ export async function POST(request: NextRequest) {
     paragraphId: string
     scrollOffset?: number
     scrollOffsetRatio?: number
+    // Text-quote anchor fields
+    anchorPrefix?: string
+    anchorExact?: string
+    anchorSuffix?: string
+    anchorCharOffset?: number
   }
 
   try {
@@ -75,7 +80,17 @@ export async function POST(request: NextRequest) {
     return apiError.badRequest('Invalid request body')
   }
 
-  const { bookId, chapterId, paragraphId, scrollOffset = 0, scrollOffsetRatio = 0 } = body
+  const {
+    bookId,
+    chapterId,
+    paragraphId,
+    scrollOffset = 0,
+    scrollOffsetRatio = 0,
+    anchorPrefix,
+    anchorExact,
+    anchorSuffix,
+    anchorCharOffset,
+  } = body
 
   if (!bookId || !chapterId || !paragraphId) {
     return apiError.badRequest('bookId, chapterId, and paragraphId are required')
@@ -103,6 +118,10 @@ export async function POST(request: NextRequest) {
     p_paragraph_id: paragraphId,
     p_scroll_offset: scrollOffset,
     p_scroll_offset_ratio: scrollOffsetRatio,
+    p_anchor_prefix: anchorPrefix || null,
+    p_anchor_exact: anchorExact || null,
+    p_anchor_suffix: anchorSuffix || null,
+    p_anchor_char_offset: anchorCharOffset || null,
   })
 
   if (error) {

@@ -2,8 +2,8 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Sparkles } from 'lucide-react'
-import { AudioStoryCard } from '@/components/audio/AudioStoryCard'
-import { SharedStoryCard } from '@/components/audio/SharedStoryCard'
+import { StoryCard } from '@/components/StoryCard'
+import { SharedStoryCard } from '@/components/SharedStoryCard'
 import { CoverStatus } from '@/types/chronicle'
 
 export default async function CreateLandingPage() {
@@ -88,13 +88,13 @@ export default async function CreateLandingPage() {
         </Link>
       </section>
 
-      {/* Recent books - with Listen button like Stories page */}
+      {/* Recent books */}
       {recentBooks && recentBooks.length > 0 && (
         <section>
           <h2 className="app-label" style={{ marginBottom: '1rem' }}>Your stories</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {recentBooks.map((book) => (
-              <AudioStoryCard
+              <StoryCard
                 key={book.id}
                 story={{
                   id: book.id,

@@ -7,7 +7,6 @@ import { ReaderShell } from '@/components/reader'
 import type {
   ReaderBook,
   ReaderProgress,
-  AudioProgress,
   TypographySettings,
 } from '@/lib/reader'
 
@@ -28,7 +27,6 @@ export default function ReaderPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null)
   const [book, setBook] = useState<ReaderBook | null>(null)
   const [progress, setProgress] = useState<ReaderProgress | null>(null)
-  const [audioProgress, setAudioProgress] = useState<AudioProgress | null>(null)
   const [typography, setTypography] = useState<TypographySettings | null>(null)
 
   // Load book data
@@ -47,7 +45,6 @@ export default function ReaderPage({ params }: PageProps) {
 
         setBook(bookData.data.book)
         setProgress(bookData.data.progress)
-        setAudioProgress(bookData.data.audioProgress)
 
         // Load typography settings
         const typoRes = await fetch('/api/reader/typography')
@@ -79,6 +76,11 @@ export default function ReaderPage({ params }: PageProps) {
           paragraphId: newProgress.paragraph_id,
           scrollOffset: newProgress.scroll_offset,
           scrollOffsetRatio: newProgress.scroll_offset_ratio,
+          // Text-quote anchor fields for reliable resume
+          anchorPrefix: newProgress.anchor_prefix,
+          anchorExact: newProgress.anchor_exact,
+          anchorSuffix: newProgress.anchor_suffix,
+          anchorCharOffset: newProgress.anchor_char_offset,
         }),
       })
     } catch (err) {
@@ -97,17 +99,13 @@ export default function ReaderPage({ params }: PageProps) {
           lineHeight: settings.line_height,
           fontFamily: settings.font_family,
           theme: settings.theme,
+          margins: settings.margins,
+          justify: settings.justify,
         }),
       })
     } catch (err) {
       console.error('Failed to save typography:', err)
     }
-  }
-
-  // Listen from paragraph
-  const handleListenFromHere = (paragraphId: string, sectionId: string) => {
-    // Navigate to the old reader with audio
-    router.push(`/create/read/${bookId}#section-${sectionId}`)
   }
 
   // Back to story list
@@ -223,11 +221,9 @@ export default function ReaderPage({ params }: PageProps) {
     <ReaderShell
       book={book}
       initialProgress={progress}
-      initialAudioProgress={audioProgress}
       initialTypography={typography}
       onSaveProgress={handleSaveProgress}
       onSaveTypography={handleSaveTypography}
-      onListenFromHere={handleListenFromHere}
       onBack={handleBack}
     />
   )

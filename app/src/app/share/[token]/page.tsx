@@ -1,8 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { BookOpen, Share2, Clock, Headphones, Sparkles } from 'lucide-react'
-import { SharedBookAudioPlayer } from '@/components/audio/SharedBookAudioPlayer'
+import { BookOpen, Share2, Clock, Sparkles } from 'lucide-react'
 import { markdownToHtml } from '@/lib/utils'
 
 interface SharedChapter {
@@ -64,20 +63,6 @@ export default async function SharedBookPage({
         0
       ),
     0
-  )
-
-  // Build flat sections list for audio player
-  const allSections = chaptersWithSections.flatMap(
-    (chapter: { id: string; title: string; sections: SharedSection[] }, chIdx: number) =>
-      chapter.sections
-        .filter((s: SharedSection) => s.content_text)
-        .map((section: SharedSection, sIdx: number) => ({
-          id: section.id,
-          title: section.title,
-          chapterTitle: chapter.title,
-          chapterIndex: chIdx,
-          sectionIndex: sIdx,
-        }))
   )
 
   return (
@@ -158,24 +143,7 @@ export default async function SharedBookPage({
             <Clock style={{ width: 16, height: 16 }} />
             ~{Math.ceil(totalWords / 250)} min read
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <Headphones style={{ width: 16, height: 16 }} />
-            ~{Math.ceil(totalWords / 150)} min listen
-          </span>
         </div>
-
-        {/* Audio Player */}
-        {allSections.length > 0 && (
-          <div style={{ marginTop: '1.5rem' }}>
-            <SharedBookAudioPlayer
-              bookTitle={book.title}
-              sections={allSections}
-              shareToken={token}
-              bookId={book.id}
-              coverUrl={book.cover_url}
-            />
-          </div>
-        )}
       </header>
 
       {/* Table of Contents */}

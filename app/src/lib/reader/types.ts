@@ -77,6 +77,14 @@ export interface ReaderProgress {
   scroll_offset: number
   /** For mobile web: relative offset ratio (0-1 within paragraph) */
   scroll_offset_ratio?: number
+  /** Text-quote anchor: prefix text (~20 chars before position) */
+  anchor_prefix?: string
+  /** Text-quote anchor: exact text at position (~120 chars) */
+  anchor_exact?: string
+  /** Text-quote anchor: suffix text (~20 chars after exact) */
+  anchor_suffix?: string
+  /** Text-quote anchor: approximate character offset (fallback) */
+  anchor_char_offset?: number
   /** Last update timestamp */
   updated_at: string
 }
@@ -101,8 +109,9 @@ export interface AudioProgress {
 // TYPOGRAPHY SETTINGS
 // =============================================================================
 
-export type ReaderTheme = 'light' | 'dark' | 'warm-night'
+export type ReaderTheme = 'light' | 'dark' | 'sepia' | 'midnight'
 export type ReaderFont = 'serif' | 'sans'
+export type ReaderMargins = 'narrow' | 'normal' | 'wide'
 
 /**
  * User typography preferences.
@@ -110,14 +119,18 @@ export type ReaderFont = 'serif' | 'sans'
  */
 export interface TypographySettings {
   user_id: string
-  /** Font size in points (default: 17) */
+  /** Font size in points (default: 18) */
   font_size: number
-  /** Line height multiplier (default: 1.5) */
+  /** Line height multiplier (default: 1.8) */
   line_height: number
   /** Font family preference */
   font_family: ReaderFont
   /** Color theme */
   theme: ReaderTheme
+  /** Content margins */
+  margins: ReaderMargins
+  /** Justify text alignment */
+  justify: boolean
   /** Last update timestamp */
   updated_at: string
 }
@@ -131,6 +144,27 @@ export const DEFAULT_TYPOGRAPHY: Omit<TypographySettings, 'user_id' | 'updated_a
   line_height: 1.8,
   font_family: 'serif',
   theme: 'dark',
+  margins: 'normal',
+  justify: false,
+}
+
+/**
+ * Theme color definitions
+ */
+export const THEME_COLORS: Record<ReaderTheme, { bg: string; text: string; accent: string; muted: string }> = {
+  light: { bg: '#FAF6ED', text: '#1A1A1A', accent: '#8B7355', muted: '#6B6B6B' },
+  dark: { bg: '#0F172A', text: '#B8C4D9', accent: '#D4A574', muted: '#64748B' },
+  sepia: { bg: '#F4ECD8', text: '#5C4B37', accent: '#8B6914', muted: '#7D6B5D' },
+  midnight: { bg: '#121212', text: '#E0E0E0', accent: '#BB86FC', muted: '#757575' },
+}
+
+/**
+ * Margin values in rem
+ */
+export const MARGIN_VALUES: Record<ReaderMargins, string> = {
+  narrow: '0.75rem',
+  normal: '1.5rem',
+  wide: '2.5rem',
 }
 
 // =============================================================================

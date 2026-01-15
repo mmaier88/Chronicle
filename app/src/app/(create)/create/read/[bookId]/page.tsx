@@ -1,8 +1,7 @@
 import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Sparkles, Clock, Headphones } from 'lucide-react'
-import { BookAudioPlayer } from '@/components/audio/BookAudioPlayer'
+import { ArrowLeft, BookOpen, Sparkles, Clock } from 'lucide-react'
 import { BookCoverClient } from '@/components/cover/BookCoverClient'
 import { RegenerateCoverButton } from '@/components/cover/RegenerateCoverButton'
 import { UploadCoverButton } from '@/components/cover/UploadCoverButton'
@@ -82,19 +81,6 @@ export default async function VibeReadPage({
     ), 0
   )
 
-  // Build flat sections list for audio player
-  const allSections = sortedChapters.flatMap((chapter, chIdx) =>
-    chapter.sections
-      .filter(s => s.content_text) // Only sections with content
-      .map((section, sIdx) => ({
-        id: section.id,
-        title: section.title,
-        chapterTitle: chapter.title,
-        chapterIndex: chIdx,
-        sectionIndex: sIdx,
-      }))
-  )
-
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
       {/* Back button */}
@@ -151,10 +137,6 @@ export default async function VibeReadPage({
             <Clock style={{ width: 16, height: 16 }} />
             ~{Math.ceil(totalWords / 250)} min read
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <Headphones style={{ width: 16, height: 16 }} />
-            ~{Math.ceil(totalWords / 150)} min listen
-          </span>
         </div>
 
         {/* Action Buttons */}
@@ -164,11 +146,8 @@ export default async function VibeReadPage({
           <SendToKindleButton book={book} chapters={sortedChapters} />
         </div>
 
-        {/* Audio Player & Reader Mode */}
+        {/* Reader Mode */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-          {allSections.length > 0 && (
-            <BookAudioPlayer bookTitle={book.title} sections={allSections} bookId={book.id} coverUrl={book.cover_url} />
-          )}
           <Link
             href={`/reader/${book.id}`}
             style={{

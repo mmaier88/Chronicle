@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Type, Sun, Moon, Sunset, Minus, Plus, X } from 'lucide-react'
-import type { TypographySettings, ReaderTheme, ReaderFont } from '@/lib/reader'
-import { DEFAULT_TYPOGRAPHY } from '@/lib/reader'
+import { Type, Sun, Moon, Sunrise, Star, Minus, Plus, X, AlignLeft, AlignJustify } from 'lucide-react'
+import type { TypographySettings, ReaderTheme, ReaderFont, ReaderMargins } from '@/lib/reader'
+import { THEME_COLORS } from '@/lib/reader'
 
 interface TypographyControlsProps {
   settings: TypographySettings
@@ -15,7 +14,7 @@ interface TypographyControlsProps {
  * Typography Controls
  *
  * Overlay panel for adjusting reader typography settings.
- * Changes are persisted to server on close.
+ * Changes are persisted to server immediately.
  */
 export function TypographyControls({ settings, onChange, onClose }: TypographyControlsProps) {
   // Font size controls
@@ -44,11 +43,19 @@ export function TypographyControls({ settings, onChange, onClose }: TypographyCo
     }
   }
 
-  // Theme colors
-  const themeConfig: Record<ReaderTheme, { icon: typeof Sun; label: string; bg: string; text: string }> = {
-    light: { icon: Sun, label: 'Light', bg: '#FAF6ED', text: '#1A1A1A' },
-    dark: { icon: Moon, label: 'Dark', bg: '#0F172A', text: '#FAF6ED' },
-    'warm-night': { icon: Sunset, label: 'Warm', bg: '#1C1410', text: '#E8D5C4' },
+  // Theme configuration with icons
+  const themeConfig: Record<ReaderTheme, { icon: typeof Sun; label: string }> = {
+    light: { icon: Sun, label: 'Light' },
+    sepia: { icon: Sunrise, label: 'Sepia' },
+    dark: { icon: Moon, label: 'Dark' },
+    midnight: { icon: Star, label: 'Midnight' },
+  }
+
+  // Margin configuration
+  const marginConfig: Record<ReaderMargins, { label: string }> = {
+    narrow: { label: 'Narrow' },
+    normal: { label: 'Normal' },
+    wide: { label: 'Wide' },
   }
 
   return (
@@ -282,7 +289,7 @@ export function TypographyControls({ settings, onChange, onClose }: TypographyCo
         </div>
 
         {/* Theme */}
-        <div>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label style={{
             display: 'block',
             fontSize: '0.75rem',
@@ -295,37 +302,148 @@ export function TypographyControls({ settings, onChange, onClose }: TypographyCo
           </label>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
+            gridTemplateColumns: '1fr 1fr 1fr 1fr',
             gap: '0.5rem',
           }}>
             {(Object.keys(themeConfig) as ReaderTheme[]).map((theme) => {
               const config = themeConfig[theme]
+              const colors = THEME_COLORS[theme]
               const Icon = config.icon
               return (
                 <button
                   key={theme}
                   onClick={() => onChange({ theme })}
                   style={{
-                    padding: '0.75rem',
+                    padding: '0.75rem 0.5rem',
                     borderRadius: 8,
                     border: settings.theme === theme
                       ? '2px solid var(--amber-warm)'
                       : '1px solid rgba(250, 246, 237, 0.2)',
-                    background: config.bg,
-                    color: config.text,
+                    background: colors.bg,
+                    color: colors.text,
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '0.25rem',
-                    fontSize: '0.75rem',
+                    fontSize: '0.7rem',
                   }}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
                   {config.label}
                 </button>
               )
             })}
+          </div>
+        </div>
+
+        {/* Margins */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            opacity: 0.6,
+            marginBottom: '0.75rem',
+          }}>
+            Margins
+          </label>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '0.5rem',
+          }}>
+            {(Object.keys(marginConfig) as ReaderMargins[]).map((margin) => {
+              const config = marginConfig[margin]
+              return (
+                <button
+                  key={margin}
+                  onClick={() => onChange({ margins: margin })}
+                  style={{
+                    padding: '0.75rem',
+                    borderRadius: 8,
+                    border: settings.margins === margin
+                      ? '2px solid var(--amber-warm)'
+                      : '1px solid rgba(250, 246, 237, 0.2)',
+                    background: settings.margins === margin
+                      ? 'rgba(212, 165, 116, 0.15)'
+                      : 'rgba(250, 246, 237, 0.05)',
+                    color: 'var(--moon-light)',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  {config.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Justify */}
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            opacity: 0.6,
+            marginBottom: '0.75rem',
+          }}>
+            Text Alignment
+          </label>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.5rem',
+          }}>
+            <button
+              onClick={() => onChange({ justify: false })}
+              style={{
+                padding: '0.75rem',
+                borderRadius: 8,
+                border: !settings.justify
+                  ? '2px solid var(--amber-warm)'
+                  : '1px solid rgba(250, 246, 237, 0.2)',
+                background: !settings.justify
+                  ? 'rgba(212, 165, 116, 0.15)'
+                  : 'rgba(250, 246, 237, 0.05)',
+                color: 'var(--moon-light)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8rem',
+              }}
+            >
+              <AlignLeft size={16} />
+              Left
+            </button>
+            <button
+              onClick={() => onChange({ justify: true })}
+              style={{
+                padding: '0.75rem',
+                borderRadius: 8,
+                border: settings.justify
+                  ? '2px solid var(--amber-warm)'
+                  : '1px solid rgba(250, 246, 237, 0.2)',
+                background: settings.justify
+                  ? 'rgba(212, 165, 116, 0.15)'
+                  : 'rgba(250, 246, 237, 0.05)',
+                color: 'var(--moon-light)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8rem',
+              }}
+            >
+              <AlignJustify size={16} />
+              Justify
+            </button>
           </div>
         </div>
       </div>
