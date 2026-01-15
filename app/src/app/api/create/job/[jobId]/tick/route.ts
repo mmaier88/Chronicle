@@ -899,13 +899,35 @@ export async function POST(
       })
 
       // Send book completion email (non-blocking)
-      if (user?.email && !isDevUser) {
-        const fullUser = user as { email: string; user_metadata?: { full_name?: string; name?: string } }
-        const userName = fullUser.user_metadata?.full_name || fullUser.user_metadata?.name || ''
-        sendBookCompletedEmail(user.email, userName, book.title, book.id).catch(err => {
-          logger.error('Book completion email failed', err, { bookId: book.id, userId: user.id, operation: 'completion_email' })
-        })
+      // For cron jobs (auto-resume), user is null so we need to look up the email
+      const sendCompletionEmail = async () => {
+        try {
+          let email: string | undefined
+          let userName = ''
+
+          if (user?.email && !isDevUser) {
+            // User is authenticated - use their session data
+            email = user.email
+            const fullUser = user as { email: string; user_metadata?: { full_name?: string; name?: string } }
+            userName = fullUser.user_metadata?.full_name || fullUser.user_metadata?.name || ''
+          } else if (isCronAuth && effectiveUserId) {
+            // Cron job - look up user from auth.users table
+            const { data: userData } = await supabase.auth.admin.getUserById(effectiveUserId)
+            if (userData?.user?.email) {
+              email = userData.user.email
+              userName = userData.user.user_metadata?.full_name || userData.user.user_metadata?.name || ''
+            }
+          }
+
+          if (email) {
+            await sendBookCompletedEmail(email, userName, book.title, book.id)
+            logger.info('Book completion email sent', { bookId: book.id, email })
+          }
+        } catch (err) {
+          logger.error('Book completion email failed', err, { bookId: book.id, userId: effectiveUserId, operation: 'completion_email' })
+        }
       }
+      sendCompletionEmail() // Fire and forget
 
       await updateJob(supabase, jobId, {
         status: 'complete',
