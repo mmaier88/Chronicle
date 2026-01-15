@@ -33,8 +33,10 @@ export async function GET(
     progress: job.progress,
     error: job.error,
     attempt: job.attempt,
+    auto_resume_attempts: job.auto_resume_attempts || 0,
     created_at: job.created_at,
     started_at: job.started_at,
+    updated_at: job.updated_at,
     completed_at: job.completed_at,
   })
 }

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Loader2, CheckCircle, XCircle, BookOpen, RefreshCw, Feather } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, BookOpen, RefreshCw, Feather, AlertTriangle } from 'lucide-react'
+import { JOB_RECOVERY_CONFIG, isJobStuck, canAutoResume } from '@/lib/job-recovery'
 
 interface JobStatus {
   id: string
@@ -11,6 +12,8 @@ interface JobStatus {
   step: string | null
   progress: number
   error: string | null
+  updated_at?: string
+  auto_resume_attempts?: number
 }
 
 const STEP_LABELS: Record<string, string> = {
@@ -36,6 +39,11 @@ function getStepLabel(step: string | null | undefined): string {
   return step
 }
 
+// How often to check for stuck jobs (in ms) - more aggressive than cron
+const STUCK_CHECK_INTERVAL_MS = 30000 // 30 seconds
+// How many seconds of no updates before client considers job stuck
+const CLIENT_STALE_THRESHOLD_SECONDS = 60
+
 export default function VibeGeneratingPage() {
   const router = useRouter()
   const params = useParams()
@@ -44,6 +52,10 @@ export default function VibeGeneratingPage() {
   const [status, setStatus] = useState<JobStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [tickCount, setTickCount] = useState(0)
+  const [isRecovering, setIsRecovering] = useState(false)
+  const [recoveryAttempts, setRecoveryAttempts] = useState(0)
+  const lastProgressRef = useRef<number>(0)
+  const lastProgressTimeRef = useRef<number>(Date.now())
 
   // Fetch status
   const fetchStatus = useCallback(async () => {
@@ -98,6 +110,59 @@ export default function VibeGeneratingPage() {
 
     return () => clearTimeout(timer)
   }, [status, tickJob, tickCount])
+
+  // Track progress changes for stuck detection
+  useEffect(() => {
+    if (status?.progress !== undefined && status.progress !== lastProgressRef.current) {
+      lastProgressRef.current = status.progress
+      lastProgressTimeRef.current = Date.now()
+      setIsRecovering(false)
+    }
+  }, [status?.progress])
+
+  // Detect stuck jobs client-side and auto-recover
+  useEffect(() => {
+    if (!status) return
+    if (status.status === 'complete' || status.status === 'failed') return
+    if (isRecovering) return
+
+    const checkStuck = () => {
+      const now = Date.now()
+      const timeSinceProgress = (now - lastProgressTimeRef.current) / 1000
+
+      // Also check server-side updated_at if available
+      let serverStaleSeconds = 0
+      if (status.updated_at) {
+        serverStaleSeconds = (now - new Date(status.updated_at).getTime()) / 1000
+      }
+
+      const isStuck = timeSinceProgress > CLIENT_STALE_THRESHOLD_SECONDS ||
+                      serverStaleSeconds > CLIENT_STALE_THRESHOLD_SECONDS
+
+      if (isStuck && recoveryAttempts < 10) {
+        console.log(`[JobRecovery] Job appears stuck (${Math.round(timeSinceProgress)}s since progress, ${Math.round(serverStaleSeconds)}s server stale). Attempting recovery...`)
+        setIsRecovering(true)
+        setRecoveryAttempts(prev => prev + 1)
+
+        // Trigger a tick to resume the job
+        tickJob().then(() => {
+          // Give it a moment then check again
+          setTimeout(() => {
+            fetchStatus()
+            setIsRecovering(false)
+          }, 2000)
+        }).catch(() => {
+          setIsRecovering(false)
+        })
+      }
+    }
+
+    const interval = setInterval(checkStuck, STUCK_CHECK_INTERVAL_MS)
+    // Also check immediately on mount
+    checkStuck()
+
+    return () => clearInterval(interval)
+  }, [status, isRecovering, recoveryAttempts, tickJob, fetchStatus])
 
   // Redirect when complete
   useEffect(() => {
@@ -246,8 +311,28 @@ export default function VibeGeneratingPage() {
         </button>
       )}
 
+      {/* Recovery indicator */}
+      {isRecovering && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          padding: '0.75rem 1rem',
+          background: 'rgba(212, 165, 116, 0.15)',
+          border: '1px solid rgba(212, 165, 116, 0.3)',
+          borderRadius: 8,
+          fontSize: '0.875rem',
+          color: 'var(--amber-warm)',
+          marginBottom: '1rem'
+        }}>
+          <RefreshCw style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
+          Resuming generation...
+        </div>
+      )}
+
       {/* Loading hints */}
-      {status?.status === 'running' && (
+      {status?.status === 'running' && !isRecovering && (
         <div className="app-card" style={{ marginTop: '3rem', textAlign: 'left' }}>
           <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>While you wait...</h3>
           <p className="app-body-sm">
