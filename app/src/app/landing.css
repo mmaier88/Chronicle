@@ -122,17 +122,6 @@
   animation: fadeUp 1s ease-out 0.8s forwards;
 }
 
-.landing-page .hero-audio-note {
-  font-size: 1rem;
-  font-weight: 300;
-  color: var(--moon-soft);
-  max-width: 540px;
-  margin-bottom: 2.5rem;
-  line-height: 1.6;
-  opacity: 0;
-  animation: fadeUp 1s ease-out 0.9s forwards;
-}
-
 .landing-page .hero-cta-group {
   display: flex;
   flex-direction: column;

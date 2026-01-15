@@ -43,9 +43,6 @@ export default async function LandingPage() {
           <p className="hero-body">
             Read deeply, revisit freely, and make the story your own.
           </p>
-          <p className="hero-audio-note">
-            Prefer audio? Every story is also available to listen — whenever it fits your day.
-          </p>
           <div className="hero-cta-group">
             <Link href="/login?redirect=/create" className="cta-button">
               Enter Chronicle
