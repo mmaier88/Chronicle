@@ -381,6 +381,150 @@ typography_settings (user_id, font_size, line_height, font_family, theme)
 
 ---
 
+### Phase 14.12: Production Safety & Testing (In Progress)
+
+**Goal:** Prevent production breakages through automated testing, type safety, and deployment safeguards.
+
+#### Database Schema Safety
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Generate Supabase types (`supabase gen types`) | Critical | Done |
+| Add types to build pipeline (fail on mismatch) | Critical | Planned |
+| Validate all DB operations against generated types | Critical | Planned |
+
+#### Error Handling Policy
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Audit all Supabase calls - add error checks | Critical | In Progress |
+| Create `assertDbSuccess()` helper | High | Done |
+| Add Sentry alerts on silent DB failures | High | Planned |
+
+#### Integration Tests (Critical Paths)
+
+| Task | Priority | Status |
+|------|----------|--------|
+| OAuth flow test (Google login → callback → session) | Critical | Planned |
+| Cover generation test (upload → DB update → URL) | High | Planned |
+| Payment flow test (Stripe → webhook → book creation) | High | Planned |
+| Share flow test (create token → access book) | Medium | Planned |
+
+#### Pre-Deploy Checklist
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Create deploy script with verification steps | High | Done |
+| Staging smoke tests before production | High | Planned |
+| OAuth verification after auth config changes | Critical | Planned |
+| Database migration safety checks | High | Planned |
+
+#### Config Change Protocol
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Backup Supabase auth config before changes | Critical | Planned |
+| Document all external service credentials | High | Planned |
+| Add rollback procedures | High | Planned |
+
+#### Performance Optimization
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Analyze 2.4MB JS chunk | High | In Progress |
+| Dynamic import heavy libraries | High | Planned |
+| Add bundle size monitoring to CI | Medium | Planned |
+
+#### Social Sharing
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Add OG image (og-image.jpg from hero) | High | Done |
+| Add OpenGraph metadata | High | Done |
+| Add Twitter card metadata | High | Done |
+
+#### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/types/database.ts` | Auto-generated Supabase types |
+| `src/lib/db-utils.ts` | Database error handling utilities |
+| `scripts/pre-deploy-check.sh` | Pre-deployment verification script |
+| `public/og-image.jpg` | Social sharing image |
+
+---
+
+### Phase 14.11: Production Hardening (Complete)
+
+**Goal:** Security, compliance, error tracking, and monitoring for production readiness.
+
+#### Security
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Remove exposed .env.local from repo | Critical | Done |
+| Add STRIPE_WEBHOOK_SECRET to env validation | High | Done |
+| Implement rate limiting module (`lib/rate-limit.ts`) | High | Done |
+| Input validation on all API endpoints | High | Done |
+
+#### Legal/GDPR Compliance
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Terms of Service acceptance checkbox on login | High | Done |
+| Account deletion endpoint (`/api/user/delete`) | High | Done |
+| Account deletion UI in settings | High | Done |
+| Cookie consent banner | High | Done |
+
+#### Error Tracking & Monitoring
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Sentry integration (client, server, edge) | High | Done |
+| React Error Boundary component | High | Done |
+| Health check endpoint (`/api/health`) | High | Done |
+| UptimeRobot monitoring setup | High | Done |
+| Uptime monitoring documentation | Medium | Done |
+
+#### Analytics
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Share link analytics tracking | Medium | Done |
+| `share_analytics` migration | Medium | Done |
+| View/listen count tracking | Medium | Done |
+
+#### CI/CD
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Enable E2E tests in GitHub Actions | High | Done |
+| Bundle size analyzer setup | Medium | Done |
+
+#### Files Created/Modified
+
+| File | Purpose |
+|------|---------|
+| `src/components/ErrorBoundary.tsx` | React error boundary with Sentry |
+| `src/components/CookieConsent.tsx` | GDPR cookie consent banner |
+| `src/app/api/health/route.ts` | Health check endpoint |
+| `src/app/api/user/delete/route.ts` | Account deletion API |
+| `src/lib/rate-limit.ts` | Rate limiting configurations |
+| `src/lib/env.ts` | Environment variable validation |
+| `sentry.client.config.ts` | Sentry client configuration |
+| `sentry.server.config.ts` | Sentry server configuration |
+| `sentry.edge.config.ts` | Sentry edge configuration |
+| `docs/UPTIME_MONITORING.md` | Monitoring setup guide |
+
+#### External Services Configured
+
+| Service | Purpose | Credential Location |
+|---------|---------|---------------------|
+| Sentry | Error tracking | 1Password: `sentry.chronicle` |
+| UptimeRobot | Uptime monitoring | 1Password: `uptimerobot` |
+
+---
+
 ### Phase 15: Discovery & Public Library
 
 **Goal:** Transform Chronicle from a creation tool into a content network. Users should be able to browse and discover stories, not just create them.

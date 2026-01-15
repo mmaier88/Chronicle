@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { StaffPicks } from '@/components/StaffPicks'
 import './landing.css'
 
 // Low-quality placeholder for progressive loading
@@ -36,28 +35,27 @@ export default async function LandingPage() {
         <div className="hero-content">
           <p className="hero-tagline">Stories made for you</p>
           <h1 className="hero-headline">
-            Listen to the story you didn&apos;t know you needed
+            A story written for you — and only you
           </h1>
           <p className="hero-subheadline">
-            Chronicle creates original stories — written for you and read aloud in a calm, human voice.
-            Shaped around your taste, your mood, and the moment you&apos;re in.
-            Not algorithms. Not bestseller lists. Just you.
+            Chronicle creates original stories shaped around your taste, your mood, and the moment you&apos;re in.
           </p>
-          <p className="hero-audio-badge">Every story is available in immersive audio.</p>
+          <p className="hero-body">
+            Read deeply, revisit freely, and make the story your own.
+          </p>
+          <p className="hero-audio-note">
+            Prefer audio? Every story is also available to listen — whenever it fits your day.
+          </p>
           <div className="hero-cta-group">
             <Link href="/login?redirect=/create" className="cta-button">
-              Start Listening
+              Enter Chronicle
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             </Link>
-            <p className="hero-micro-cue">Perfect for evenings, walks, and quiet moments.</p>
           </div>
         </div>
       </section>
-
-      {/* Staff Picks */}
-      <StaffPicks />
 
       {/* Footer */}
       <footer className="landing-footer-bottom">

@@ -71,7 +71,7 @@ Return JSON only:
     const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
 
     // Log AI job
-    await supabase.from('ai_jobs').insert({
+    const { error: jobLogError } = await supabase.from('ai_jobs').insert({
       book_id: bookId,
       user_id: user.id,
       target_type: 'extract',
@@ -83,6 +83,9 @@ Return JSON only:
       status: 'completed',
       completed_at: new Date().toISOString(),
     })
+    if (jobLogError) {
+      console.error('Failed to log AI job:', jobLogError)
+    }
 
     // Parse and store semantic blocks
     try {
@@ -90,7 +93,7 @@ Return JSON only:
 
       // Store claims as semantic blocks
       for (const claim of parsed.claims || []) {
-        await supabase.from('semantic_blocks').insert({
+        const { error } = await supabase.from('semantic_blocks').insert({
           book_id: bookId,
           section_id: sectionId,
           block_type: 'claim',
@@ -99,26 +102,29 @@ Return JSON only:
           stance: claim.stance,
           confidence: claim.confidence,
         })
+        if (error) console.error('Failed to store claim block:', error)
       }
 
       // Store motifs
       for (const motif of parsed.motifs || []) {
-        await supabase.from('semantic_blocks').insert({
+        const { error } = await supabase.from('semantic_blocks').insert({
           book_id: bookId,
           section_id: sectionId,
           block_type: 'motif',
           content: `${motif.text}: ${motif.significance}`,
         })
+        if (error) console.error('Failed to store motif block:', error)
       }
 
       // Store threads
       for (const thread of parsed.threads || []) {
-        await supabase.from('semantic_blocks').insert({
+        const { error } = await supabase.from('semantic_blocks').insert({
           book_id: bookId,
           section_id: sectionId,
           block_type: 'thread',
           content: `[${thread.status}] ${thread.text}`,
         })
+        if (error) console.error('Failed to store thread block:', error)
       }
 
       return NextResponse.json({ result: parsed })

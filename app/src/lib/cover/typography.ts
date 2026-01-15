@@ -232,7 +232,7 @@ export async function composeCover(options: ComposeOptions): Promise<Buffer> {
 
   // Skip text overlay if requested (avoids font rendering issues on servers without fonts)
   if (skipText) {
-    return sharp(resizedImage).png().toBuffer()
+    return optimizeImage(resizedImage)
   }
 
   // Determine text color
@@ -253,21 +253,34 @@ export async function composeCover(options: ComposeOptions): Promise<Buffer> {
         left: 0,
       },
     ])
-    .png()
     .toBuffer()
 
-  return finalCover
+  return optimizeImage(finalCover)
+}
+
+/**
+ * Optimize image for web delivery
+ * Uses WebP for best compression while maintaining quality
+ */
+async function optimizeImage(imageBuffer: Buffer): Promise<Buffer> {
+  return sharp(imageBuffer)
+    .webp({
+      quality: 85,
+      effort: 6,
+    })
+    .toBuffer()
 }
 
 /**
  * Generate cover without text (for preview/testing)
  */
 export async function resizeForCover(imageBuffer: Buffer): Promise<Buffer> {
-  return sharp(imageBuffer)
+  const resized = await sharp(imageBuffer)
     .resize(COVER_WIDTH, COVER_HEIGHT, {
       fit: 'cover',
       position: 'center',
     })
-    .png()
     .toBuffer()
+
+  return optimizeImage(resized)
 }

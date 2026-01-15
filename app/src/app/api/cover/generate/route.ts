@@ -122,13 +122,13 @@ export async function POST(request: Request) {
         throw new Error(result.error || 'Cover generation failed')
       }
 
-      // Upload to Supabase Storage
-      const storagePath = `${user.id}/${bookId}/cover.png`
+      // Upload to Supabase Storage (WebP for better compression)
+      const storagePath = `${user.id}/${bookId}/cover.webp`
 
       const { error: uploadError } = await supabase.storage
         .from('covers')
         .upload(storagePath, result.coverBuffer, {
-          contentType: 'image/png',
+          contentType: 'image/webp',
           upsert: true,
         })
 

@@ -145,7 +145,7 @@ Return JSON:
     const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
 
     // Log AI job
-    await supabase.from('ai_jobs').insert({
+    const { error: jobLogError } = await supabase.from('ai_jobs').insert({
       book_id: bookId,
       user_id: user.id,
       target_type: 'consistency',
@@ -157,13 +157,16 @@ Return JSON:
       status: 'completed',
       completed_at: new Date().toISOString(),
     })
+    if (jobLogError) {
+      console.error('Failed to log AI job:', jobLogError)
+    }
 
     // Parse and store consistency report
     try {
       const parsed = JSON.parse(responseText)
 
       // Store report
-      await supabase.from('consistency_reports').insert({
+      const { error: reportError } = await supabase.from('consistency_reports').insert({
         book_id: bookId,
         chapter_id: chapterId || null,
         report_type: scope,
@@ -174,6 +177,9 @@ Return JSON:
         summary: parsed.summary,
         severity: parsed.severity,
       })
+      if (reportError) {
+        console.error('Failed to store consistency report:', reportError)
+      }
 
       return NextResponse.json({ result: parsed })
     } catch {

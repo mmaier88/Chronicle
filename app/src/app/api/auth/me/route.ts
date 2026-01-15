@@ -1,5 +1,6 @@
 import { getUser, createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -25,7 +26,7 @@ export async function GET() {
       preferences: preferences || null,
     })
   } catch (error) {
-    console.error('[Auth] Error fetching user:', error)
+    logger.error('[Auth] Error fetching user', error)
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 })
   }
 }

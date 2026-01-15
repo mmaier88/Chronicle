@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { CURRENT_TERMS_VERSION } from '@/lib/terms'
 
 // Security headers
 const securityHeaders = {
@@ -9,6 +10,12 @@ const securityHeaders = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 }
+
+// Paths that require terms acceptance
+const termsProtectedPaths = ['/create', '/reader', '/dashboard']
+
+// Paths exempt from terms check (auth flow, legal pages, public pages)
+const termsExemptPaths = ['/login', '/signup', '/callback', '/accept-terms', '/legal', '/imprint', '/pricing', '/api', '/share']
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -46,8 +53,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes
-  const protectedPaths = ['/dashboard', '/workspace', '/project', '/document']
+  // Protected routes (require auth)
+  const protectedPaths = ['/dashboard', '/workspace', '/project', '/document', '/create']
   const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   )
@@ -59,6 +66,32 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Check terms acceptance for authenticated users on protected paths
+  const isTermsExemptPath = termsExemptPaths.some(path =>
+    request.nextUrl.pathname.startsWith(path)
+  )
+  const needsTermsCheck = termsProtectedPaths.some(path =>
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  if (user && needsTermsCheck && !isTermsExemptPath) {
+    // Check if user has accepted current terms
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('terms_accepted_at, terms_version')
+      .eq('id', user.id)
+      .single()
+
+    const needsTermsAcceptance = !profile?.terms_accepted_at ||
+      profile.terms_version !== CURRENT_TERMS_VERSION
+
+    if (needsTermsAcceptance) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/accept-terms'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Redirect logged in users away from auth pages
   const authPaths = ['/login', '/signup']
   const isAuthPath = authPaths.some(path =>
@@ -67,7 +100,7 @@ export async function updateSession(request: NextRequest) {
 
   if (isAuthPath && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/create'
     return NextResponse.redirect(url)
   }
 

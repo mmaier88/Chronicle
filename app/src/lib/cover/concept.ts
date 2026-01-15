@@ -39,20 +39,41 @@ export interface ConceptInput {
 
 const SYSTEM_PROMPT = `You are a visual concept distiller for book covers.
 
-Your job is to extract ONE everyday object that could represent the story's essence.
+Your job is to find ONE striking visual element from the story's SETTING or WORLD.
 
-RULES:
+WHAT TO PICK (in order of preference):
+1. SETTING ELEMENTS - What does the world look like? Snow, ocean, cityscape, forest, desert
+2. ENVIRONMENTAL DETAILS - Weather, time of day, natural phenomena (snowflake, wave, aurora, fog)
+3. PROFESSION/ACTIVITY TOOLS - What does the protagonist work with? (map, radio, telescope, scalpel)
+4. KEY STORY OBJECTS - Items central to the plot (a specific artifact, device, or item mentioned)
+
+EXAMPLES OF GOOD CHOICES:
+- Winter wilderness story → a single perfect snowflake, frost crystals, pine needles with snow
+- Ocean/maritime story → a curling wave, nautical chart, ship's compass
+- Urban surveillance story → radio antenna silhouette, circuit board patterns, satellite dish
+- Scientific story → glass prism with light, telescope lens, molecular structure
+- Desert story → sand dune ripples, cracked earth, desert rose crystal
+
+AVOID THEMATIC ABSTRACTIONS:
+- NO scales/balances (too abstract for "balance" or "debt" themes)
+- NO mirrors (too cliché for "reflection" or "self-discovery")
+- NO hourglasses (too cliché for "time" themes)
+- NO keys (too cliché for "secrets" or "unlocking")
+- NO chains (too cliché for "freedom" or "bondage")
+
+BANNED GENERIC OBJECTS:
+- Notebooks, journals, envelopes, letters
+- Coffee cups, tea cups
+- Generic books, pens, pencils
+- Anything that could be on any book cover
+
+OUTPUT RULES:
 - Output ONLY valid JSON
-- Pick ONE concrete, everyday object (not abstract concepts)
-- The object should be mundane but meaningful in context
+- The visual element must be CONCRETE and PHOTOGRAPHABLE
+- Be SPECIFIC: "a single hexagonal snowflake" not "snow"
+- Draw from the SETTING described, not abstract themes
 - NO style words (no "ethereal", "mystical", "vibrant")
-- NO colors
-- NO composition suggestions
-- NO art direction
-- The metaphor must be a PHYSICAL OBJECT that exists in the real world
-
-Good metaphors: "an empty chair", "a half-eaten apple", "a set of house keys", "a wilted flower", "a cracked mirror"
-Bad metaphors: "the weight of time", "shattered dreams", "cosmic void", "swirling emotions"
+- NO colors unless intrinsic (silver, brass, etc.)
 
 The avoid list should include visual clichés for this genre.`
 

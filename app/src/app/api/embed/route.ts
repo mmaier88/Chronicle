@@ -180,13 +180,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark milestone as embedded
-    await supabase
+    const { error: updateError } = await supabase
       .from('milestones')
       .update({
         embedded: true,
         embedded_at: new Date().toISOString(),
       })
       .eq('id', milestone.id)
+    if (updateError) {
+      console.error('Failed to mark milestone as embedded:', updateError)
+    }
 
     return NextResponse.json({
       success: true,

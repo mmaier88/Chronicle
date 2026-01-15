@@ -66,6 +66,8 @@ export function checkRateLimit(
 
 // Pre-configured rate limiters for different endpoints
 export const RATE_LIMITS = {
+  // Auth endpoints: 10 requests per minute (prevents brute force)
+  auth: { maxRequests: 10, windowMs: 60000 },
   // AI generation: 20 requests per minute
   aiGenerate: { maxRequests: 20, windowMs: 60000 },
   // TTS: 10 requests per minute
@@ -76,6 +78,18 @@ export const RATE_LIMITS = {
   cover: { maxRequests: 5, windowMs: 60000 },
   // Email sending: 10 per hour
   email: { maxRequests: 10, windowMs: 3600000 },
+  // Share creation: 20 per hour
+  share: { maxRequests: 20, windowMs: 3600000 },
+  // Account deletion: 3 per hour (prevent accidental mass deletion)
+  accountDelete: { maxRequests: 3, windowMs: 3600000 },
+}
+
+// Helper to get IP from request
+export function getClientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const realIp = request.headers.get('x-real-ip')
+  const cfIp = request.headers.get('cf-connecting-ip')
+  return cfIp || realIp || forwarded?.split(',')[0]?.trim() || 'unknown'
 }
 
 // Helper to create rate limit response headers

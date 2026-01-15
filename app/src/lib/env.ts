@@ -18,6 +18,10 @@ interface EnvConfig {
   SENDGRID_API_KEY?: string
   VOYAGE_API_KEY?: string
   NEXT_PUBLIC_APP_URL?: string
+  STRIPE_SECRET_KEY?: string
+  STRIPE_WEBHOOK_SECRET?: string
+  CRON_SECRET?: string
+  SENTRY_DSN?: string
 }
 
 const requiredVars = [
@@ -33,6 +37,10 @@ const optionalVars = [
   'SENDGRID_API_KEY',
   'VOYAGE_API_KEY',
   'NEXT_PUBLIC_APP_URL',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'CRON_SECRET',
+  'SENTRY_DSN',
 ] as const
 
 export function validateEnv(): EnvConfig {
@@ -77,6 +85,10 @@ export function validateEnv(): EnvConfig {
     SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
     VOYAGE_API_KEY: process.env.VOYAGE_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    CRON_SECRET: process.env.CRON_SECRET,
+    SENTRY_DSN: process.env.SENTRY_DSN,
   }
 }
 
@@ -91,4 +103,6 @@ export const features = {
   textToSpeech: () => !!process.env.ELEVENLABS_API_KEY,
   email: () => !!process.env.SENDGRID_API_KEY,
   embeddings: () => !!process.env.VOYAGE_API_KEY,
+  payments: () => !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_WEBHOOK_SECRET,
+  errorTracking: () => !!process.env.SENTRY_DSN,
 }

@@ -49,3 +49,5 @@ coverage/
 # Supabase
 supabase/.temp/
 .env*.local
+.env.vercel
+.env.vercel-prod

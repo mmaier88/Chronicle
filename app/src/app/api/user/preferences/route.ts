@@ -1,6 +1,7 @@
 import { getUser, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { BOOK_VOICES } from '@/lib/elevenlabs/client'
+import { logger } from '@/lib/logger'
 
 const validVoiceIds = BOOK_VOICES.map(v => v.id)
 
@@ -34,13 +35,13 @@ export async function POST(request: NextRequest) {
       })
 
     if (error) {
-      console.error('[Preferences] Error saving:', error)
+      logger.error('[Preferences] Error saving:', error)
       return NextResponse.json({ error: 'Failed to save preferences' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[Preferences] Error:', error)
+    logger.error('[Preferences] Error:', error)
     return NextResponse.json({ error: 'Failed to save preferences' }, { status: 500 })
   }
 }
@@ -62,13 +63,13 @@ export async function GET() {
       .single()
 
     if (error && error.code !== 'PGRST116') {
-      console.error('[Preferences] Error fetching:', error)
+      logger.error('[Preferences] Error fetching:', error)
       return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 })
     }
 
     return NextResponse.json({ preferences: data || null })
   } catch (error) {
-    console.error('[Preferences] Error:', error)
+    logger.error('[Preferences] Error:', error)
     return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 })
   }
 }

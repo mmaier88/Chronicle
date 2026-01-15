@@ -59,14 +59,18 @@ Background: ${backgroundColor}, matte finish, subtle paper texture optional.
 Flat, even lighting with soft shadows.
 Muted color palette (maximum 3 colors).
 
-Composition:
-- IMPORTANT: The object must be LARGE and PROMINENT
-- Object occupies approximately 60-70% of the frame width
-- Object is the dominant visual element - do not make it tiny
-- Centered vertically in the frame
-- Some empty space above and below, but the object should feel substantial
-- No environment or scenery
+Composition - CRITICAL FRAMING REQUIREMENTS:
+- THE OBJECT MUST FILL THE FRAME - this is non-negotiable
+- Object occupies 70-80% of the image area
+- The object must be FULLY VISIBLE - no cropping, no parts cut off
+- The ENTIRE object must fit within the frame with small margins
+- Object is centered both horizontally and vertically
+- Leave only minimal breathing room around edges (10-15% margin)
+- The object should feel like it was carefully placed to fill the space
+- No environment or scenery - just the object
 - No depth-of-field blur
+- If the object is small (like a key or ring), show it at macro scale filling the frame
+- If the object is large (like a chair), frame it to fit entirely within bounds
 
 Style:
 - Understated and intentionally restrained
@@ -97,7 +101,10 @@ AVOID:
 - Abstract geometry
 - Vortices or swirls
 - Floating objects
-- Multiple subjects`
+- Multiple subjects
+- NEVER crop the object - it must be fully visible
+- NEVER make the object tiny in the frame
+- NEVER place the object at the edge of the frame`
   }
 
   // PHOTOGRAPHIC_REALISM track (future)
@@ -112,11 +119,13 @@ Mood: ${concept.emotion}
 Background: Seamless ${backgroundColor} backdrop.
 Professional studio lighting, soft and even.
 
-Composition:
-- IMPORTANT: The object must be LARGE and PROMINENT
-- Object occupies approximately 60-70% of the frame width
+Composition - CRITICAL FRAMING REQUIREMENTS:
+- THE OBJECT MUST FILL THE FRAME - this is non-negotiable
+- Object occupies 70-80% of the image area
+- The object must be FULLY VISIBLE - no cropping, no parts cut off
+- The ENTIRE object must fit within the frame with small margins
 - Object centered in frame
-- Some negative space above and below, but object should feel substantial
+- Leave only minimal breathing room around edges (10-15% margin)
 - Shot straight-on or with minimal angle
 
 MANDATORY CONSTRAINTS:
@@ -128,7 +137,9 @@ AVOID:
 - ${avoidList}
 - Over-stylized editing
 - Heavy filters
-- Multiple objects`
+- Multiple objects
+- NEVER crop the object - it must be fully visible
+- NEVER make the object tiny in the frame`
 }
 
 /**

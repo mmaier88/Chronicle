@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Log AI job if bookId provided
     if (bookId) {
-      await supabase.from('ai_jobs').insert({
+      const { error: jobLogError } = await supabase.from('ai_jobs').insert({
         book_id: bookId,
         user_id: user.id,
         target_type: 'polish',
@@ -70,6 +70,9 @@ export async function POST(request: NextRequest) {
         status: 'completed',
         completed_at: new Date().toISOString(),
       })
+      if (jobLogError) {
+        console.error('Failed to log AI job:', jobLogError)
+      }
     }
 
     return apiSuccess({

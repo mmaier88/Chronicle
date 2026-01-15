@@ -125,7 +125,10 @@ export async function POST(request: NextRequest) {
   if (jobError || !job) {
     logger.error('Failed to create vibe job', jobError, { userId: user.id, bookId: book.id, operation: 'create_vibe_job' })
     // Clean up book if job creation fails
-    await supabase.from('books').delete().eq('id', book.id)
+    const { error: deleteError } = await supabase.from('books').delete().eq('id', book.id)
+    if (deleteError) {
+      logger.error('Failed to clean up book after job creation failure', deleteError, { bookId: book.id })
+    }
     return NextResponse.json({ error: 'Failed to create generation job' }, { status: 500 })
   }
 

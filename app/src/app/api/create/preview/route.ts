@@ -171,7 +171,7 @@ Requirements:
     }
 
     // Log AI job
-    await supabase.from('ai_jobs').insert({
+    const { error: jobLogError } = await supabase.from('ai_jobs').insert({
       book_id: null as unknown as string, // No book yet
       user_id: user.id,
       target_type: 'constitution', // Closest match
@@ -183,6 +183,9 @@ Requirements:
       status: 'completed',
       completed_at: new Date().toISOString(),
     })
+    if (jobLogError) {
+      console.error('Failed to log AI job:', jobLogError)
+    }
 
     return apiSuccess({ preview })
 

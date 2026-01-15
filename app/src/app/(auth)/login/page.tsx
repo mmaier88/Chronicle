@@ -199,6 +199,35 @@ function LoginForm() {
           {loading ? 'Sending...' : 'Send magic link'}
         </button>
       </form>
+
+      {/* Informational copy - no checkbox */}
+      <p style={{
+        marginTop: '1.5rem',
+        fontSize: '0.8125rem',
+        color: '#e8e0d0',
+        opacity: 0.6,
+        lineHeight: 1.5,
+        textAlign: 'center',
+      }}>
+        By creating an account, you agree to the{' '}
+        <a
+          href="/legal"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#d4a574', textDecoration: 'underline' }}
+        >
+          Terms of Service
+        </a>
+        {' '}and{' '}
+        <a
+          href="/legal#privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#d4a574', textDecoration: 'underline' }}
+        >
+          Privacy Policy
+        </a>
+      </p>
     </div>
   )
 }

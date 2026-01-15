@@ -125,10 +125,13 @@ export async function POST(request: NextRequest) {
           paymentId: payment.id,
           userId: payment.user_id,
         })
-        await supabase
+        const { error: updateError } = await supabase
           .from('payments')
           .update({ status: 'failed', error_message: 'Book creation failed' })
           .eq('id', payment.id)
+        if (updateError) {
+          logger.error('Failed to update payment status to failed', updateError, { paymentId: payment.id })
+        }
         return NextResponse.json({ error: 'Book creation failed' }, { status: 500 })
       }
 
@@ -154,16 +157,22 @@ export async function POST(request: NextRequest) {
           bookId: book.id,
         })
         // Clean up book if job creation fails
-        await supabase.from('books').delete().eq('id', book.id)
-        await supabase
+        const { error: deleteError } = await supabase.from('books').delete().eq('id', book.id)
+        if (deleteError) {
+          logger.error('Failed to clean up book after job creation failure', deleteError, { bookId: book.id })
+        }
+        const { error: updateError } = await supabase
           .from('payments')
           .update({ status: 'failed', error_message: 'Job creation failed' })
           .eq('id', payment.id)
+        if (updateError) {
+          logger.error('Failed to update payment status to failed', updateError, { paymentId: payment.id })
+        }
         return NextResponse.json({ error: 'Job creation failed' }, { status: 500 })
       }
 
       // Update payment as completed with job reference
-      await supabase
+      const { error: completeError } = await supabase
         .from('payments')
         .update({
           status: 'completed',
@@ -173,6 +182,10 @@ export async function POST(request: NextRequest) {
           vibe_job_id: job.id,
         })
         .eq('id', payment.id)
+
+      if (completeError) {
+        logger.error('Failed to update payment as completed', completeError, { paymentId: payment.id })
+      }
 
       logger.info('Payment completed, book and job created', {
         paymentId: payment.id,
@@ -189,10 +202,13 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session
       logger.info('Checkout session expired', { sessionId: session.id })
 
-      await supabase
+      const { error: expireError } = await supabase
         .from('payments')
         .update({ status: 'expired' })
         .eq('stripe_checkout_session_id', session.id)
+      if (expireError) {
+        logger.error('Failed to update payment as expired', expireError, { sessionId: session.id })
+      }
       break
     }
 
@@ -201,10 +217,13 @@ export async function POST(request: NextRequest) {
       logger.info('Charge refunded', { chargeId: charge.id, paymentIntent: charge.payment_intent })
 
       if (charge.payment_intent) {
-        await supabase
+        const { error: refundError } = await supabase
           .from('payments')
           .update({ status: 'refunded' })
           .eq('stripe_payment_intent_id', charge.payment_intent)
+        if (refundError) {
+          logger.error('Failed to update payment as refunded', refundError, { paymentIntent: charge.payment_intent })
+        }
       }
       break
     }

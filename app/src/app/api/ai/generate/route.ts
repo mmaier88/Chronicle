@@ -170,7 +170,7 @@ Return as JSON: { prose: "...", claims: ["claim1", "claim2"] }`
     const responseText = content.type === 'text' ? content.text : ''
 
     // Log AI job
-    await supabase.from('ai_jobs').insert({
+    const { error: jobLogError } = await supabase.from('ai_jobs').insert({
       book_id: bookId,
       user_id: user.id,
       target_type: type,
@@ -182,6 +182,9 @@ Return as JSON: { prose: "...", claims: ["claim1", "claim2"] }`
       status: 'completed',
       completed_at: new Date().toISOString(),
     })
+    if (jobLogError) {
+      console.error('Failed to log AI job:', jobLogError)
+    }
 
     // Try to parse as JSON, otherwise return as text
     try {
@@ -194,7 +197,7 @@ Return as JSON: { prose: "...", claims: ["claim1", "claim2"] }`
     console.error('AI generation error:', error)
 
     // Log failed job
-    await supabase.from('ai_jobs').insert({
+    const { error: failLogError } = await supabase.from('ai_jobs').insert({
       book_id: bookId,
       user_id: user.id,
       target_type: type,
@@ -204,6 +207,9 @@ Return as JSON: { prose: "...", claims: ["claim1", "claim2"] }`
       status: 'failed',
       error_message: error instanceof Error ? error.message : 'Unknown error',
     })
+    if (failLogError) {
+      console.error('Failed to log failed AI job:', failLogError)
+    }
 
     return ApiErrors.internal('AI generation failed')
   }

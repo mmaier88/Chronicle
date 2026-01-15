@@ -1,4 +1,8 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { DEFAULT_VOICE_ID } from "./constants";
+
+// Re-export constants from separate file (avoids bundling SDK in client code)
+export { DEFAULT_VOICE_ID, BOOK_VOICES, type VoiceId } from "./constants";
 
 // Lazy-initialize ElevenLabs client (avoid build-time errors)
 let _elevenlabs: ElevenLabsClient | null = null;
@@ -14,17 +18,6 @@ function getClient(): ElevenLabsClient {
   }
   return _elevenlabs;
 }
-
-// Default voice for book narration
-export const DEFAULT_VOICE_ID = "nPczCjzI2devNBz1zQrb";
-
-// Available voices for book narration
-export const BOOK_VOICES = [
-  { id: "nPczCjzI2devNBz1zQrb", name: "Marcus", gender: "male", description: "Deep, engaging male voice - default narrator" },
-  { id: "dCnu06FiOZma2KVNUoPZ", name: "Aurora", gender: "female", description: "Warm, expressive female voice - alternative narrator" },
-] as const;
-
-export type VoiceId = typeof BOOK_VOICES[number]["id"];
 
 /**
  * Preprocess text for TTS generation
