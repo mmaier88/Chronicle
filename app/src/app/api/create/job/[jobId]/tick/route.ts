@@ -853,9 +853,10 @@ export async function POST(
         logger.info('Cover failed or missing, triggering regeneration', { bookId: book.id, coverStatus })
 
         // Trigger cover regeneration with service auth
+        // Note: cover/generate handles setting cover_status to 'generating' then 'ready'/'failed'
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
         try {
-          await fetch(`${baseUrl}/api/cover/generate`, {
+          const coverResponse = await fetch(`${baseUrl}/api/cover/generate`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -864,16 +865,26 @@ export async function POST(
             },
             body: JSON.stringify({ bookId: book.id, regenerate: true })
           })
+
+          // Check if cover generation succeeded
+          if (coverResponse.ok) {
+            const coverResult = await coverResponse.json()
+            if (coverResult.success && coverResult.status === 'ready') {
+              // Cover is now ready - re-fetch book to get updated status and continue to finalization
+              logger.info('Cover regeneration succeeded, continuing to finalization', { bookId: book.id })
+              // Don't return here - let the next tick iteration handle finalization
+              // This avoids a race condition where we might overwrite the 'ready' status
+            }
+          } else {
+            const errorText = await coverResponse.text()
+            logger.error('Cover regeneration returned error', { bookId: book.id, status: coverResponse.status, error: errorText })
+          }
         } catch (err) {
           logger.error('Cover regeneration trigger failed', err, { bookId: book.id })
         }
 
-        // Update status to generating and wait
-        await supabase
-          .from('books')
-          .update({ cover_status: 'generating' })
-          .eq('id', book.id)
-
+        // Return and wait for next tick to check cover status
+        // DO NOT set cover_status here - cover/generate already handles it
         return NextResponse.json({
           status: 'running',
           step: 'finalize',

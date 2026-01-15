@@ -163,7 +163,7 @@ export async function POST(request: Request) {
       const coverUrl = `${urlData.publicUrl}?t=${Date.now()}`
 
       // Update book with cover URL
-      await supabase
+      const { error: updateError } = await supabase
         .from('books')
         .update({
           cover_url: coverUrl,
@@ -172,6 +172,11 @@ export async function POST(request: Request) {
           cover_generated_at: new Date().toISOString(),
         })
         .eq('id', bookId)
+
+      if (updateError) {
+        logger.error('Failed to update book with cover URL', updateError, { bookId, operation: 'cover_update' })
+        throw new Error(`Failed to update book: ${updateError.message}`)
+      }
 
       logger.info('Cover generation complete', {
         bookId,
