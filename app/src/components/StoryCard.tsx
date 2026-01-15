@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Clock, BookOpen } from 'lucide-react'
+import { Clock, Settings } from 'lucide-react'
 import { BookCover } from '@/components/cover/BookCover'
 import { CoverStatus } from '@/types/chronicle'
 
@@ -22,7 +22,7 @@ interface StoryCardProps {
 export function StoryCard({ story }: StoryCardProps) {
   return (
     <Link
-      href={`/create/reader/${story.id}`}
+      href={`/create/read/${story.id}`}
       className="app-card"
       style={{
         display: 'flex',
@@ -105,8 +105,8 @@ export function StoryCard({ story }: StoryCardProps) {
           marginLeft: '1rem',
         }}
       >
-        <BookOpen style={{ width: 14, height: 14 }} />
-        Read
+        <Settings style={{ width: 14, height: 14 }} />
+        Manage
       </div>
 
       <style jsx global>{`
