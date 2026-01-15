@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServiceClient, getUser } from '@/lib/supabase/server'
-import { generateCover, regenerateCover, type Concept } from '@/lib/cover'
+import { generateCover } from '@/lib/cover'
 import { VibePreview } from '@/types/chronicle'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from '@/lib/rate-limit'
@@ -74,13 +74,15 @@ export async function POST(request: Request) {
     const { bookId, regenerate } = validated
 
     // Get book with preview data from vibe_jobs
+    // Note: cover_concept column may not exist in all environments
     const { data: book, error: bookError } = await supabase
       .from('books')
-      .select('id, owner_id, title, genre, constitution_json, cover_status, cover_url, cover_concept')
+      .select('id, owner_id, title, genre, constitution_json, cover_status, cover_url')
       .eq('id', bookId)
       .single()
 
     if (bookError || !book) {
+      logger.error('Book query failed', bookError, { bookId, operation: 'cover_generate' })
       return ApiErrors.notFound('Book')
     }
 
@@ -124,28 +126,16 @@ export async function POST(request: Request) {
       .eq('id', bookId)
 
     try {
-      let result
-
-      // If regenerating and we have an existing concept, reuse it
-      if (regenerate && book.cover_concept) {
-        logger.info('Cover regeneration: reusing existing concept', { bookId })
-        result = await regenerateCover(
-          book.cover_concept as Concept,
-          book.title,
-          userDisplayName,
-          book.genre
-        )
-      } else {
-        // Generate new cover with full pipeline
-        logger.info('Cover generation: starting new pipeline', { bookId })
-        result = await generateCover({
-          summary,
-          genre: book.genre,
-          mood: preview?.promise?.[0], // Use first promise as mood hint
-          title: book.title,
-          author: userDisplayName,
-        })
-      }
+      // Generate cover with full pipeline
+      // Note: concept reuse feature requires cover_concept column (migration 00009)
+      logger.info('Cover generation: starting pipeline', { bookId, regenerate })
+      const result = await generateCover({
+        summary,
+        genre: book.genre,
+        mood: preview?.promise?.[0], // Use first promise as mood hint
+        title: book.title,
+        author: userDisplayName,
+      })
 
       if (!result.success || !result.coverBuffer) {
         throw new Error(result.error || 'Cover generation failed')
@@ -172,7 +162,7 @@ export async function POST(request: Request) {
 
       const coverUrl = `${urlData.publicUrl}?t=${Date.now()}`
 
-      // Update book with cover URL and concept (for future regeneration)
+      // Update book with cover URL
       await supabase
         .from('books')
         .update({
@@ -180,7 +170,6 @@ export async function POST(request: Request) {
           cover_storage_path: storagePath,
           cover_status: 'ready',
           cover_generated_at: new Date().toISOString(),
-          cover_concept: result.concept, // Store for regeneration
         })
         .eq('id', bookId)
 
