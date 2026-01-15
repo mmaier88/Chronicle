@@ -21,9 +21,12 @@ export function ShareButton({ bookId, existingShareUrl }: ShareButtonProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookId }),
       })
-      const data = await response.json()
-      if (data.shareUrl) {
-        setShareUrl(data.shareUrl)
+      const result = await response.json()
+      // API returns { success: true, data: { shareUrl: ... } }
+      if (result.success && result.data?.shareUrl) {
+        setShareUrl(result.data.shareUrl)
+      } else if (result.error) {
+        console.error('Share API error:', result.error)
       }
     } catch (err) {
       console.error('Failed to create share link:', err)

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Clock, Settings } from 'lucide-react'
+import { Clock, BookOpen } from 'lucide-react'
 import { BookCover } from '@/components/cover/BookCover'
 import { CoverStatus } from '@/types/chronicle'
 
@@ -88,7 +88,9 @@ export function StoryCard({ story }: StoryCardProps) {
         </div>
       </div>
 
-      <div
+      <Link
+        href={`/create/reader/${story.id}`}
+        onClick={(e) => e.stopPropagation()}
         className="story-card-btn"
         style={{
           display: 'flex',
@@ -103,11 +105,12 @@ export function StoryCard({ story }: StoryCardProps) {
           whiteSpace: 'nowrap',
           transition: 'all 0.2s',
           marginLeft: '1rem',
+          textDecoration: 'none',
         }}
       >
-        <Settings style={{ width: 14, height: 14 }} />
-        Manage
-      </div>
+        <BookOpen style={{ width: 14, height: 14 }} />
+        Reader
+      </Link>
 
       <style jsx global>{`
         .story-card-btn:hover {
