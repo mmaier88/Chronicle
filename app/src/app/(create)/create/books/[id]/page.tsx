@@ -4,6 +4,7 @@ import { Book } from '@/types/chronicle'
 import Link from 'next/link'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { BookEditTabs } from '@/components/books/BookEditTabs'
+import { EditableBookHeader } from '@/components/books/EditableBookHeader'
 
 export default async function BookPage({
   params,
@@ -52,7 +53,7 @@ export default async function BookPage({
         borderBottom: '1px solid rgba(250, 246, 237, 0.1)',
       }}>
         <div>
-          <h1 className="app-heading-1">{typedBook.title}</h1>
+          <EditableBookHeader book={typedBook} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
             <span className={typedBook.status === 'drafting' ? 'app-badge app-badge-warning' : typedBook.status === 'editing' ? 'app-badge app-badge-info' : 'app-badge app-badge-success'}>
               {typedBook.status}
