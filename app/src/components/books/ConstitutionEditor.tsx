@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Book, Constitution } from '@/types/chronicle'
-import { Lock, Unlock, Save, AlertCircle } from 'lucide-react'
+import { Lock, Unlock, Save, AlertCircle, Loader2 } from 'lucide-react'
 
 interface ConstitutionEditorProps {
   book: Book
@@ -25,15 +25,18 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [isLocking, setIsLocking] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const router = useRouter()
 
   const updateField = (key: keyof Constitution, value: string) => {
     setConstitution(prev => ({ ...prev, [key]: value || null }))
     setHasChanges(true)
+    setSaveSuccess(false)
   }
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveSuccess(false)
     const supabase = createClient()
 
     const { error } = await supabase
@@ -49,6 +52,7 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
     }
 
     setHasChanges(false)
+    setSaveSuccess(true)
     router.refresh()
   }
 
@@ -84,42 +88,72 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
   const isComplete = Object.values(constitution).every(v => v !== null && v !== '')
 
   return (
-    <div className="bg-white/80 rounded-lg border border-amber-200/60 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-amber-900">Constitution</h2>
+    <div>
+      {/* Success banner */}
+      {saveSuccess && (
+        <div style={{
+          marginBottom: '1rem',
+          padding: '1rem',
+          background: 'rgba(34, 197, 94, 0.1)',
+          border: '1px solid rgba(34, 197, 94, 0.3)',
+          borderRadius: 12,
+          color: '#86efac',
+          fontSize: '0.875rem'
+        }}>
+          Changes saved successfully
+        </div>
+      )}
+
+      {/* Header with lock status */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <h2 className="app-heading-3">Constitution</h2>
         {book.constitution_locked ? (
-          <span className="flex items-center gap-1 text-sm text-green-600">
-            <Lock className="w-4 h-4" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', color: '#86efac' }}>
+            <Lock style={{ width: 14, height: 14 }} />
             Locked
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-sm text-amber-600">
-            <Unlock className="w-4 h-4" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', color: 'var(--amber-warm)' }}>
+            <Unlock style={{ width: 14, height: 14 }} />
             Draft
           </span>
         )}
       </div>
 
+      {/* Info banner for unlocked constitutions */}
       {!book.constitution_locked && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-          <div className="flex gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-amber-800">
-              The Constitution defines your book&apos;s foundational principles. Fill in all fields and lock it to begin writing chapters.
-            </p>
-          </div>
+        <div style={{
+          display: 'flex',
+          gap: '0.75rem',
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          background: 'rgba(212, 165, 116, 0.1)',
+          border: '1px solid rgba(212, 165, 116, 0.2)',
+          borderRadius: 12,
+        }}>
+          <AlertCircle style={{ width: 16, height: 16, color: 'var(--amber-warm)', flexShrink: 0, marginTop: '0.125rem' }} />
+          <p className="app-body-sm">
+            The Constitution defines your book&apos;s foundational principles. Fill in all fields and lock it to begin writing chapters.
+          </p>
         </div>
       )}
 
-      <div className="space-y-4">
-        {CONSTITUTION_FIELDS.map(({ key, label, placeholder }) => (
-          <div key={key}>
-            <label className="block text-sm font-medium text-amber-800 mb-1">
+      {/* Fields */}
+      <div className="app-card" style={{ padding: 0, overflow: 'hidden' }}>
+        {CONSTITUTION_FIELDS.map(({ key, label, placeholder }, idx) => (
+          <div
+            key={key}
+            style={{
+              padding: '1.25rem',
+              borderBottom: idx < CONSTITUTION_FIELDS.length - 1 ? '1px solid rgba(250, 246, 237, 0.06)' : 'none'
+            }}
+          >
+            <label className="app-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
               {label}
             </label>
             {book.constitution_locked ? (
-              <p className="text-sm text-amber-700 bg-amber-50/50 p-3 rounded-lg">
-                {constitution[key] || <span className="text-amber-400">Not set</span>}
+              <p className="app-body" style={{ opacity: constitution[key] ? 1 : 0.5 }}>
+                {constitution[key] || 'Not set'}
               </p>
             ) : (
               <textarea
@@ -127,39 +161,79 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
                 onChange={(e) => updateField(key, e.target.value)}
                 placeholder={placeholder}
                 rows={2}
-                className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent resize-none bg-white"
+                disabled={isSaving || isLocking}
+                className="app-textarea"
+                style={{ background: 'rgba(26, 39, 68, 0.3)', resize: 'none', width: '100%' }}
               />
             )}
           </div>
         ))}
       </div>
 
+      {/* Action buttons */}
       {!book.constitution_locked && (
-        <div className="flex gap-3 mt-6">
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
           <button
             onClick={handleSave}
             disabled={isSaving || !hasChanges}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-amber-300 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-amber-800"
+            className="app-button-secondary"
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              opacity: isSaving || !hasChanges ? 0.5 : 1,
+              cursor: isSaving || !hasChanges ? 'not-allowed' : 'pointer',
+            }}
           >
-            <Save className="w-4 h-4" />
-            {isSaving ? 'Saving...' : 'Save Draft'}
+            {isSaving ? (
+              <>
+                <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save style={{ width: 16, height: 16 }} />
+                Save Draft
+              </>
+            )}
           </button>
           <button
             onClick={handleLock}
             disabled={isLocking || !isComplete}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-900 text-white rounded-lg hover:bg-amber-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="app-button-primary"
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              opacity: isLocking || !isComplete ? 0.5 : 1,
+              cursor: isLocking || !isComplete ? 'not-allowed' : 'pointer',
+            }}
           >
-            <Lock className="w-4 h-4" />
-            {isLocking ? 'Locking...' : 'Lock Constitution'}
+            {isLocking ? (
+              <>
+                <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
+                Locking...
+              </>
+            ) : (
+              <>
+                <Lock style={{ width: 16, height: 16 }} />
+                Lock Constitution
+              </>
+            )}
           </button>
         </div>
       )}
 
       {!book.constitution_locked && !isComplete && (
-        <p className="text-xs text-amber-600/70 mt-3 text-center">
+        <p className="app-body-sm" style={{ marginTop: '0.75rem', textAlign: 'center', opacity: 0.6 }}>
           Fill in all fields to enable locking
         </p>
       )}
+
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }
