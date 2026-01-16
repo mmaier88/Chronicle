@@ -120,10 +120,10 @@ export async function POST(request: NextRequest) {
   }
 
   // For regeneration with constitution: lock it immediately if all fields are filled
-  const isConstitutionComplete = constitution &&
+  const isConstitutionComplete = !!(constitution &&
     constitution.central_thesis &&
     constitution.worldview_frame &&
-    constitution.narrative_voice
+    constitution.narrative_voice)
 
   // Create book shell
   const { data: book, error: bookError } = await supabase
