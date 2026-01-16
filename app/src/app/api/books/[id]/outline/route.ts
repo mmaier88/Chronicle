@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { Book, Chapter, Section } from '@/types/chronicle'
+import { Chapter, Section } from '@/types/chronicle'
 
 interface RouteParams {
   params: Promise<{ id: string }>
