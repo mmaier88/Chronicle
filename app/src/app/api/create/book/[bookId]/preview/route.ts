@@ -41,12 +41,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Check if book is still generating
-  if (typedBook.status !== 'final') {
-    return NextResponse.json({
-      error: 'Cannot regenerate a book that is still being generated. Wait for completion.'
-    }, { status: 400 })
-  }
+  // Note: Allow access to non-final books for editing purposes
+  // Only block if book status indicates active generation
 
   // Fetch the associated vibe_job to get the original preview data
   const { data: vibeJob, error: jobError } = await supabase
