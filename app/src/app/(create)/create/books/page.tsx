@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Book } from '@/types/chronicle'
 import Link from 'next/link'
-import { BookOpen, Clock, FileText, Wand2 } from 'lucide-react'
+import { Clock, FileText, Wand2 } from 'lucide-react'
 
 export default async function BooksPage() {
   const supabase = await createClient()
@@ -22,18 +22,18 @@ export default async function BooksPage() {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 className="app-heading-1">Editor</h1>
+        <h1 className="app-heading-1">Remix</h1>
         <p className="app-body" style={{ marginTop: '0.25rem', opacity: 0.7 }}>
-          Edit and republish your stories
+          Create new versions of your stories
         </p>
       </div>
 
       {typedBooks.length === 0 ? (
         <div className="app-card" style={{ textAlign: 'center', padding: '3rem' }}>
           <Wand2 style={{ width: 48, height: 48, color: 'var(--amber-warm)', margin: '0 auto 1rem', opacity: 0.6 }} />
-          <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>No stories to edit yet</h3>
+          <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>No stories to remix yet</h3>
           <p className="app-body-sm">
-            Create a story first, then come back here to edit and republish it
+            Create a story first, then come back here to remix it
           </p>
         </div>
       ) : (
@@ -41,7 +41,7 @@ export default async function BooksPage() {
           {typedBooks.map((book) => (
             <Link
               key={book.id}
-              href={`/create/books/${book.id}`}
+              href={`/create/regenerate/${book.id}`}
               className="app-card"
               style={{ display: 'block', textDecoration: 'none' }}
             >
