@@ -7,12 +7,17 @@ import { NextRequest, NextResponse } from 'next/server'
  * Debug endpoint to manually kick a stuck job.
  * Only works on staging (non-production) environments.
  * No authentication required - FOR DEBUGGING ONLY.
+ *
+ * Query params:
+ * - force_complete=true: Force complete a job stuck at finalize (skip cover check)
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   const { jobId } = await params
+  const { searchParams } = new URL(request.url)
+  const forceComplete = searchParams.get('force_complete') === 'true'
 
   // Only allow on staging/development
   const isProduction = process.env.VERCEL_ENV === 'production' ||
@@ -38,7 +43,7 @@ export async function POST(
   // Get book info
   const { data: book } = await supabase
     .from('books')
-    .select('id, title, source_book_id')
+    .select('id, title, source_book_id, status, cover_status, cover_url')
     .eq('id', job.book_id)
     .single()
 
@@ -51,6 +56,9 @@ export async function POST(
     auto_resume_attempts: job.auto_resume_attempts,
     book_id: job.book_id,
     book_title: book?.title,
+    book_status: book?.status,
+    cover_status: book?.cover_status,
+    cover_url: book?.cover_url,
     source_book_id: book?.source_book_id,
   })
 
@@ -59,6 +67,34 @@ export async function POST(
       message: 'Job already complete',
       job,
       book,
+    })
+  }
+
+  // Force complete - skip cover check and mark as done
+  if (forceComplete && job.step === 'finalize') {
+    console.log(`[Kick] Force completing job ${jobId}`)
+
+    // Mark book as final
+    await supabase
+      .from('books')
+      .update({ status: 'final' })
+      .eq('id', job.book_id)
+
+    // Mark job as complete
+    await supabase
+      .from('vibe_jobs')
+      .update({
+        status: 'complete',
+        step: 'complete',
+        progress: 100,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', jobId)
+
+    return NextResponse.json({
+      message: 'Job force-completed (cover check skipped)',
+      job: { ...job, status: 'complete', progress: 100 },
+      book: { ...book, status: 'final' },
     })
   }
 
@@ -135,7 +171,7 @@ export async function GET(
 
   const { data: job, error: jobError } = await supabase
     .from('vibe_jobs')
-    .select('*, books!vibe_jobs_book_id_fkey(id, title, source_book_id, status)')
+    .select('*, books!vibe_jobs_book_id_fkey(id, title, source_book_id, status, cover_status, cover_url)')
     .eq('id', jobId)
     .single()
 
