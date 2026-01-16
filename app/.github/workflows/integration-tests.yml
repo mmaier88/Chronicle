@@ -1,0 +1,129 @@
+name: Integration Tests
+
+on:
+  # Run on staging deployments
+  deployment_status:
+  # Run on schedule for synthetic monitoring
+  schedule:
+    # Every hour on the hour
+    - cron: '0 * * * *'
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  integration-tests:
+    # Only run on successful staging deployments or scheduled/manual triggers
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Preview')
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'app/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: app
+        run: npx playwright install chromium --with-deps
+
+      - name: Determine target URL
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.target }}" == "production" ]; then
+              echo "url=https://chronicle.town" >> $GITHUB_OUTPUT
+            else
+              echo "url=https://staging.chronicle.town" >> $GITHUB_OUTPUT
+            fi
+          elif [ "${{ github.event_name }}" == "deployment_status" ]; then
+            echo "url=${{ github.event.deployment_status.target_url }}" >> $GITHUB_OUTPUT
+          else
+            # Scheduled runs target staging
+            echo "url=https://staging.chronicle.town" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Playwright tests
+        working-directory: app
+        run: npx playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.target.outputs.url }}
+          E2E_TEST_USER_ID: ${{ secrets.E2E_TEST_USER_ID }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: app/playwright-report/
+          retention-days: 7
+
+  synthetic-monitoring:
+    # Run hourly synthetic checks
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Determine target
+        id: target
+        run: |
+          if [ "${{ github.event.inputs.target }}" == "production" ]; then
+            echo "url=https://chronicle.town" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://staging.chronicle.town" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run synthetic health check
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ steps.target.outputs.url }}/api/monitoring/synthetic")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response: $BODY"
+          echo "HTTP Code: $HTTP_CODE"
+
+          # Parse status from response
+          STATUS=$(echo "$BODY" | jq -r '.status // "unknown"')
+          echo "Health Status: $STATUS"
+
+          # Fail the job if unhealthy
+          if [ "$STATUS" == "unhealthy" ]; then
+            echo "::error::System is unhealthy!"
+            exit 1
+          elif [ "$STATUS" == "degraded" ]; then
+            echo "::warning::System is degraded"
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Synthetic monitoring check failed! Check the logs above for details."
+          # Add Slack/Discord/email notification here if needed

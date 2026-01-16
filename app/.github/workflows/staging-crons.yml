@@ -1,0 +1,87 @@
+name: Staging Crons
+
+# Vercel crons only run on production deployments
+# This workflow replicates the cron schedule for staging
+
+on:
+  schedule:
+    # Auto-resume stuck jobs - every 5 minutes
+    - cron: '*/5 * * * *'
+    # TTS cleanup - daily at 3am UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: 'Specific endpoint to call (leave empty for all)'
+        required: false
+        type: choice
+        options:
+          - all
+          - auto-resume
+          - tts-cleanup
+
+jobs:
+  call-cron-endpoints:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Determine which endpoints to call
+        id: endpoints
+        run: |
+          # Get the cron schedule that triggered this run
+          CRON_SCHEDULE="${{ github.event.schedule }}"
+          MANUAL_INPUT="${{ github.event.inputs.endpoint }}"
+
+          if [ -n "$MANUAL_INPUT" ] && [ "$MANUAL_INPUT" != "all" ]; then
+            echo "CALL_AUTO_RESUME=$([[ $MANUAL_INPUT == 'auto-resume' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "CALL_TTS_CLEANUP=$([[ $MANUAL_INPUT == 'tts-cleanup' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          elif [ "$CRON_SCHEDULE" == "*/5 * * * *" ]; then
+            echo "CALL_AUTO_RESUME=true" >> $GITHUB_OUTPUT
+            echo "CALL_TTS_CLEANUP=false" >> $GITHUB_OUTPUT
+          elif [ "$CRON_SCHEDULE" == "0 3 * * *" ]; then
+            echo "CALL_AUTO_RESUME=false" >> $GITHUB_OUTPUT
+            echo "CALL_TTS_CLEANUP=true" >> $GITHUB_OUTPUT
+          else
+            # Manual trigger with 'all' or no input
+            echo "CALL_AUTO_RESUME=true" >> $GITHUB_OUTPUT
+            echo "CALL_TTS_CLEANUP=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Call auto-resume endpoint
+        if: steps.endpoints.outputs.CALL_AUTO_RESUME == 'true'
+        run: |
+          echo "Calling auto-resume on staging..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "https://staging.chronicle.town/api/create/job/auto-resume")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response: $BODY"
+          echo "HTTP Code: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::warning::Auto-resume returned HTTP $HTTP_CODE"
+          fi
+
+      - name: Call TTS cleanup endpoint
+        if: steps.endpoints.outputs.CALL_TTS_CLEANUP == 'true'
+        run: |
+          echo "Calling TTS cleanup on staging..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://staging.chronicle.town/api/tts/cleanup")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response: $BODY"
+          echo "HTTP Code: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::warning::TTS cleanup returned HTTP $HTTP_CODE"
+          fi
