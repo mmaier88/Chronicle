@@ -146,7 +146,10 @@ export async function POST(request: NextRequest) {
 
   if (bookError || !book) {
     logger.error('Failed to create book', bookError, { userId: user.id, operation: 'create_book' })
-    return NextResponse.json({ error: 'Failed to create book' }, { status: 500 })
+    return NextResponse.json({
+      error: 'Failed to create book',
+      details: bookError?.message || 'Unknown error'
+    }, { status: 500 })
   }
 
   // For partial regeneration: copy chapters before sourceChapterIndex

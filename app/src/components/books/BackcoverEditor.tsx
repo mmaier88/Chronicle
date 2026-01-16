@@ -129,30 +129,6 @@ export function BackcoverEditor({ bookId }: BackcoverEditorProps) {
       )}
 
       <div className="app-card" style={{ padding: 0, overflow: 'hidden' }}>
-        {/* Title */}
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(250, 246, 237, 0.06)' }}>
-          <label className="app-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Title
-          </label>
-          <input
-            type="text"
-            value={preview.title}
-            onChange={(e) => updateField('title', e.target.value)}
-            disabled={isSaving}
-            className="app-input"
-            style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: '1.5rem',
-              fontWeight: 500,
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              width: '100%',
-            }}
-            placeholder="Your title..."
-          />
-        </div>
-
         {/* Logline */}
         <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(250, 246, 237, 0.06)' }}>
           <label className="app-label" style={{ display: 'block', marginBottom: '0.5rem' }}>

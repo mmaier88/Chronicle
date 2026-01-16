@@ -38,7 +38,7 @@ export default async function CreateLayout({
             {hasBooks && (
               <Link href="/create/books" className="app-nav-link">
                 <Wand2 />
-                <span>Edit</span>
+                <span>Remix</span>
               </Link>
             )}
           </div>
