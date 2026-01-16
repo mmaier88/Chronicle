@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }, { status: 429 })
   }
 
-  // For regeneration: verify source book ownership and status
+  // For regeneration: verify source book ownership and check for active generation
   if (sourceBookId) {
     const { data: sourceBook, error: sourceError } = await supabase
       .from('books')
@@ -94,8 +94,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot regenerate a book you do not own' }, { status: 403 })
     }
 
-    if (sourceBook.status !== 'final') {
-      return NextResponse.json({ error: 'Cannot regenerate a book that is still being generated' }, { status: 400 })
+    // Check if there's an active job generating this book
+    const { data: activeJob } = await supabase
+      .from('vibe_jobs')
+      .select('id, status')
+      .eq('book_id', sourceBookId)
+      .in('status', ['queued', 'running'])
+      .limit(1)
+      .single()
+
+    if (activeJob) {
+      return NextResponse.json({ error: 'Cannot regenerate a book that is currently being generated' }, { status: 400 })
     }
   }
 
