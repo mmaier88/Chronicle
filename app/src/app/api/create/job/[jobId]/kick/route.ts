@@ -32,7 +32,7 @@ export async function POST(
   // Fetch the job
   const { data: job, error: jobError } = await supabase
     .from('vibe_jobs')
-    .select('id, user_id, book_id, status, step, progress, error, updated_at, auto_resume_attempts')
+    .select('id, user_id, book_id, status, step, progress, error, updated_at')
     .eq('id', jobId)
     .single()
 
@@ -53,7 +53,6 @@ export async function POST(
     progress: job.progress,
     error: job.error,
     updated_at: job.updated_at,
-    auto_resume_attempts: job.auto_resume_attempts,
     book_id: job.book_id,
     book_title: book?.title,
     book_status: book?.status,
@@ -190,7 +189,6 @@ export async function GET(
       error: job.error,
       created_at: job.created_at,
       updated_at: job.updated_at,
-      auto_resume_attempts: job.auto_resume_attempts,
       source_book_id: job.source_book_id,
     },
     book: job.books,
