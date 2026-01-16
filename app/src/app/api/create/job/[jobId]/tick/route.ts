@@ -586,13 +586,23 @@ export async function POST(
     // Fetch book
     const { data: book } = await supabase
       .from('books')
-      .select('id, title, genre, status, constitution_json, owner_id, cover_status')
+      .select('id, title, genre, status, constitution_json, owner_id, cover_status, source_book_id')
       .eq('id', vibeJob.book_id)
       .single()
 
     if (!book) {
       throw new Error('Book not found')
     }
+
+    // Log tick operation for debugging
+    logger.info('Tick processing', {
+      jobId,
+      bookId: book.id,
+      bookTitle: book.title,
+      sourceBookId: (book as { source_book_id?: string }).source_book_id || null,
+      step,
+      operation: 'tick',
+    })
 
     // STEP: Constitution
     if (step === 'created' || step === 'constitution') {

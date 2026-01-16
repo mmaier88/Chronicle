@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation'
 
 interface AutoResumeRedirectProps {
   jobId: string | null
+  bookTitle?: string | null
+  isRemix?: boolean
 }
 
 /**
  * Auto-redirects to the generating page if there's an in-progress job.
  * The generating page handles all recovery automatically.
  */
-export function AutoResumeRedirect({ jobId }: AutoResumeRedirectProps) {
+export function AutoResumeRedirect({ jobId, bookTitle, isRemix }: AutoResumeRedirectProps) {
   const router = useRouter()
 
   useEffect(() => {
@@ -26,6 +28,12 @@ export function AutoResumeRedirect({ jobId }: AutoResumeRedirectProps) {
 
   if (!jobId) return null
 
+  const message = bookTitle
+    ? isRemix
+      ? `Resuming remix of "${bookTitle}"...`
+      : `Resuming "${bookTitle}"...`
+    : 'Resuming your story...'
+
   return (
     <div style={{
       position: 'fixed',
@@ -39,7 +47,7 @@ export function AutoResumeRedirect({ jobId }: AutoResumeRedirectProps) {
       justifyContent: 'center',
       zIndex: 1000,
     }}>
-      <div style={{ textAlign: 'center' }}>
+      <div style={{ textAlign: 'center', maxWidth: 400, padding: '0 1rem' }}>
         <div style={{
           width: 48,
           height: 48,
@@ -50,7 +58,7 @@ export function AutoResumeRedirect({ jobId }: AutoResumeRedirectProps) {
           animation: 'spin 1s linear infinite'
         }} />
         <p className="app-body" style={{ color: 'var(--amber-warm)' }}>
-          Resuming your story...
+          {message}
         </p>
         <style jsx>{`
           @keyframes spin {

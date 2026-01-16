@@ -11,12 +11,26 @@ export default async function BooksPage() {
   // Check for any in-progress job (will auto-redirect)
   const { data: inProgressJob } = await supabase
     .from('vibe_jobs')
-    .select('id')
+    .select('id, book_id, source_book_id, books!vibe_jobs_book_id_fkey(title)')
     .eq('user_id', user?.id)
     .in('status', ['queued', 'running'])
     .order('created_at', { ascending: false })
     .limit(1)
     .single()
+
+  // Get the book title for the in-progress job
+  let inProgressBookTitle: string | null = null
+  let isRemix = false
+  if (inProgressJob) {
+    // books can be an object (single row) or null
+    const books = inProgressJob.books as { title: string } | { title: string }[] | null
+    if (books && !Array.isArray(books)) {
+      inProgressBookTitle = books.title
+    } else if (Array.isArray(books) && books.length > 0) {
+      inProgressBookTitle = books[0].title
+    }
+    isRemix = !!inProgressJob.source_book_id
+  }
 
   // Fetch all completed books that can be remixed
   const { data: books, error } = await supabase
@@ -35,7 +49,11 @@ export default async function BooksPage() {
   return (
     <div>
       {/* Auto-redirect to generating page if there's an in-progress job */}
-      <AutoResumeRedirect jobId={inProgressJob?.id || null} />
+      <AutoResumeRedirect
+        jobId={inProgressJob?.id || null}
+        bookTitle={inProgressBookTitle}
+        isRemix={isRemix}
+      />
 
       <div style={{ marginBottom: '2rem' }}>
         <h1 className="app-heading-1">Remix</h1>

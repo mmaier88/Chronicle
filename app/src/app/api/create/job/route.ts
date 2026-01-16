@@ -152,6 +152,17 @@ export async function POST(request: NextRequest) {
     }, { status: 500 })
   }
 
+  // Log book creation for debugging
+  logger.info('Book created', {
+    bookId: book.id,
+    title: preview.title,
+    sourceBookId: sourceBookId || null,
+    isRegeneration: !!sourceBookId,
+    castCount: preview.cast.length,
+    castNames: preview.cast.map(c => c.name).join(', '),
+    operation: 'create_book',
+  })
+
   // For partial regeneration: copy chapters before sourceChapterIndex
   let startStep = 'created'
   if (sourceBookId && typeof sourceChapterIndex === 'number' && sourceChapterIndex > 0) {
