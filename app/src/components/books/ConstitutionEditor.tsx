@@ -151,51 +151,45 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
             <label className="app-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
               {label}
             </label>
-            {book.constitution_locked ? (
-              <p className="app-body" style={{ opacity: constitution[key] ? 1 : 0.5 }}>
-                {constitution[key] || 'Not set'}
-              </p>
-            ) : (
-              <textarea
-                value={constitution[key] || ''}
-                onChange={(e) => updateField(key, e.target.value)}
-                placeholder={placeholder}
-                rows={2}
-                disabled={isSaving || isLocking}
-                className="app-textarea"
-                style={{ background: 'rgba(26, 39, 68, 0.3)', resize: 'none', width: '100%' }}
-              />
-            )}
+            <textarea
+              value={constitution[key] || ''}
+              onChange={(e) => updateField(key, e.target.value)}
+              placeholder={placeholder}
+              rows={2}
+              disabled={isSaving || isLocking}
+              className="app-textarea"
+              style={{ background: 'rgba(26, 39, 68, 0.3)', resize: 'none', width: '100%' }}
+            />
           </div>
         ))}
       </div>
 
       {/* Action buttons */}
-      {!book.constitution_locked && (
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-          <button
-            onClick={handleSave}
-            disabled={isSaving || !hasChanges}
-            className="app-button-secondary"
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              opacity: isSaving || !hasChanges ? 0.5 : 1,
-              cursor: isSaving || !hasChanges ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save style={{ width: 16, height: 16 }} />
-                Save Draft
-              </>
-            )}
-          </button>
+      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+        <button
+          onClick={handleSave}
+          disabled={isSaving || !hasChanges}
+          className={book.constitution_locked ? 'app-button-primary' : 'app-button-secondary'}
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            opacity: isSaving || !hasChanges ? 0.5 : 1,
+            cursor: isSaving || !hasChanges ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save style={{ width: 16, height: 16 }} />
+              Save Changes
+            </>
+          )}
+        </button>
+        {!book.constitution_locked && (
           <button
             onClick={handleLock}
             disabled={isLocking || !isComplete}
@@ -219,8 +213,8 @@ export function ConstitutionEditor({ book }: ConstitutionEditorProps) {
               </>
             )}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {!book.constitution_locked && !isComplete && (
         <p className="app-body-sm" style={{ marginTop: '0.75rem', textAlign: 'center', opacity: 0.6 }}>
