@@ -109,7 +109,30 @@ export default async function StoriesPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* Completed Stories - Audio First */}
+          {/* In Progress - Show first for visibility */}
+          {inProgressStories.length > 0 && (
+            <section>
+              <h2 className="app-label" style={{ marginBottom: '1rem' }}>
+                In Progress ({inProgressStories.length})
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {inProgressStories.map((story) => (
+                  <InProgressCard
+                    key={story.id}
+                    story={{
+                      id: story.id,
+                      title: story.title,
+                      status: story.status,
+                      job: story.job,
+                      isStale: story.isStale
+                    }}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Completed Stories */}
           {completedStories.length > 0 && (
             <section>
               <h2 className="app-label" style={{ marginBottom: '1rem' }}>
@@ -128,29 +151,6 @@ export default async function StoriesPage() {
                       cover_url: story.cover_url,
                       cover_status: story.cover_status as CoverStatus,
                       source_book_title: story.source_book_id ? sourceBookTitles[story.source_book_id] : null,
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* In Progress */}
-          {inProgressStories.length > 0 && (
-            <section>
-              <h2 className="app-label" style={{ marginBottom: '1rem' }}>
-                In Progress ({inProgressStories.length})
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {inProgressStories.map((story) => (
-                  <InProgressCard
-                    key={story.id}
-                    story={{
-                      id: story.id,
-                      title: story.title,
-                      status: story.status,
-                      job: story.job,
-                      isStale: story.isStale
                     }}
                   />
                 ))}
