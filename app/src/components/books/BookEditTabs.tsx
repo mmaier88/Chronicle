@@ -4,9 +4,8 @@ import { useState } from 'react'
 import { Book } from '@/types/chronicle'
 import { ConstitutionEditor } from './ConstitutionEditor'
 import { BackcoverEditor } from './BackcoverEditor'
-import { OutlineEditor } from './OutlineEditor'
 
-type Tab = 'backcover' | 'constitution' | 'outline'
+type Tab = 'backcover' | 'constitution'
 
 interface BookEditTabsProps {
   book: Book
@@ -15,7 +14,6 @@ interface BookEditTabsProps {
 const TABS: { id: Tab; label: string }[] = [
   { id: 'backcover', label: 'Backcover' },
   { id: 'constitution', label: 'Constitution' },
-  { id: 'outline', label: 'Outline' },
 ]
 
 export function BookEditTabs({ book }: BookEditTabsProps) {
@@ -60,10 +58,6 @@ export function BookEditTabs({ book }: BookEditTabsProps) {
 
         {activeTab === 'constitution' && (
           <ConstitutionEditor book={book} />
-        )}
-
-        {activeTab === 'outline' && (
-          <OutlineEditor bookId={book.id} />
         )}
       </div>
     </div>
