@@ -31,7 +31,7 @@ export default async function BooksPage() {
       {typedBooks.length === 0 ? (
         <div className="app-card" style={{ textAlign: 'center', padding: '3rem' }}>
           <Wand2 style={{ width: 48, height: 48, color: 'var(--amber-warm)', margin: '0 auto 1rem', opacity: 0.6 }} />
-          <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>No stories to remix yet</h3>
+          <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>No stories to edit yet</h3>
           <p className="app-body-sm">
             Create a story first, then come back here to edit and republish it
           </p>

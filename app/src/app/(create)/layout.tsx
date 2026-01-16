@@ -10,7 +10,7 @@ export default async function CreateLayout({
 }) {
   const { user, isDevUser } = await getUser()
 
-  // Check if user has any books (for showing Remix link)
+  // Check if user has any books (for showing Edit link)
   const supabase = await createClient()
   const { count: bookCount } = await supabase
     .from('books')
@@ -38,7 +38,7 @@ export default async function CreateLayout({
             {hasBooks && (
               <Link href="/create/books" className="app-nav-link">
                 <Wand2 />
-                <span>Remix</span>
+                <span>Edit</span>
               </Link>
             )}
           </div>
