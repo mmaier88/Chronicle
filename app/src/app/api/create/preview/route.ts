@@ -87,26 +87,26 @@ export async function POST(request: NextRequest) {
       return ApiErrors.unauthorized()
     }
 
-  // Validate request body
-  const validated = await validateBody(request, previewRequestSchema)
-  if (isApiError(validated)) return validated
+    // Validate request body
+    const validated = await validateBody(request, previewRequestSchema)
+    if (isApiError(validated)) return validated
 
-  const { genre, prompt, existingPreview } = validated
+    const { genre, prompt, existingPreview } = validated
 
-  // Check for blocked content
-  const blockedMatch = checkForBlockedContent(prompt)
-  if (blockedMatch) {
-    return ApiErrors.badRequest(
-      `Your prompt references "${blockedMatch}" which appears to be a copyrighted franchise. Please make your story "inspired by" rather than directly using these characters/worlds.`,
-      { blocked: true }
-    )
-  }
+    // Check for blocked content
+    const blockedMatch = checkForBlockedContent(prompt)
+    if (blockedMatch) {
+      return ApiErrors.badRequest(
+        `Your prompt references "${blockedMatch}" which appears to be a copyrighted franchise. Please make your story "inspired by" rather than directly using these characters/worlds.`,
+        { blocked: true }
+      )
+    }
 
-  const genreDescription = genre === 'literary_fiction'
-    ? 'literary fiction with rich character development and thematic depth'
-    : 'non-fiction with clear arguments and engaging narrative'
+    const genreDescription = genre === 'literary_fiction'
+      ? 'literary fiction with rich character development and thematic depth'
+      : 'non-fiction with clear arguments and engaging narrative'
 
-  const systemPrompt = `You are a creative writing assistant generating a "back of book" preview for a short book (~30 pages).
+    const systemPrompt = `You are a creative writing assistant generating a "back of book" preview for a short book (~30 pages).
 
 IMPORTANT RULES:
 1. This preview is SPOILER-LIGHT - do NOT reveal plot twists, endings, or major revelations
@@ -140,7 +140,6 @@ Requirements:
 - promise: exactly 3 bullets describing what readers will experience
 - warnings: infer appropriate levels from the prompt content`
 
-  try {
     const message = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 2048,
@@ -198,9 +197,5 @@ Requirements:
   } catch (error) {
     console.error('Preview generation error:', error)
     return ApiErrors.internal('Failed to generate preview')
-  }
-  } catch (unexpectedError) {
-    console.error('[Preview] Unexpected error:', unexpectedError)
-    return ApiErrors.internal(`Unexpected error: ${(unexpectedError as Error).message}`)
   }
 }
