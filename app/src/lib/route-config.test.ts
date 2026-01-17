@@ -107,11 +107,42 @@ describe('Route Configuration', () => {
 })
 
 describe('Finalize Step Cover Handling', () => {
+  const appDir = path.join(process.cwd(), 'src', 'app', 'api')
+  const tickRouteFile = path.join(appDir, 'create', 'job', '[jobId]', 'tick', 'route.ts')
+
   /**
    * These tests verify the finalize step logic handles cover generation correctly.
-   * The bug was that when cover regeneration succeeded, the code still returned
+   *
+   * BUG 1 (2026-01-17): When cover regeneration succeeded, code still returned
    * "Regenerating cover..." instead of proceeding to finalization.
+   *
+   * BUG 2 (2026-01-17): After 5-minute timeout marked cover as 'failed' in DB,
+   * the code used stale local variable 'coverStatus' (still 'generating') to
+   * check if regeneration needed, skipping it entirely and finalizing without cover!
    */
+
+  it('CRITICAL: uses needsRegeneration flag (not stale coverStatus variable)', () => {
+    const content = fs.readFileSync(tickRouteFile, 'utf-8')
+
+    // Must use a mutable flag that gets updated after timeout
+    expect(content).toContain('needsRegeneration')
+
+    // The flag must be set to true after the 5-minute timeout
+    expect(content).toMatch(/needsRegeneration\s*=\s*true/)
+
+    // The regeneration check must use the flag, not the stale coverStatus
+    expect(content).toMatch(/if\s*\(\s*needsRegeneration\s*\)/)
+  })
+
+  it('CRITICAL: checks apiSuccess response correctly (result.data?.status)', () => {
+    const content = fs.readFileSync(tickRouteFile, 'utf-8')
+
+    // Must check result.data?.status, NOT result.status
+    expect(content).toContain('coverResult.data?.status')
+
+    // Should NOT have the incorrect pattern
+    expect(content).not.toMatch(/coverResult\.status\s*===\s*['"]ready['"]/)
+  })
 
   it('documents the correct flow for cover regeneration at finalize', () => {
     /**
@@ -130,20 +161,21 @@ describe('Finalize Step Cover Handling', () => {
     expect(true).toBe(true) // Documentation test
   })
 
-  it('documents the apiSuccess response format', () => {
+  it('documents the stale variable bug and fix', () => {
     /**
-     * The cover/generate endpoint uses apiSuccess() which wraps responses as:
-     * {
-     *   success: true,
-     *   data: {
-     *     status: 'ready',
-     *     cover_url: '...',
-     *     ...
-     *   }
-     * }
+     * THE BUG (stale variable):
      *
-     * The tick endpoint must check: result.success && result.data?.status === 'ready'
-     * NOT: result.success && result.status === 'ready' (incorrect!)
+     * 1. coverStatus = 'generating' (from DB)
+     * 2. After 5 min timeout, update DB to 'failed'
+     * 3. Check: if (coverStatus === 'failed') → FALSE! (still 'generating')
+     * 4. Skip regeneration, finalize without cover!
+     *
+     * THE FIX (needsRegeneration flag):
+     *
+     * 1. let needsRegeneration = (coverStatus === 'failed' || !coverStatus)
+     * 2. After 5 min timeout, set needsRegeneration = true
+     * 3. Check: if (needsRegeneration) → TRUE!
+     * 4. Regenerate cover, then finalize
      */
     expect(true).toBe(true) // Documentation test
   })

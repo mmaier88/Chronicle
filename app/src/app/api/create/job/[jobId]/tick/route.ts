@@ -853,24 +853,29 @@ export async function POST(
       // Check cover status - we prefer to have a cover before completing
       const coverStatus = book.cover_status as string | null
 
+      // Track if we need to regenerate cover
+      let needsRegeneration = coverStatus === 'failed' || !coverStatus
+
       // If cover is still generating, check how long it's been
       if (coverStatus === 'generating' || coverStatus === 'pending') {
         // Check if job has been in finalize for too long (cover generation stuck)
         const jobUpdatedAt = new Date(vibeJob.updated_at || vibeJob.created_at)
         const minutesInFinalize = (Date.now() - jobUpdatedAt.getTime()) / 60000
 
-        // If we've been waiting more than 5 minutes for cover, complete without it
+        // If we've been waiting more than 5 minutes for cover, mark as failed and regenerate
         if (minutesInFinalize > 5) {
-          logger.warn('Cover generation stuck, completing without cover', {
+          logger.warn('Cover generation stuck, marking as failed and regenerating', {
             bookId: book.id,
             coverStatus,
             minutesWaiting: Math.round(minutesInFinalize),
           })
-          // Mark cover as failed so user can manually regenerate later
+          // Mark cover as failed
           await supabase
             .from('books')
             .update({ cover_status: 'failed' })
             .eq('id', book.id)
+          // CRITICAL: Set flag to trigger regeneration below
+          needsRegeneration = true
         } else {
           logger.info('Waiting for cover generation', { bookId: book.id, coverStatus, minutesWaiting: Math.round(minutesInFinalize) })
           return NextResponse.json({
@@ -882,8 +887,8 @@ export async function POST(
         }
       }
 
-      // If cover failed, retry it before completing
-      if (coverStatus === 'failed' || !coverStatus) {
+      // If cover failed or was just marked as failed, regenerate it
+      if (needsRegeneration) {
         logger.info('Cover failed or missing, triggering regeneration', { bookId: book.id, coverStatus })
 
         // Trigger cover regeneration synchronously and wait for result
