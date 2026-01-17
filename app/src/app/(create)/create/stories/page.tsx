@@ -1,68 +1,80 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { BookOpen, Clock, Sparkles, AlertCircle, RefreshCw, Trash2 } from 'lucide-react'
+import { BookOpen, Sparkles } from 'lucide-react'
 import { StoryCard } from '@/components/StoryCard'
-import { CoverStatus, VibeJobStatus } from '@/types/chronicle'
-import { InProgressCard } from './InProgressCard'
-import { isJobStuck, JOB_RECOVERY_CONFIG } from '@/lib/job-recovery'
+import { CoverStatus } from '@/types/chronicle'
+import { AutoResumeRedirect } from '@/components/AutoResumeRedirect'
 
 export default async function StoriesPage() {
   const supabase = await createClient()
   const { user } = await getUser()
 
-  // Fetch all user's vibe-generated stories with their job status
-  const { data: stories, error } = await supabase
-    .from('books')
-    .select(`
-      id, title, status, created_at, core_question, cover_url, cover_status,
-      vibe_jobs!inner(id, status, step, progress, error, updated_at, auto_resume_attempts)
-    `)
-    .eq('owner_id', user?.id)
-    .eq('source', 'vibe')
+  // Check for any in-progress job (will auto-redirect)
+  const { data: inProgressJob } = await supabase
+    .from('vibe_jobs')
+    .select('id, book_id, source_book_id, books!vibe_jobs_book_id_fkey(title)')
+    .eq('user_id', user?.id)
+    .in('status', ['queued', 'running'])
     .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
 
-  // Also fetch stories without jobs (completed ones)
-  const { data: completedOnly } = await supabase
+  // Get the book title for the in-progress job
+  let inProgressBookTitle: string | null = null
+  let isRemix = false
+  if (inProgressJob) {
+    // books can be an object (single row) or null
+    const books = inProgressJob.books as { title: string } | { title: string }[] | null
+    if (books && !Array.isArray(books)) {
+      inProgressBookTitle = books.title
+    } else if (Array.isArray(books) && books.length > 0) {
+      inProgressBookTitle = books[0].title
+    }
+    isRemix = !!inProgressJob.source_book_id
+  }
+
+  // Fetch completed stories
+  const { data: completedStories, error } = await supabase
     .from('books')
-    .select('id, title, status, created_at, core_question, cover_url, cover_status')
+    .select('id, title, status, created_at, core_question, cover_url, cover_status, source_book_id')
     .eq('owner_id', user?.id)
     .eq('source', 'vibe')
     .eq('status', 'final')
     .order('created_at', { ascending: false })
 
+  // Fetch source book titles for regenerated books
+  const sourceBookIds = (completedStories || [])
+    .map(s => s.source_book_id)
+    .filter((id): id is string => id !== null)
+
+  let sourceBookTitles: Record<string, string> = {}
+  if (sourceBookIds.length > 0) {
+    const { data: sourceBooks } = await supabase
+      .from('books')
+      .select('id, title')
+      .in('id', sourceBookIds)
+
+    sourceBookTitles = (sourceBooks || []).reduce((acc, book) => {
+      acc[book.id] = book.title
+      return acc
+    }, {} as Record<string, string>)
+  }
+
   if (error) {
     console.error('Error fetching stories:', error)
   }
 
-  // Merge results - use completedOnly for final stories
-  const completedStories = completedOnly || []
-
-  // In progress stories with job info
-  type StoryWithJob = typeof stories extends (infer T)[] | null ? T : never
-  const inProgressStories = (stories || []).filter((s: StoryWithJob) => {
-    const job = Array.isArray(s.vibe_jobs) ? s.vibe_jobs[0] : s.vibe_jobs
-    return s.status !== 'final' && job
-  }).map((s: StoryWithJob) => {
-    const job = Array.isArray(s.vibe_jobs) ? s.vibe_jobs[0] : s.vibe_jobs
-    // Use centralized isJobStuck function
-    const jobStatus = {
-      id: job.id,
-      status: job.status,
-      step: job.step,
-      progress: job.progress,
-      updated_at: job.updated_at,
-      auto_resume_attempts: job.auto_resume_attempts,
-      error: job.error,
-    }
-    return {
-      ...s,
-      job,
-      isStale: isJobStuck(jobStatus)
-    }
-  })
+  const stories = completedStories || []
 
   return (
     <div style={{ maxWidth: 800 }}>
+      {/* Auto-redirect to generating page if there's an in-progress job */}
+      <AutoResumeRedirect
+        jobId={inProgressJob?.id || null}
+        bookTitle={inProgressBookTitle}
+        isRemix={isRemix}
+      />
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 className="app-heading-1">Your Stories</h1>
@@ -76,7 +88,7 @@ export default async function StoriesPage() {
         </Link>
       </div>
 
-      {completedStories.length === 0 && inProgressStories.length === 0 ? (
+      {stories.length === 0 ? (
         <div className="app-card" style={{ textAlign: 'center', padding: '3rem' }}>
           <BookOpen style={{ width: 48, height: 48, color: 'var(--amber-warm)', margin: '0 auto 1rem', opacity: 0.6 }} />
           <h3 className="app-heading-3" style={{ marginBottom: '0.5rem' }}>No stories yet</h3>
@@ -89,54 +101,22 @@ export default async function StoriesPage() {
           </Link>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* Completed Stories - Audio First */}
-          {completedStories.length > 0 && (
-            <section>
-              <h2 className="app-label" style={{ marginBottom: '1rem' }}>
-                Completed ({completedStories.length})
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {completedStories.map((story) => (
-                  <StoryCard
-                    key={story.id}
-                    story={{
-                      id: story.id,
-                      title: story.title,
-                      status: story.status,
-                      created_at: story.created_at,
-                      core_question: story.core_question,
-                      cover_url: story.cover_url,
-                      cover_status: story.cover_status as CoverStatus,
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* In Progress */}
-          {inProgressStories.length > 0 && (
-            <section>
-              <h2 className="app-label" style={{ marginBottom: '1rem' }}>
-                In Progress ({inProgressStories.length})
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {inProgressStories.map((story) => (
-                  <InProgressCard
-                    key={story.id}
-                    story={{
-                      id: story.id,
-                      title: story.title,
-                      status: story.status,
-                      job: story.job,
-                      isStale: story.isStale
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {stories.map((story) => (
+            <StoryCard
+              key={story.id}
+              story={{
+                id: story.id,
+                title: story.title,
+                status: story.status,
+                created_at: story.created_at,
+                core_question: story.core_question,
+                cover_url: story.cover_url,
+                cover_status: story.cover_status as CoverStatus,
+                source_book_title: story.source_book_id ? sourceBookTitles[story.source_book_id] : null,
+              }}
+            />
+          ))}
         </div>
       )}
     </div>

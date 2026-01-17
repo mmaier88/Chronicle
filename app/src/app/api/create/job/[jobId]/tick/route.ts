@@ -214,6 +214,8 @@ interface VibeJob {
   story_synopsis: string | null
   error: string | null
   attempt: number
+  created_at: string
+  updated_at: string
 }
 
 // Helper to update job status
@@ -542,7 +544,7 @@ export async function POST(
   // Fetch job
   const { data: job, error: jobError } = await supabase
     .from('vibe_jobs')
-    .select('id, user_id, book_id, genre, user_prompt, preview, status, step, progress, story_synopsis, error, attempt')
+    .select('id, user_id, book_id, genre, user_prompt, preview, status, step, progress, story_synopsis, error, attempt, created_at, updated_at')
     .eq('id', jobId)
     .eq('user_id', effectiveUserId)
     .single()
@@ -586,13 +588,23 @@ export async function POST(
     // Fetch book
     const { data: book } = await supabase
       .from('books')
-      .select('id, title, genre, status, constitution_json, owner_id, cover_status')
+      .select('id, title, genre, status, constitution_json, owner_id, cover_status, source_book_id')
       .eq('id', vibeJob.book_id)
       .single()
 
     if (!book) {
       throw new Error('Book not found')
     }
+
+    // Log tick operation for debugging
+    logger.info('Tick processing', {
+      jobId,
+      bookId: book.id,
+      bookTitle: book.title,
+      sourceBookId: (book as { source_book_id?: string }).source_book_id || null,
+      step,
+      operation: 'tick',
+    })
 
     // STEP: Constitution
     if (step === 'created' || step === 'constitution') {
@@ -834,18 +846,36 @@ export async function POST(
 
     // STEP: Finalize
     if (step === 'finalize') {
-      // Check cover status - we MUST have a cover before completing
+      // Check cover status - we prefer to have a cover before completing
       const coverStatus = book.cover_status as string | null
 
-      // If cover is still generating, wait for it
+      // If cover is still generating, check how long it's been
       if (coverStatus === 'generating' || coverStatus === 'pending') {
-        logger.info('Waiting for cover generation', { bookId: book.id, coverStatus })
-        return NextResponse.json({
-          status: 'running',
-          step: 'finalize',
-          progress: 98,
-          message: 'Waiting for cover to finish generating...'
-        })
+        // Check if job has been in finalize for too long (cover generation stuck)
+        const jobUpdatedAt = new Date(vibeJob.updated_at || vibeJob.created_at)
+        const minutesInFinalize = (Date.now() - jobUpdatedAt.getTime()) / 60000
+
+        // If we've been waiting more than 5 minutes for cover, complete without it
+        if (minutesInFinalize > 5) {
+          logger.warn('Cover generation stuck, completing without cover', {
+            bookId: book.id,
+            coverStatus,
+            minutesWaiting: Math.round(minutesInFinalize),
+          })
+          // Mark cover as failed so user can manually regenerate later
+          await supabase
+            .from('books')
+            .update({ cover_status: 'failed' })
+            .eq('id', book.id)
+        } else {
+          logger.info('Waiting for cover generation', { bookId: book.id, coverStatus, minutesWaiting: Math.round(minutesInFinalize) })
+          return NextResponse.json({
+            status: 'running',
+            step: 'finalize',
+            progress: 98,
+            message: 'Waiting for cover to finish generating...'
+          })
+        }
       }
 
       // If cover failed, retry it before completing

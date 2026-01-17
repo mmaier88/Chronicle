@@ -10,7 +10,7 @@ export default async function CreateLayout({
 }) {
   const { user, isDevUser } = await getUser()
 
-  // Check if user has any books (for showing Remix link)
+  // Check if user has any books (for showing Edit link)
   const supabase = await createClient()
   const { count: bookCount } = await supabase
     .from('books')

@@ -1,7 +1,7 @@
 import { createClient, getUser, createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Sparkles, Clock } from 'lucide-react'
+import { ArrowLeft, BookOpen, Sparkles, Clock, RefreshCw } from 'lucide-react'
 import { BookCoverClient } from '@/components/cover/BookCoverClient'
 import { RegenerateCoverButton } from '@/components/cover/RegenerateCoverButton'
 import { UploadCoverButton } from '@/components/cover/UploadCoverButton'
@@ -144,6 +144,28 @@ export default async function VibeReadPage({
           <ShareButton bookId={book.id} existingShareUrl={shareUrl} />
           <ExportButton book={book} chapters={sortedChapters} />
           <SendToKindleButton book={book} chapters={sortedChapters} />
+          {book.status === 'final' && (
+            <Link
+              href={`/create/regenerate/${book.id}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.625rem 1.25rem',
+                background: 'rgba(250, 246, 237, 0.08)',
+                border: '1px solid rgba(250, 246, 237, 0.12)',
+                borderRadius: 50,
+                color: 'var(--moon-soft)',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              <RefreshCw style={{ width: 16, height: 16 }} />
+              Regenerate
+            </Link>
+          )}
         </div>
 
         {/* Reader Mode */}

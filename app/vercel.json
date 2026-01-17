@@ -8,6 +8,10 @@
     {
       "path": "/api/create/job/auto-resume",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/monitoring/synthetic",
+      "schedule": "0 * * * *"
     }
   ]
 }
