@@ -25,17 +25,22 @@ interface CreateCheckoutRequest {
 }
 
 export async function POST(request: NextRequest) {
-  const { user } = await getUser()
-  if (!user) {
-    return apiError.unauthorized()
-  }
-
-  let body: CreateCheckoutRequest
   try {
-    body = await request.json()
-  } catch {
-    return apiError.badRequest('Invalid request body')
-  }
+    logger.info('Checkout endpoint called')
+
+    const { user } = await getUser()
+    logger.info('User check', { hasUser: !!user, userId: user?.id })
+
+    if (!user) {
+      return apiError.unauthorized()
+    }
+
+    let body: CreateCheckoutRequest
+    try {
+      body = await request.json()
+    } catch {
+      return apiError.badRequest('Invalid request body')
+    }
 
   const { genre, prompt, preview, length, edition, sliders } = body
 
@@ -236,5 +241,12 @@ export async function POST(request: NextRequest) {
       errorCode: stripeErr?.code,
     })
     return apiError.internal('Failed to create checkout session')
+  }
+  } catch (unexpectedErr) {
+    logger.error('Unexpected error in checkout endpoint', unexpectedErr, {
+      message: (unexpectedErr as Error)?.message,
+      stack: (unexpectedErr as Error)?.stack,
+    })
+    return apiError.internal('Unexpected error')
   }
 }
