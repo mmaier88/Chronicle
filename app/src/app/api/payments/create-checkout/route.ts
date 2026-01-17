@@ -55,6 +55,15 @@ export async function POST(request: NextRequest) {
   const { price, priceId } = getPrice(edition, length)
   const mode = editionToMode(edition)
 
+  // Debug: log pricing info
+  logger.info('Checkout pricing info', {
+    edition,
+    length,
+    price,
+    priceId: priceId ? `${priceId.substring(0, 10)}...` : 'MISSING',
+    stripeConfigured: isStripeConfigured(),
+  })
+
   // Handle free tier - create book and job directly
   if (isFree(edition, length)) {
     logger.info('Free tier checkout - creating book directly', { userId: user.id, edition, length })
@@ -218,7 +227,14 @@ export async function POST(request: NextRequest) {
       session_id: session.id,
     })
   } catch (err) {
-    logger.error('Stripe checkout creation failed', err, { userId: user.id })
+    const stripeErr = err as { message?: string; type?: string; code?: string }
+    logger.error('Stripe checkout creation failed', err, {
+      userId: user.id,
+      priceId,
+      errorMessage: stripeErr?.message,
+      errorType: stripeErr?.type,
+      errorCode: stripeErr?.code,
+    })
     return apiError.internal('Failed to create checkout session')
   }
 }
