@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUser } from '@/lib/supabase/server'
+import { getUser, createServiceClient } from '@/lib/supabase/server'
 import { isStripeConfigured } from '@/lib/stripe/client'
 import { getPrice } from '@/lib/stripe/pricing'
 
@@ -30,6 +30,25 @@ export async function GET(request: NextRequest) {
     standard_60: getPrice('standard', 60),
   }
 
+  // Test DB connection with service client
+  let dbTest = { success: false, error: null as string | null, paymentCount: 0 }
+  try {
+    const supabase = createServiceClient()
+    const { data, error, count } = await supabase
+      .from('payments')
+      .select('id', { count: 'exact', head: true })
+      .limit(1)
+
+    if (error) {
+      dbTest.error = error.message
+    } else {
+      dbTest.success = true
+      dbTest.paymentCount = count || 0
+    }
+  } catch (e) {
+    dbTest.error = (e as Error).message
+  }
+
   return NextResponse.json({
     timestamp: new Date().toISOString(),
     user: user ? { id: user.id, email: user.email } : null,
@@ -39,5 +58,6 @@ export async function GET(request: NextRequest) {
       masterwork_60_priceId: priceCheck.masterwork_60.priceId ? `${priceCheck.masterwork_60.priceId.substring(0, 15)}...` : 'MISSING',
       standard_60_priceId: priceCheck.standard_60.priceId ? `${priceCheck.standard_60.priceId.substring(0, 15)}...` : 'MISSING',
     },
+    dbTest,
   })
 }
