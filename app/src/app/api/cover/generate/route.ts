@@ -7,6 +7,10 @@
  */
 
 import { NextResponse } from 'next/server'
+
+// Cover generation involves AI calls (concept distillation, image generation, quality checks)
+// and can take 30-60+ seconds. Set max duration to 120s to prevent timeouts.
+export const maxDuration = 120
 import { createServiceClient, getUser } from '@/lib/supabase/server'
 import { generateCover } from '@/lib/cover'
 import { VibePreview } from '@/types/chronicle'

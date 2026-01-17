@@ -10,6 +10,10 @@ import { logger } from '@/lib/logger'
 import { resolveSliders } from '@/lib/slider-resolution'
 import { SLIDER_CONFIG } from '@/lib/slider-config'
 
+// Tick endpoint handles AI prose generation and cover finalization.
+// Cover generation at finalize step can take up to 120s.
+export const maxDuration = 180
+
 const anthropic = new Anthropic()
 
 const MAX_RETRIES = 3
@@ -882,8 +886,7 @@ export async function POST(
       if (coverStatus === 'failed' || !coverStatus) {
         logger.info('Cover failed or missing, triggering regeneration', { bookId: book.id, coverStatus })
 
-        // Trigger cover regeneration with service auth
-        // Note: cover/generate handles setting cover_status to 'generating' then 'ready'/'failed'
+        // Trigger cover regeneration synchronously and wait for result
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
         try {
           const coverResponse = await fetch(`${baseUrl}/api/cover/generate`, {
@@ -896,34 +899,54 @@ export async function POST(
             body: JSON.stringify({ bookId: book.id, regenerate: true })
           })
 
-          // Check if cover generation succeeded
           if (coverResponse.ok) {
             const coverResult = await coverResponse.json()
-            if (coverResult.success && coverResult.status === 'ready') {
-              // Cover is now ready - re-fetch book to get updated status and continue to finalization
-              logger.info('Cover regeneration succeeded, continuing to finalization', { bookId: book.id })
-              // Don't return here - let the next tick iteration handle finalization
-              // This avoids a race condition where we might overwrite the 'ready' status
+            // apiSuccess wraps response in { success: true, data: { status: 'ready', ... } }
+            if (coverResult.success && coverResult.data?.status === 'ready') {
+              logger.info('Cover regeneration succeeded, proceeding to finalization', { bookId: book.id })
+              // Fall through to finalization below - don't return!
+            } else {
+              // Cover generation returned but not ready - could be in progress or failed
+              logger.warn('Cover regeneration did not complete successfully', {
+                bookId: book.id,
+                result: coverResult
+              })
+              // Wait for next tick to retry
+              return NextResponse.json({
+                status: 'running',
+                step: 'finalize',
+                progress: 97,
+                message: 'Cover generation in progress...'
+              })
             }
           } else {
             const errorText = await coverResponse.text()
-            logger.error('Cover regeneration returned error', { bookId: book.id, status: coverResponse.status, error: errorText })
+            logger.error('Cover regeneration returned error', {
+              bookId: book.id,
+              status: coverResponse.status,
+              error: errorText
+            })
+            // Wait for next tick to retry
+            return NextResponse.json({
+              status: 'running',
+              step: 'finalize',
+              progress: 97,
+              message: 'Cover generation failed, will retry...'
+            })
           }
         } catch (err) {
           logger.error('Cover regeneration trigger failed', err, { bookId: book.id })
+          // Wait for next tick to retry
+          return NextResponse.json({
+            status: 'running',
+            step: 'finalize',
+            progress: 97,
+            message: 'Cover generation error, will retry...'
+          })
         }
-
-        // Return and wait for next tick to check cover status
-        // DO NOT set cover_status here - cover/generate already handles it
-        return NextResponse.json({
-          status: 'running',
-          step: 'finalize',
-          progress: 97,
-          message: 'Regenerating cover...'
-        })
       }
 
-      // Cover is ready - proceed with finalization
+      // Cover is ready (or regeneration just succeeded) - proceed with finalization
       logger.info('Cover ready, finalizing book', { bookId: book.id })
 
       // Mark book as final
