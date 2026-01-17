@@ -17,21 +17,49 @@ export interface PriceInfo {
 }
 
 /**
- * Pricing matrix: edition → length → price info
- * Prices are in cents (USD)
+ * Base pricing matrix: edition → length → price (cents)
+ * Price IDs are read at runtime via getPrice() to ensure env vars are available
  */
-export const PRICING: Record<Edition, Record<BookLength, PriceInfo>> = {
+const BASE_PRICING: Record<Edition, Record<BookLength, number>> = {
   standard: {
-    30: { price: 0, priceId: '' }, // Free tier!
-    60: { price: 399, priceId: process.env.STRIPE_PRICE_STANDARD_60 || '' },
-    120: { price: 699, priceId: process.env.STRIPE_PRICE_STANDARD_120 || '' },
-    300: { price: 999, priceId: process.env.STRIPE_PRICE_STANDARD_300 || '' },
+    30: 0, // Free tier!
+    60: 399,
+    120: 699,
+    300: 999,
   },
   masterwork: {
-    30: { price: 499, priceId: process.env.STRIPE_PRICE_MASTERWORK_30 || '' },
-    60: { price: 799, priceId: process.env.STRIPE_PRICE_MASTERWORK_60 || '' },
-    120: { price: 1199, priceId: process.env.STRIPE_PRICE_MASTERWORK_120 || '' },
-    300: { price: 1499, priceId: process.env.STRIPE_PRICE_MASTERWORK_300 || '' },
+    30: 499,
+    60: 799,
+    120: 1199,
+    300: 1499,
+  },
+}
+
+/**
+ * Get Stripe price ID for a given edition and length
+ * Reads environment variables at runtime (not build time)
+ */
+function getStripePriceId(edition: Edition, length: BookLength): string {
+  const key = `STRIPE_PRICE_${edition.toUpperCase()}_${length}`
+  return process.env[key] || ''
+}
+
+/**
+ * Client-safe pricing for display purposes (no Stripe IDs)
+ * Use getPrice() on the server for full price info including Stripe IDs
+ */
+export const PRICING: Record<Edition, Record<BookLength, { price: number }>> = {
+  standard: {
+    30: { price: 0 },
+    60: { price: 399 },
+    120: { price: 699 },
+    300: { price: 999 },
+  },
+  masterwork: {
+    30: { price: 499 },
+    60: { price: 799 },
+    120: { price: 1199 },
+    300: { price: 1499 },
   },
 }
 
@@ -57,14 +85,18 @@ export function formatPrice(cents: number): string {
  * Check if a price is free
  */
 export function isFree(edition: Edition, length: BookLength): boolean {
-  return PRICING[edition][length].price === 0
+  return BASE_PRICING[edition][length] === 0
 }
 
 /**
  * Get price info for a given edition and length
+ * Reads Stripe price IDs at runtime (not build time)
  */
 export function getPrice(edition: Edition, length: BookLength): PriceInfo {
-  return PRICING[edition][length]
+  return {
+    price: BASE_PRICING[edition][length],
+    priceId: getStripePriceId(edition, length),
+  }
 }
 
 /**
