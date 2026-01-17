@@ -42,6 +42,10 @@ export default async function StoriesPage() {
     .eq('status', 'final')
     .order('created_at', { ascending: false })
 
+  // Debug logging
+  console.log('[StoriesPage] User:', user?.id, user?.email)
+  console.log('[StoriesPage] Query result:', { count: completedStories?.length, error: error?.message })
+
   // Fetch source book titles for regenerated books
   const sourceBookIds = (completedStories || [])
     .map(s => s.source_book_id)
