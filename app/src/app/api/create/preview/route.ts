@@ -74,12 +74,18 @@ function checkForBlockedContent(text: string): string | null {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { user } = await getUser()
+  try {
+    console.log('[Preview] Endpoint called')
+    console.log('[Preview] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY)
+    console.log('[Preview] ANTHROPIC_API_KEY prefix:', process.env.ANTHROPIC_API_KEY?.substring(0, 15))
 
-  if (!user) {
-    return ApiErrors.unauthorized()
-  }
+    const supabase = await createClient()
+    const { user } = await getUser()
+    console.log('[Preview] User:', user?.id)
+
+    if (!user) {
+      return ApiErrors.unauthorized()
+    }
 
   // Validate request body
   const validated = await validateBody(request, previewRequestSchema)

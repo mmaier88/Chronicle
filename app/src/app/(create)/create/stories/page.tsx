@@ -70,8 +70,20 @@ export default async function StoriesPage() {
 
   const stories = completedStories || []
 
+  // TEMP DEBUG - remove after fixing
+  const debugInfo = {
+    userId: user?.id,
+    userEmail: user?.email,
+    queryCount: completedStories?.length ?? 0,
+    queryError: error?.message ?? null,
+  }
+
   return (
     <div style={{ maxWidth: 800 }}>
+      {/* TEMP DEBUG */}
+      <pre style={{ fontSize: 10, opacity: 0.5, marginBottom: 16 }}>
+        {JSON.stringify(debugInfo, null, 2)}
+      </pre>
       {/* Auto-redirect to generating page if there's an in-progress job */}
       <AutoResumeRedirect
         jobId={inProgressJob?.id || null}

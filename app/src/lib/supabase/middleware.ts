@@ -2,13 +2,41 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { CURRENT_TERMS_VERSION } from '@/lib/terms'
 
-// Security headers
+// Security headers - comprehensive protection
 const securityHeaders = {
+  // Prevent MIME type sniffing (fixes Content-Type Sniffing Attack)
   'X-Content-Type-Options': 'nosniff',
+  // Prevent clickjacking
   'X-Frame-Options': 'DENY',
+  // XSS protection (legacy, but still useful for older browsers)
   'X-XSS-Protection': '1; mode=block',
+  // Control referrer information
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  // Disable unnecessary browser features
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  // Content Security Policy - adjust as needed for your app
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https:",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.anthropic.com https://api.elevenlabs.io",
+    "frame-src 'self' https://js.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join('; '),
+  // Strict Transport Security (HTTPS only)
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  // Prevent DNS prefetching leaks
+  'X-DNS-Prefetch-Control': 'off',
+  // Prevent IE from executing downloads in site context
+  'X-Download-Options': 'noopen',
+  // Prevent Adobe products from loading data
+  'X-Permitted-Cross-Domain-Policies': 'none',
 }
 
 // Paths that require terms acceptance

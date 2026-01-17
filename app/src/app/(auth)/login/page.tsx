@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
+// Note: createClient is still used for OAuth login below
+
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -23,22 +25,31 @@ function LoginForm() {
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/callback?redirect=${redirect}`,
-      },
-    })
+    try {
+      // Use rate-limited API endpoint instead of direct Supabase call
+      const response = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          redirectTo: `${window.location.origin}/callback?redirect=${redirect}`,
+        }),
+      })
 
-    if (error) {
-      setError(error.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to send login link')
+        setLoading(false)
+        return
+      }
+
+      setSuccess(true)
       setLoading(false)
-      return
+    } catch (err) {
+      setError('Network error. Please try again.')
+      setLoading(false)
     }
-
-    setSuccess(true)
-    setLoading(false)
   }
 
   const handleOAuthLogin = async (provider: 'google') => {
