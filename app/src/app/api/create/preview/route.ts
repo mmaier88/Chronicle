@@ -199,4 +199,8 @@ Requirements:
     console.error('Preview generation error:', error)
     return ApiErrors.internal('Failed to generate preview')
   }
+  } catch (unexpectedError) {
+    console.error('[Preview] Unexpected error:', unexpectedError)
+    return ApiErrors.internal(`Unexpected error: ${(unexpectedError as Error).message}`)
+  }
 }

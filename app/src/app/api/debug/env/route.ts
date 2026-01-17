@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
   const envCheck = {
     STRIPE_SECRET_KEY: !!process.env.STRIPE_SECRET_KEY,
     STRIPE_SECRET_KEY_PREFIX: process.env.STRIPE_SECRET_KEY?.substring(0, 10),
+    ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
+    ANTHROPIC_API_KEY_PREFIX: process.env.ANTHROPIC_API_KEY?.substring(0, 15),
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30),
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     isStripeConfigured: isStripeConfigured(),
